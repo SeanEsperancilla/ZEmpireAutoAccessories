@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ZEmpireAutoAccessories.Models;
 
@@ -5,24 +7,16 @@ namespace ZEmpireAutoAccessories.Data
 {
     /// <summary>
     /// Database-first context bound to the ZEmpire database (schemas:
-    /// asp, cat, crm, inv, ops, sales, sec). The database already exists;
-    /// this context maps onto it and is not intended to drive migrations.
+    /// asp, cat, crm, inv, ops, sales, sec). ASP.NET Core Identity is mapped
+    /// onto the existing asp.* tables. The database already exists; this
+    /// context maps onto it and is not intended to drive migrations.
     /// </summary>
-    public class ApplicationDbContext : DbContext
+    public class ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, string>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
         }
-
-        // ----- asp (Identity) -----
-        public DbSet<AspNetUser> AspNetUsers => Set<AspNetUser>();
-        public DbSet<AspNetRole> AspNetRoles => Set<AspNetRole>();
-        public DbSet<AspNetRoleClaim> AspNetRoleClaims => Set<AspNetRoleClaim>();
-        public DbSet<AspNetUserClaim> AspNetUserClaims => Set<AspNetUserClaim>();
-        public DbSet<AspNetUserLogin> AspNetUserLogins => Set<AspNetUserLogin>();
-        public DbSet<AspNetUserRole> AspNetUserRoles => Set<AspNetUserRole>();
-        public DbSet<AspNetUserToken> AspNetUserTokens => Set<AspNetUserToken>();
 
         // ----- crm -----
         public DbSet<Customer> Customers => Set<Customer>();
@@ -77,25 +71,21 @@ namespace ZEmpireAutoAccessories.Data
 
         protected override void OnModelCreating(ModelBuilder b)
         {
-            base.OnModelCreating(b);
+            base.OnModelCreating(b); // configures the Identity entities
 
-            // ---------- Identity (asp) : composite keys + cascade ----------
-            b.Entity<AspNetUserLogin>().HasKey(x => new { x.LoginProvider, x.ProviderKey });
-            b.Entity<AspNetUserRole>().HasKey(x => new { x.UserId, x.RoleId });
-            b.Entity<AspNetUserToken>().HasKey(x => new { x.UserId, x.LoginProvider, x.Name });
-
-            b.Entity<AspNetRoleClaim>().HasOne(x => x.Role).WithMany()
-                .HasForeignKey(x => x.RoleId).OnDelete(DeleteBehavior.Cascade);
-            b.Entity<AspNetUserClaim>().HasOne(x => x.User).WithMany()
-                .HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
-            b.Entity<AspNetUserLogin>().HasOne(x => x.User).WithMany()
-                .HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
-            b.Entity<AspNetUserRole>().HasOne(x => x.User).WithMany()
-                .HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
-            b.Entity<AspNetUserRole>().HasOne(x => x.Role).WithMany()
-                .HasForeignKey(x => x.RoleId).OnDelete(DeleteBehavior.Cascade);
-            b.Entity<AspNetUserToken>().HasOne(x => x.User).WithMany()
-                .HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            // ---------- Identity tables live in the asp schema ----------
+            b.Entity<ApplicationUser>(e =>
+            {
+                e.ToTable("AspNetUsers", "asp");
+                e.Property(x => x.FullName).HasMaxLength(150).IsRequired();
+                e.Property(x => x.CreatedAt).HasColumnType("datetime2(0)");
+            });
+            b.Entity<ApplicationRole>().ToTable("AspNetRoles", "asp");
+            b.Entity<IdentityUserClaim<string>>().ToTable("AspNetUserClaims", "asp");
+            b.Entity<IdentityUserRole<string>>().ToTable("AspNetUserRoles", "asp");
+            b.Entity<IdentityUserLogin<string>>().ToTable("AspNetUserLogins", "asp");
+            b.Entity<IdentityRoleClaim<string>>().ToTable("AspNetRoleClaims", "asp");
+            b.Entity<IdentityUserToken<string>>().ToTable("AspNetUserTokens", "asp");
 
             // ---------- crm ----------
             b.Entity<Vehicle>(e =>

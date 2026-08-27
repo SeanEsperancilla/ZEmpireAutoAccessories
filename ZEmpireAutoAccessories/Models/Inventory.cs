@@ -21,7 +21,7 @@ namespace ZEmpireAutoAccessories.Models
         public DateTime TransactionDate { get; set; }
 
         public Product Product { get; set; } = null!;
-        public AspNetUser User { get; set; } = null!;
+        public ApplicationUser User { get; set; } = null!;
     }
 
     [Table("InventoryCheck", Schema = "inv")]
@@ -33,7 +33,7 @@ namespace ZEmpireAutoAccessories.Models
         public string UserId { get; set; } = null!;
         public DateTime CheckDate { get; set; }
 
-        public AspNetUser User { get; set; } = null!;
+        public ApplicationUser User { get; set; } = null!;
         public ICollection<InventoryCheckDetail> Details { get; set; } = new List<InventoryCheckDetail>();
     }
 

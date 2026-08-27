@@ -34,7 +34,7 @@ namespace ZEmpireAutoAccessories.Models
 
         public Customer Customer { get; set; } = null!;
         public Vehicle? Vehicle { get; set; }
-        public AspNetUser User { get; set; } = null!;
+        public ApplicationUser User { get; set; } = null!;
         public PaymentMode PaymentMode { get; set; } = null!;
         public ICollection<SaleDetail> SaleDetails { get; set; } = new List<SaleDetail>();
     }
@@ -93,7 +93,7 @@ namespace ZEmpireAutoAccessories.Models
         public JobOrder? JobOrder { get; set; }
         public Customer Customer { get; set; } = null!;
         public Vehicle? Vehicle { get; set; }
-        public AspNetUser User { get; set; } = null!;
+        public ApplicationUser User { get; set; } = null!;
         public PaymentMode PaymentMode { get; set; } = null!;
         public ICollection<ServiceInvoiceDetail> Details { get; set; } = new List<ServiceInvoiceDetail>();
     }
@@ -165,7 +165,7 @@ namespace ZEmpireAutoAccessories.Models
 
         public Customer Customer { get; set; } = null!;
         public Vehicle Vehicle { get; set; } = null!;
-        public AspNetUser User { get; set; } = null!;
+        public ApplicationUser User { get; set; } = null!;
         public JobType? JobType { get; set; }
         public ICollection<QuotationDetail> Details { get; set; } = new List<QuotationDetail>();
 
@@ -226,7 +226,7 @@ namespace ZEmpireAutoAccessories.Models
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
 
-        public AspNetUser User { get; set; } = null!;
+        public ApplicationUser User { get; set; } = null!;
     }
 
     [Table("Warranty", Schema = "sales")]

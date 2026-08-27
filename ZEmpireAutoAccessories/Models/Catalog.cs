@@ -156,6 +156,6 @@ namespace ZEmpireAutoAccessories.Models
         public DateTime DateChanged { get; set; }
 
         public Pricing Pricing { get; set; } = null!;
-        public AspNetUser User { get; set; } = null!;
+        public ApplicationUser User { get; set; } = null!;
     }
 }

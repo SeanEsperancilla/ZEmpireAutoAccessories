@@ -45,7 +45,7 @@ namespace ZEmpireAutoAccessories.Models
 
         public Customer Customer { get; set; } = null!;
         public Vehicle Vehicle { get; set; } = null!;
-        public AspNetUser User { get; set; } = null!;
+        public ApplicationUser User { get; set; } = null!;
         public JobType? JobType { get; set; }
         public Employee? AssignedEmployee { get; set; }
         public Quotation? Quotation { get; set; }
@@ -104,7 +104,7 @@ namespace ZEmpireAutoAccessories.Models
         public string? ClientSignature { get; set; }
 
         public JobOrder JobOrder { get; set; } = null!;
-        public AspNetUser User { get; set; } = null!;
+        public ApplicationUser User { get; set; } = null!;
         public ICollection<VehicleChecklistDetail> Details { get; set; } = new List<VehicleChecklistDetail>();
     }
 

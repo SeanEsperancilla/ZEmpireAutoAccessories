@@ -1,46 +1,116 @@
-﻿<!DOCTYPE html>
+﻿@{
+    var fullName = User.FindFirst(AppClaims.FullName)?.Value
+                   ?? User.Identity?.Name ?? "User";
+    var role = User.FindFirst(ClaimTypes.Role)?.Value ?? "";
+    var initials = string.Join("", fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                        .Take(2).Select(p => char.ToUpper(p[0])));
+    if (string.IsNullOrEmpty(initials)) { initials = "U"; }
+
+    var myModules = User.FindAll(AppClaims.ModuleAccess).Select(c => c.Value)
+                        .Where(m => m != "Dashboard").OrderBy(m => m).ToList();
+}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - ZEmpireAutoAccessories</title>
+    <title>@ViewData["Title"] · ZEmpire</title>
+    <link rel="icon" href="~/images/ZEmpireLogo.png" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/ZEmpireAutoAccessories.styles.css" asp-append-version="true" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --zx-red:#e5464d; --zx-red2:#b01822; --zx-ink:#0b0b0c; }
+        body { background:#f4f5f7; }
+        .zx-nav { background:#0b0b0c; border-bottom:2px solid var(--zx-red); box-shadow:0 2px 10px rgba(0,0,0,.25); }
+        .zx-brand { display:inline-flex; align-items:center; gap:11px; text-decoration:none; }
+        .zx-brand img { width:36px; height:36px; }
+        .zx-brand .wm { font-family:'Oswald',system-ui,sans-serif; font-weight:700; font-size:19px; letter-spacing:1px; color:#fff; }
+        .zx-brand .wm b { color:var(--zx-red); }
+        .zx-nav .nav-link { color:#c7ccd6; font-weight:500; border-radius:8px; padding:.4rem .75rem; }
+        .zx-nav .nav-link:hover { color:#fff; background:rgba(255,255,255,.07); }
+        .zx-nav .nav-link.active { color:#fff; background:rgba(229,70,77,.18); }
+        .zx-nav .dropdown-menu { background:#141418; border:1px solid #2a2a33; }
+        .zx-nav .dropdown-item { color:#c7ccd6; }
+        .zx-nav .dropdown-item.disabled { color:#7b8290; }
+        .zx-nav .dropdown-item:hover { background:rgba(255,255,255,.06); color:#fff; }
+        .zx-nav .dropdown-item-text { color:#7b8290; }
+        .zx-avatar { width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:13px;color:#fff;
+                     background:linear-gradient(135deg,var(--zx-red),var(--zx-red2)); }
+        .zx-role { font-size:11px;color:#e5464d;text-transform:uppercase;letter-spacing:.4px;font-weight:600; }
+        .zx-userbtn { border:1px solid #2a2a33; background:rgba(255,255,255,.04); border-radius:12px; padding:5px 8px; display:inline-flex; align-items:center; gap:10px; color:#eef1f6; }
+        .zx-userbtn:hover { background:rgba(255,255,255,.09); }
+        .zx-userbtn .fw-semibold { color:#fff !important; }
+    </style>
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">ZEmpireAutoAccessories</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <header>
+            <nav class="zx-nav navbar navbar-expand-lg mb-4">
+                <div class="container-fluid px-lg-4">
+                    <a class="zx-brand navbar-brand" asp-controller="Home" asp-action="Index">
+                        <img src="~/images/ZEmpireLogo.png" alt="Z-Empire" />
+                        <span class="wm">Z<b>-</b>EMPIRE</span>
+                    </a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#zxNav" style="filter:invert(1);">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="zxNav">
+                        <ul class="navbar-nav me-auto">
+                            <li class="nav-item">
+                                <a class="nav-link active" asp-controller="Home" asp-action="Index">Dashboard</a>
+                            </li>
+                            @if (myModules.Count > 0)
+                            {
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                        Modules <span class="badge ms-1" style="background:var(--zx-red);color:#fff;">@myModules.Count</span>
+                                    </a>
+                                    <ul class="dropdown-menu" style="max-height:60vh;overflow:auto;">
+                                        @foreach (var m in myModules)
+                                        {
+                                            <li><span class="dropdown-item disabled">@m</span></li>
+                                        }
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><span class="dropdown-item-text text-muted small">Module screens coming soon</span></li>
+                                    </ul>
+                                </li>
+                            }
+                        </ul>
+
+                        <div class="dropdown">
+                            <button class="zx-userbtn dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <span class="zx-avatar">@initials</span>
+                                <span class="text-start d-none d-sm-block">
+                                    <span class="d-block fw-semibold" style="font-size:13.5px;color:#0f172a;">@fullName</span>
+                                    <span class="zx-role">@role</span>
+                                </span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><span class="dropdown-item-text small text-muted">Signed in as<br><strong>@User.Identity?.Name</strong></span></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form asp-controller="Account" asp-action="Logout" method="post">
+                                        <button type="submit" class="dropdown-item text-danger">Sign out</button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </nav>
-    </header>
+            </nav>
+        </header>
+    }
+
     <div class="container">
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - ZEmpireAutoAccessories - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

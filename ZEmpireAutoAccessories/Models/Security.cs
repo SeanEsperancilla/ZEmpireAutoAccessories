@@ -41,7 +41,7 @@ namespace ZEmpireAutoAccessories.Models
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
 
-        public AspNetUser User { get; set; } = null!;
+        public ApplicationUser User { get; set; } = null!;
     }
 
     [Table("Module", Schema = "sec")]
@@ -63,7 +63,7 @@ namespace ZEmpireAutoAccessories.Models
         public int ModuleID { get; set; }
         public bool CanAccess { get; set; }
 
-        public AspNetRole Role { get; set; } = null!;
+        public ApplicationRole Role { get; set; } = null!;
         public Module Module { get; set; } = null!;
     }
 }

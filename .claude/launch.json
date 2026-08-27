@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "zempire-web",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--launch-profile", "http", "--project", "ZEmpireAutoAccessories/ZEmpireAutoAccessories.csproj"],
+      "port": 5182
+    }
+  ]
+}
