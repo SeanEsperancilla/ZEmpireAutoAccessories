@@ -1,4 +1,4 @@
-﻿using ZEmpireAutoAccessories.Models;
+using ZEmpireAutoAccessories.Models;
 
 namespace ZEmpireAutoAccessories.Services.Interfaces
 {
@@ -9,9 +9,18 @@ namespace ZEmpireAutoAccessories.Services.Interfaces
         Task<List<Sale>> GetSales();
 
         Task<Sale> CreateSale(
-            int userId,
+            string userId,
             int customerId,
-            string modeOfPayment,
-            List<SaleDetailRequest> items);
+            int paymentModeId,
+            string invoiceNumber,
+            int? vehicleId,
+            List<SaleLineRequest> items);
+    }
+
+    public class SaleLineRequest
+    {
+        public int ProductID { get; set; }
+        public int Quantity { get; set; }
+        public decimal UnitPrice { get; set; }
     }
 }
