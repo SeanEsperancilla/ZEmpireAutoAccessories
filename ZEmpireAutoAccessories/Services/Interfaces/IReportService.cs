@@ -1,4 +1,4 @@
-﻿using ZEmpireAutoAccessories.Models;
+using ZEmpireAutoAccessories.Models;
 
 namespace ZEmpireAutoAccessories.Services.Interfaces
 {
@@ -10,7 +10,8 @@ namespace ZEmpireAutoAccessories.Services.Interfaces
 
         Task<decimal> GetMonthlySales();
 
-        Task<List<Product>> GetLowStockProducts();
+        /// <summary>Products at or below the given stock-on-hand threshold.</summary>
+        Task<List<VwStockOnHand>> GetLowStock(decimal threshold = 5);
 
         Task<List<Sale>> GetRecentSales(int count = 10);
     }

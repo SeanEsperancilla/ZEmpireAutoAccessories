@@ -1,11 +1,16 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ZEmpireAutoAccessories.Data;
 using ZEmpireAutoAccessories.Models;
 using ZEmpireAutoAccessories.Services.Interfaces;
 
 namespace ZEmpireAutoAccessories.Services
 {
-    public class SalesService : ISalesService 
+    /// <summary>
+    /// Records a product sale (sales.Sales + sales.SalesDetail) and posts an
+    /// inventory OUT transaction per line. Line SubTotal is a computed column
+    /// in the database, so only Quantity and UnitPrice are set here.
+    /// </summary>
+    public class SalesService : ISalesService
     {
         private readonly ApplicationDbContext _context;
 
@@ -19,15 +24,10 @@ namespace ZEmpireAutoAccessories.Services
             return await _context.Sales
                 .Include(s => s.Customer)
                 .Include(s => s.User)
+                .Include(s => s.PaymentMode)
                 .Include(s => s.SaleDetails)
-                    .ThenInclude(sd => sd.Pricing)
-                        .ThenInclude(p => p.Product)
-                .Include(s => s.SaleDetails)
-                    .ThenInclude(sd => sd.Pricing)
-                        .ThenInclude(p =>
-                            p.VehicleClassification)
-                .FirstOrDefaultAsync(s =>
-                    s.SaleID == saleId);
+                    .ThenInclude(sd => sd.Product)
+                .FirstOrDefaultAsync(s => s.SalesID == saleId);
         }
 
         public async Task<List<Sale>> GetSales()
@@ -35,45 +35,40 @@ namespace ZEmpireAutoAccessories.Services
             return await _context.Sales
                 .Include(s => s.Customer)
                 .Include(s => s.User)
+                .Include(s => s.PaymentMode)
                 .OrderByDescending(s => s.SalesDate)
                 .ToListAsync();
         }
 
         public async Task<Sale> CreateSale(
-            int userId,
+            string userId,
             int customerId,
-            string modeOfPayment,
-            List<SaleDetailRequest> items)
+            int paymentModeId,
+            string invoiceNumber,
+            int? vehicleId,
+            List<SaleLineRequest> items)
         {
             if (items == null || items.Count == 0)
-                throw new InvalidOperationException(
-                    "A sale must contain at least one item.");
+                throw new InvalidOperationException("A sale must contain at least one item.");
 
-            await using var transaction =
-                await _context.Database.BeginTransactionAsync();
-
+            await using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var customer =
-                    await _context.Customers
-                        .FirstOrDefaultAsync(c =>
-                            c.CustomerID == customerId);
-
-                if (customer == null)
-                    throw new KeyNotFoundException(
-                        "Customer was not found.");
+                if (!await _context.Customers.AnyAsync(c => c.CustomerID == customerId))
+                    throw new KeyNotFoundException("Customer was not found.");
 
                 var sale = new Sale
                 {
-                    UserID = userId,
+                    InvoiceNumber = invoiceNumber,
                     CustomerID = customerId,
-                    ModeOfPayment = modeOfPayment,
+                    VehicleID = vehicleId,
+                    UserId = userId,
+                    PaymentModeID = paymentModeId,
                     SalesDate = DateTime.Now,
                     TotalAmount = 0
                 };
 
                 _context.Sales.Add(sale);
-
                 await _context.SaveChangesAsync();
 
                 decimal total = 0;
@@ -81,65 +76,44 @@ namespace ZEmpireAutoAccessories.Services
                 foreach (var item in items)
                 {
                     if (item.Quantity <= 0)
-                        throw new ArgumentException(
-                            "Sale quantity must be greater than zero.");
+                        throw new ArgumentException("Sale quantity must be greater than zero.");
 
-                    var pricing =
-                        await _context.Pricings
-                            .Include(p => p.Product)
-                            .FirstOrDefaultAsync(p =>
-                                p.PricingID == item.PricingID);
+                    var product = await _context.Products
+                        .FirstOrDefaultAsync(p => p.ProductID == item.ProductID)
+                        ?? throw new KeyNotFoundException($"Product ID {item.ProductID} was not found.");
 
-                    if (pricing == null)
-                        throw new KeyNotFoundException(
-                            $"Pricing ID {item.PricingID} was not found.");
+                    var stockOnHand = await _context.InventoryTransactions
+                        .Where(t => t.ProductID == item.ProductID)
+                        .SumAsync(t => t.TransactionType == "IN" ? t.Quantity : -t.Quantity);
 
-                    var product = pricing.Product;
+                    if (stockOnHand < item.Quantity)
+                        throw new InvalidOperationException($"Insufficient stock for {product.ProductName}.");
 
-                    if (product.CurrentStock < item.Quantity)
+                    _context.SalesDetails.Add(new SaleDetail
                     {
-                        throw new InvalidOperationException(
-                            $"Insufficient stock for {product.ProductName}.");
-                    }
-
-                    var subtotal =
-                        pricing.SellingPrice * item.Quantity;
-
-                    var saleDetail = new SaleDetail
-                    {
-                        SaleID = sale.SaleID,
-                        PricingID = pricing.PricingID,
+                        SalesID = sale.SalesID,
+                        ProductID = item.ProductID,
                         Quantity = item.Quantity,
-                        SellingPrice = pricing.SellingPrice,
-                        Subtotal = subtotal
-                    };
+                        UnitPrice = item.UnitPrice
+                        // SubTotal is a computed column in the database
+                    });
 
-                    _context.SaleDetails.Add(saleDetail);
+                    _context.InventoryTransactions.Add(new InventoryTransaction
+                    {
+                        ProductID = item.ProductID,
+                        UserId = userId,
+                        TransactionType = "OUT",
+                        Quantity = item.Quantity,
+                        TransactionDate = DateTime.Now
+                    });
 
-                    product.CurrentStock -= item.Quantity;
-
-                    var inventoryTransaction =
-                        new InventoryTransaction
-                        {
-                            UserID = userId,
-                            ProductID = product.ProductID,
-                            TransactionType = "OUT",
-                            Quantity = item.Quantity,
-                            TransactionDate = DateTime.Now
-                        };
-
-                    _context.InventoryTransactions
-                        .Add(inventoryTransaction);
-
-                    total += subtotal;
+                    total += item.UnitPrice * item.Quantity;
                 }
 
                 sale.TotalAmount = total;
-
                 await _context.SaveChangesAsync();
 
                 await transaction.CommitAsync();
-
                 return sale;
             }
             catch
@@ -148,12 +122,5 @@ namespace ZEmpireAutoAccessories.Services
                 throw;
             }
         }
-    }
-
-    public class SaleDetailRequest
-    {
-        public int PricingID { get; set; }
-
-        public decimal Quantity { get; set; }
     }
 }

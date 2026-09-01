@@ -1,12 +1,16 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ZEmpireAutoAccessories.Data;
 using ZEmpireAutoAccessories.Models;
 using ZEmpireAutoAccessories.Services.Interfaces;
 
 namespace ZEmpireAutoAccessories.Services
 {
+    /// <summary>
+    /// Pricing is a matrix in cat.Pricing keyed by
+    /// Product x TintVariant(optional) x VehicleClassification x Panel.
+    /// Price changes are journaled to cat.PriceHistory.
+    /// </summary>
     public class PricingService : IPricingService
-
     {
         private readonly ApplicationDbContext _context;
 
@@ -15,119 +19,22 @@ namespace ZEmpireAutoAccessories.Services
             _context = context;
         }
 
-        public async Task<decimal> CalculateSellingPrice(
-            decimal basePrice,
-            decimal markupPercentage)
-        {
-            if (basePrice < 0)
-                throw new ArgumentException(
-                    "Base price cannot be negative.");
-
-            if (markupPercentage < 0)
-                throw new ArgumentException(
-                    "Markup percentage cannot be negative.");
-
-            decimal markupAmount =
-                basePrice * (markupPercentage / 100m);
-
-            return basePrice + markupAmount;
-        }
-
         public async Task<Pricing?> GetPricing(
             int productId,
-            int vehicleClassificationId)
+            int? tintVariantId,
+            int vehicleClassificationId,
+            int panelId)
         {
             return await _context.Pricings
                 .Include(p => p.Product)
                 .Include(p => p.VehicleClassification)
+                .Include(p => p.Panel)
+                .Include(p => p.TintVariant)
                 .FirstOrDefaultAsync(p =>
                     p.ProductID == productId &&
-                    p.VehicleClassificationID ==
-                    vehicleClassificationId);
-        }
-
-        public async Task<Pricing> CreatePricing(
-            int productId,
-            int vehicleClassificationId,
-            decimal basePrice,
-            decimal markupPercentage,
-            int userId)
-        {
-            var existingPricing =
-                await GetPricing(
-                    productId,
-                    vehicleClassificationId);
-
-            if (existingPricing != null)
-            {
-                throw new InvalidOperationException(
-                    "Pricing already exists for this product and vehicle classification.");
-            }
-
-            var sellingPrice =
-                await CalculateSellingPrice(
-                    basePrice,
-                    markupPercentage);
-
-            var pricing = new Pricing
-            {
-                ProductID = productId,
-                VehicleClassificationID =
-                    vehicleClassificationId,
-                BasePrice = basePrice,
-                MarkupPercentage = markupPercentage,
-                SellingPrice = sellingPrice
-            };
-
-            _context.Pricings.Add(pricing);
-
-            await _context.SaveChangesAsync();
-
-            return pricing;
-        }
-
-        public async Task<Pricing> UpdatePricing(
-            int pricingId,
-            decimal basePrice,
-            decimal markupPercentage,
-            int userId)
-        {
-            var pricing =
-                await _context.Pricings
-                    .FirstOrDefaultAsync(p =>
-                        p.PricingID == pricingId);
-
-            if (pricing == null)
-                throw new KeyNotFoundException(
-                    "Pricing record was not found.");
-
-            var oldPrice = pricing.SellingPrice;
-
-            pricing.BasePrice = basePrice;
-            pricing.MarkupPercentage = markupPercentage;
-
-            pricing.SellingPrice =
-                await CalculateSellingPrice(
-                    basePrice,
-                    markupPercentage);
-
-            if (oldPrice != pricing.SellingPrice)
-            {
-                var history = new PriceHistory
-                {
-                    PricingID = pricing.PricingID,
-                    UserID = userId,
-                    OldPrice = oldPrice,
-                    NewPrice = pricing.SellingPrice,
-                    DateChanged = DateTime.Now
-                };
-
-                _context.PriceHistories.Add(history);
-            }
-
-            await _context.SaveChangesAsync();
-
-            return pricing;
+                    p.TintVariantID == tintVariantId &&
+                    p.VehicleClassificationID == vehicleClassificationId &&
+                    p.PanelID == panelId);
         }
 
         public async Task<List<Pricing>> GetAllPricing()
@@ -135,12 +42,74 @@ namespace ZEmpireAutoAccessories.Services
             return await _context.Pricings
                 .Include(p => p.Product)
                 .Include(p => p.VehicleClassification)
+                .Include(p => p.Panel)
+                .Include(p => p.TintVariant)
                 .OrderBy(p => p.Product.ProductName)
                 .ToListAsync();
         }
 
-        public async Task<List<PriceHistory>> GetPriceHistory(
-            int pricingId)
+        public async Task<Pricing> CreatePricing(
+            int productId,
+            int? tintVariantId,
+            int vehicleClassificationId,
+            int panelId,
+            decimal price)
+        {
+            if (price < 0)
+                throw new ArgumentException("Price cannot be negative.");
+
+            var existing = await GetPricing(productId, tintVariantId, vehicleClassificationId, panelId);
+            if (existing != null)
+                throw new InvalidOperationException(
+                    "Pricing already exists for this product / variant / classification / panel.");
+
+            var pricing = new Pricing
+            {
+                ProductID = productId,
+                TintVariantID = tintVariantId,
+                VehicleClassificationID = vehicleClassificationId,
+                PanelID = panelId,
+                Price = price
+            };
+
+            _context.Pricings.Add(pricing);
+            await _context.SaveChangesAsync();
+
+            return pricing;
+        }
+
+        public async Task<Pricing> UpdatePrice(int pricingId, decimal newPrice, string userId)
+        {
+            if (newPrice < 0)
+                throw new ArgumentException("Price cannot be negative.");
+
+            var pricing = await _context.Pricings
+                .FirstOrDefaultAsync(p => p.PricingID == pricingId);
+
+            if (pricing == null)
+                throw new KeyNotFoundException("Pricing record was not found.");
+
+            var oldPrice = pricing.Price;
+
+            if (oldPrice != newPrice)
+            {
+                _context.PriceHistories.Add(new PriceHistory
+                {
+                    PricingID = pricing.PricingID,
+                    UserId = userId,
+                    OldPrice = oldPrice,
+                    NewPrice = newPrice,
+                    DateChanged = DateTime.Now
+                });
+
+                pricing.Price = newPrice;
+                await _context.SaveChangesAsync();
+            }
+
+            return pricing;
+        }
+
+        public async Task<List<PriceHistory>> GetPriceHistory(int pricingId)
         {
             return await _context.PriceHistories
                 .Include(h => h.User)

@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using ZEmpireAutoAccessories.Authorization;
 using ZEmpireAutoAccessories.Data;
 using ZEmpireAutoAccessories.Models;
 
 namespace ZEmpireAutoAccessories.Controllers
 {
+    [ModuleAuthorize("Vehicles")]
     public class VehicleController : Controller
     {
         private readonly ApplicationDbContext _context;

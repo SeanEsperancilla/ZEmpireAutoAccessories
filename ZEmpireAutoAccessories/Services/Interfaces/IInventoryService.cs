@@ -1,4 +1,4 @@
-﻿using ZEmpireAutoAccessories.Models;
+using ZEmpireAutoAccessories.Models;
 
 namespace ZEmpireAutoAccessories.Services.Interfaces
 {
@@ -8,23 +8,18 @@ namespace ZEmpireAutoAccessories.Services.Interfaces
 
         Task<List<Product>> GetAllProducts();
 
-        Task<List<Product>> GetLowStockProducts();
+        /// <summary>Net stock (SUM IN - SUM OUT) for a product from inv.InventoryTransaction.</summary>
+        Task<decimal> GetStockOnHand(int productId);
 
-        Task StockIn(
-            int productId,
-            decimal quantity,
-            int userId);
+        /// <summary>Stock-on-hand for every product, from the dbo.vw_StockOnHand view.</summary>
+        Task<List<VwStockOnHand>> GetStockLevels();
 
-        Task StockOut(
-            int productId,
-            decimal quantity,
-            int userId);
+        Task StockIn(int productId, decimal quantity, string userId);
 
-        Task<bool> HasSufficientStock(
-            int productId,
-            decimal quantity);
+        Task StockOut(int productId, decimal quantity, string userId);
 
-        Task<List<InventoryTransaction>> GetTransactions(
-            int productId);
+        Task<bool> HasSufficientStock(int productId, decimal quantity);
+
+        Task<List<InventoryTransaction>> GetTransactions(int productId);
     }
 }

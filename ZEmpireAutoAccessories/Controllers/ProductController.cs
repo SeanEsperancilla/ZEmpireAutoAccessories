@@ -1,10 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using ZEmpireAutoAccessories.Authorization;
 using ZEmpireAutoAccessories.Data;
 using ZEmpireAutoAccessories.Models;
 
 namespace ZEmpireAutoAccessories.Controllers
 {
+    [ModuleAuthorize("Products")]
     public class ProductController : Controller
     {
         private readonly ApplicationDbContext _context;
