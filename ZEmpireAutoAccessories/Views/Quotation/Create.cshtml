@@ -1,0 +1,84 @@
+﻿@model ZEmpireAutoAccessories.Models.Quotation
+
+@{
+    ViewData["Title"] = "New Quotation";
+}
+
+<style>
+    .zx-page-head h1 {
+        font-family: 'Oswald',system-ui,sans-serif;
+        font-weight: 700;
+        font-size: 22px;
+        margin: 0 0 18px;
+        color: #0b0b0c;
+    }
+
+    .zx-card {
+        background: #fff;
+        border: 1px solid #e8ebf0;
+        border-radius: 14px;
+        padding: 24px;
+        max-width: 640px;
+    }
+
+    .btn-zx {
+        background: var(--zx-red);
+        border-color: var(--zx-red);
+        color: #fff;
+        font-weight: 600;
+    }
+
+        .btn-zx:hover {
+            background: var(--zx-red2);
+            border-color: var(--zx-red2);
+            color: #fff;
+        }
+</style>
+
+<div class="zx-page-head">
+    <h1>New Quotation</h1>
+</div>
+
+<div class="zx-card">
+    <form asp-action="Create" method="post">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="CustomerID" class="form-label"></label>
+                <select asp-for="CustomerID" class="form-select" asp-items="ViewBag.CustomerID">
+                    <option value="">-- Select Customer --</option>
+                </select>
+                <span asp-validation-for="CustomerID" class="text-danger"></span>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="VehicleID" class="form-label"></label>
+                <select asp-for="VehicleID" class="form-select" asp-items="ViewBag.VehicleID">
+                    <option value="">-- Select Vehicle --</option>
+                </select>
+                <span asp-validation-for="VehicleID" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="JobTypeID" class="form-label">Job Type <span class="text-muted fw-normal">(optional)</span></label>
+                <select asp-for="JobTypeID" class="form-select" asp-items="ViewBag.JobTypeID">
+                    <option value="">-- None --</option>
+                </select>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="ValidUntil" class="form-label">Valid Until <span class="text-muted fw-normal">(optional)</span></label>
+                <input asp-for="ValidUntil" type="date" class="form-control" />
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Remarks" class="form-label"></label>
+            <textarea asp-for="Remarks" class="form-control" rows="3"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-zx">Save &amp; Add Line Items</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+    </form>
+</div>

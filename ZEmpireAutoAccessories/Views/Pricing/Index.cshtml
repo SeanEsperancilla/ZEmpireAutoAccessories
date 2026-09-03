@@ -1,7 +1,7 @@
-@model IEnumerable<ZEmpireAutoAccessories.Models.Vehicle>
+﻿@model IEnumerable<ZEmpireAutoAccessories.Models.Pricing>
 
 @{
-    ViewData["Title"] = "Vehicles";
+    ViewData["Title"] = "Pricing";
 }
 
 <style>
@@ -65,22 +65,19 @@
 </style>
 
 <div class="zx-page-head">
-    <h1>Vehicles</h1>
-    <div>
-        <a class="btn btn-outline-secondary" asp-controller="VehicleClassification" asp-action="Index">Manage Classifications</a>
-        <a class="btn btn-zx" asp-action="Create">+ New Vehicle</a>
-    </div>
+    <h1>Pricing</h1>
+    <a class="btn btn-zx" asp-action="Create">+ New Pricing</a>
 </div>
 
 <div class="zx-card">
     <table class="table zx-table mb-0">
         <thead>
             <tr>
-                <th>Plate Number</th>
-                <th>Brand / Model</th>
-                <th>Year</th>
-                <th>Classification</th>
-                <th>Owner</th>
+                <th>Product</th>
+                <th>Tint Variant</th>
+                <th>Vehicle Classification</th>
+                <th>Panel</th>
+                <th>Price</th>
                 <th class="text-end pe-3">Actions</th>
             </tr>
         </thead>
@@ -88,22 +85,22 @@
             @foreach (var item in Model)
             {
                 <tr>
-                    <td>@(item.PlateNumber ?? "—")</td>
-                    <td>@item.Brand @item.Model</td>
-                    <td>@(item.ManufacturingYear?.ToString() ?? "—")</td>
+                    <td>@item.Product.ProductName</td>
+                    <td>@(item.TintVariant?.VariantName ?? "—")</td>
                     <td>@item.VehicleClassification.ClassificationName</td>
-                    <td>@item.Customer.FullName</td>
+                    <td>@item.Panel.PanelName</td>
+                    <td>@("₱" + item.Price.ToString("N2"))</td>
                     <td class="text-end pe-3 zx-actions">
-                        <a asp-action="Edit" asp-route-id="@item.VehicleID">Edit</a>
-                        <a asp-action="Details" asp-route-id="@item.VehicleID">Details</a>
-                        <a asp-action="Delete" asp-route-id="@item.VehicleID" class="text-danger">Delete</a>
+                        <a asp-action="Edit" asp-route-id="@item.PricingID">Edit</a>
+                        <a asp-action="Details" asp-route-id="@item.PricingID">History</a>
+                        <a asp-action="Delete" asp-route-id="@item.PricingID" class="text-danger">Delete</a>
                     </td>
                 </tr>
             }
             @if (!Model.Any())
             {
                 <tr>
-                    <td colspan="6" class="text-center text-muted py-4">No vehicles yet.</td>
+                    <td colspan="6" class="text-center text-muted py-4">No pricing records yet.</td>
                 </tr>
             }
         </tbody>

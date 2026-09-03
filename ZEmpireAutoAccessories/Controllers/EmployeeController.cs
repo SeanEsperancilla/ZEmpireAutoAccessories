@@ -7,7 +7,7 @@ using ZEmpireAutoAccessories.Models;
 
 namespace ZEmpireAutoAccessories.Controllers
 {
-    [ModuleAuthorize("Employees")]
+    [ModuleAuthorize("User Management")]
     public class EmployeeController : Controller
     {
         private readonly ApplicationDbContext _context;

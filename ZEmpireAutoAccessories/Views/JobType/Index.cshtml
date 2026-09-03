@@ -1,7 +1,7 @@
-@model IEnumerable<ZEmpireAutoAccessories.Models.Vehicle>
+﻿@model IEnumerable<ZEmpireAutoAccessories.Models.JobType>
 
 @{
-    ViewData["Title"] = "Vehicles";
+    ViewData["Title"] = "Job Types";
 }
 
 <style>
@@ -65,22 +65,15 @@
 </style>
 
 <div class="zx-page-head">
-    <h1>Vehicles</h1>
-    <div>
-        <a class="btn btn-outline-secondary" asp-controller="VehicleClassification" asp-action="Index">Manage Classifications</a>
-        <a class="btn btn-zx" asp-action="Create">+ New Vehicle</a>
-    </div>
+    <h1>Job Types</h1>
+    <a class="btn btn-zx" asp-action="Create">+ New Job Type</a>
 </div>
 
 <div class="zx-card">
     <table class="table zx-table mb-0">
         <thead>
             <tr>
-                <th>Plate Number</th>
-                <th>Brand / Model</th>
-                <th>Year</th>
-                <th>Classification</th>
-                <th>Owner</th>
+                <th>@Html.DisplayNameFor(m => m.JobTypeName)</th>
                 <th class="text-end pe-3">Actions</th>
             </tr>
         </thead>
@@ -88,22 +81,17 @@
             @foreach (var item in Model)
             {
                 <tr>
-                    <td>@(item.PlateNumber ?? "—")</td>
-                    <td>@item.Brand @item.Model</td>
-                    <td>@(item.ManufacturingYear?.ToString() ?? "—")</td>
-                    <td>@item.VehicleClassification.ClassificationName</td>
-                    <td>@item.Customer.FullName</td>
+                    <td>@item.JobTypeName</td>
                     <td class="text-end pe-3 zx-actions">
-                        <a asp-action="Edit" asp-route-id="@item.VehicleID">Edit</a>
-                        <a asp-action="Details" asp-route-id="@item.VehicleID">Details</a>
-                        <a asp-action="Delete" asp-route-id="@item.VehicleID" class="text-danger">Delete</a>
+                        <a asp-action="Edit" asp-route-id="@item.JobTypeID">Edit</a>
+                        <a asp-action="Delete" asp-route-id="@item.JobTypeID" class="text-danger">Delete</a>
                     </td>
                 </tr>
             }
             @if (!Model.Any())
             {
                 <tr>
-                    <td colspan="6" class="text-center text-muted py-4">No vehicles yet.</td>
+                    <td colspan="2" class="text-center text-muted py-4">No job types yet.</td>
                 </tr>
             }
         </tbody>

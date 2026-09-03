@@ -1,0 +1,161 @@
+﻿@model ZEmpireAutoAccessories.Models.Product
+
+@{
+    ViewData["Title"] = "Manage Stock";
+    var stockOnHand = ViewData["StockOnHand"] as decimal? ?? 0;
+    var transactions = ViewData["Transactions"] as List<ZEmpireAutoAccessories.Models.InventoryTransaction> ?? new();
+    var successMessage = TempData["Success"] as string;
+    var inventoryError = TempData["InventoryError"] as string;
+}
+
+<style>
+    .zx-page-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+    }
+
+        .zx-page-head h1 {
+            font-family: 'Oswald',system-ui,sans-serif;
+            font-weight: 700;
+            font-size: 22px;
+            margin: 0;
+            color: #0b0b0c;
+        }
+
+    .zx-card {
+        background: #fff;
+        border: 1px solid #e8ebf0;
+        border-radius: 14px;
+        padding: 22px;
+        margin-bottom: 18px;
+    }
+
+    .btn-zx {
+        background: var(--zx-red);
+        border-color: var(--zx-red);
+        color: #fff;
+        font-weight: 600;
+    }
+
+        .btn-zx:hover {
+            background: var(--zx-red2);
+            border-color: var(--zx-red2);
+            color: #fff;
+        }
+
+    .zx-table thead {
+        background: #0b0b0c;
+        color: #fff;
+    }
+
+        .zx-table thead th {
+            border-bottom: none;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+        }
+
+    .stock-figure {
+        font-family: 'Oswald',system-ui,sans-serif;
+        font-weight: 700;
+        font-size: 32px;
+        color: #0b0b0c;
+    }
+
+    .badge-in {
+        background: rgba(34,197,94,.15);
+        color: #15803d;
+        font-weight: 600;
+    }
+
+    .badge-out {
+        background: rgba(239,68,68,.15);
+        color: #b91c1c;
+        font-weight: 600;
+    }
+</style>
+
+<div class="zx-page-head">
+    <h1>@Model.ProductName</h1>
+    <a asp-action="Index" class="btn btn-outline-secondary">Back to Inventory</a>
+</div>
+
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success">@successMessage</div>
+}
+@if (!string.IsNullOrEmpty(inventoryError))
+{
+    <div class="alert alert-danger">@inventoryError</div>
+}
+
+<div class="zx-card">
+    <div class="text-muted small text-uppercase mb-1">Stock On Hand</div>
+    <div class="stock-figure">@stockOnHand</div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-6">
+        <div class="zx-card mb-0">
+            <h6 class="mb-3">Stock In</h6>
+            <form asp-action="StockIn" method="post" class="d-flex gap-2">
+                <input type="hidden" name="productId" value="@Model.ProductID" />
+                <input type="number" step="0.01" name="quantity" class="form-control" min="0.01" required />
+                <button type="submit" class="btn btn-zx">Add</button>
+            </form>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="zx-card mb-0">
+            <h6 class="mb-3">Stock Out</h6>
+            <form asp-action="StockOut" method="post" class="d-flex gap-2">
+                <input type="hidden" name="productId" value="@Model.ProductID" />
+                <input type="number" step="0.01" name="quantity" class="form-control" min="0.01" required />
+                <button type="submit" class="btn btn-outline-danger">Remove</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="zx-card">
+    <h6 class="mb-3">Transaction History</h6>
+    <table class="table zx-table mb-0">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Quantity</th>
+                <th>Recorded By</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var t in transactions)
+            {
+                <tr>
+                    <td>@t.TransactionDate.ToString("MMM d, yyyy h:mm tt")</td>
+                    <td>
+                        @if (t.TransactionType == "IN")
+                        {
+                            <span class="badge badge-in">Stock In</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-out">Stock Out</span>
+                        }
+                    </td>
+                    <td>@t.Quantity</td>
+                    <td>@t.User.UserName</td>
+                </tr>
+            }
+            @if (!transactions.Any())
+            {
+                <tr>
+                    <td colspan="4" class="text-center text-muted py-3">No transactions recorded yet.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

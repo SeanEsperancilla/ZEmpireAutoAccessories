@@ -1,0 +1,130 @@
+﻿@model ZEmpireAutoAccessories.Models.Pricing
+
+@{
+    ViewData["Title"] = "Pricing Details";
+    var history = ViewData["History"] as List<ZEmpireAutoAccessories.Models.PriceHistory> ?? new();
+}
+
+<style>
+    .zx-page-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+    }
+
+        .zx-page-head h1 {
+            font-family: 'Oswald',system-ui,sans-serif;
+            font-weight: 700;
+            font-size: 22px;
+            margin: 0;
+            color: #0b0b0c;
+        }
+
+    .zx-card {
+        background: #fff;
+        border: 1px solid #e8ebf0;
+        border-radius: 14px;
+        padding: 22px;
+        margin-bottom: 18px;
+    }
+
+    dt {
+        color: #7b8290;
+        font-weight: 600;
+        font-size: 12.5px;
+        text-transform: uppercase;
+        letter-spacing: .3px;
+    }
+
+    dd {
+        margin-bottom: 14px;
+        font-size: 15px;
+        color: #0b0b0c;
+    }
+
+    .btn-zx {
+        background: var(--zx-red);
+        border-color: var(--zx-red);
+        color: #fff;
+        font-weight: 600;
+    }
+
+        .btn-zx:hover {
+            background: var(--zx-red2);
+            border-color: var(--zx-red2);
+            color: #fff;
+        }
+
+    .zx-table thead {
+        background: #0b0b0c;
+        color: #fff;
+    }
+
+        .zx-table thead th {
+            border-bottom: none;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+        }
+</style>
+
+<div class="zx-page-head">
+    <h1>Pricing Details</h1>
+    <a class="btn btn-zx" asp-action="Edit" asp-route-id="@Model.PricingID">Update Price</a>
+</div>
+
+<div class="zx-card">
+    <dl class="row mb-0">
+        <dt class="col-sm-3">Product</dt>
+        <dd class="col-sm-9">@Model.Product.ProductName</dd>
+
+        <dt class="col-sm-3">Tint Variant</dt>
+        <dd class="col-sm-9">@(Model.TintVariant?.VariantName ?? "—")</dd>
+
+        <dt class="col-sm-3">Vehicle Classification</dt>
+        <dd class="col-sm-9">@Model.VehicleClassification.ClassificationName</dd>
+
+        <dt class="col-sm-3">Panel</dt>
+        <dd class="col-sm-9">@Model.Panel.PanelName</dd>
+
+        <dt class="col-sm-3">Current Price</dt>
+        <dd class="col-sm-9">@("₱" + Model.Price.ToString("N2"))</dd>
+    </dl>
+</div>
+
+<div class="zx-card">
+    <h6 class="mb-3">Price Change History</h6>
+    <table class="table zx-table mb-0">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Old Price</th>
+                <th>New Price</th>
+                <th>Changed By</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var h in history)
+            {
+                <tr>
+                    <td>@h.DateChanged.ToString("MMM d, yyyy h:mm tt")</td>
+                    <td>@("₱" + h.OldPrice.ToString("N2"))</td>
+                    <td>@("₱" + h.NewPrice.ToString("N2"))</td>
+                    <td>@h.User.UserName</td>
+                </tr>
+            }
+            @if (!history.Any())
+            {
+                <tr>
+                    <td colspan="4" class="text-center text-muted py-3">No price changes recorded yet.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div class="mt-3">
+    <a asp-action="Index">&larr; Back to list</a>
+</div>

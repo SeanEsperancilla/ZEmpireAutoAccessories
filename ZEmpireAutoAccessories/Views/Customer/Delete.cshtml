@@ -1,79 +1,118 @@
-@model Customer
+@model ZEmpireAutoAccessories.Models.Customer
+
 @{
     ViewData["Title"] = "Delete Customer";
-    var vehicleCount = Model.Vehicles.Count;
-    var blocked = vehicleCount > 0;
+    var blocked = Model.Vehicles.Count > 0;
+    var deleteError = TempData["DeleteError"] as string;
+}
 
-    string Initials(string name)
-    {
-        var parts = (name ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 0) return "?";
-        var s = parts[0].Substring(0, 1);
-        if (parts.Length > 1) s += parts[^1].Substring(0, 1);
-        return s.ToUpperInvariant();
+<style>
+    .zx-page-head h1 {
+        font-family: 'Oswald',system-ui,sans-serif;
+        font-weight: 700;
+        font-size: 22px;
+        margin: 0 0 18px;
+        color: #0b0b0c;
     }
-}
 
-@await Html.PartialAsync("_Styles")
+    .zx-card {
+        background: #fff;
+        border: 1px solid #f3c9cb;
+        border-radius: 14px;
+        padding: 24px;
+        max-width: 560px;
+    }
 
-<section class="crm-hero">
-    <a asp-action="Index" class="back d-inline-flex align-items-center gap-1 mb-2">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-        Back to customers
-    </a>
+    dt {
+        color: #7b8290;
+        font-weight: 600;
+        font-size: 12.5px;
+        text-transform: uppercase;
+        letter-spacing: .3px;
+    }
+
+    dd {
+        margin-bottom: 14px;
+        font-size: 15px;
+        color: #0b0b0c;
+    }
+</style>
+
+<div class="zx-page-head">
     <h1>Delete Customer</h1>
-    <p>This action cannot be undone.</p>
-</section>
+</div>
 
-@if (TempData["Error"] is string err)
+@if (!string.IsNullOrEmpty(deleteError))
 {
-    <div class="alert alert-danger d-flex align-items-center gap-2 border-0" style="border-radius:12px;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
-        <span>@err</span>
+    <div class="alert alert-danger">@deleteError</div>
+}
+else if (blocked)
+{
+    var word = Model.Vehicles.Count == 1 ? "vehicle" : "vehicles";
+    <div class="alert alert-danger">
+        Can't delete this customer. They still have @Model.Vehicles.Count @word registered.
+        Reassign @(Model.Vehicles.Count == 1 ? "it" : "them") to another customer first, then come back and delete.
+    </div>
+}
+else
+{
+    <div class="alert alert-danger">
+        Are you sure you want to delete this customer? This cannot be undone.
     </div>
 }
 
-<div class="row justify-content-center">
-    <div class="col-12 col-lg-7 col-xl-6">
-        <div class="crm-panel crm-panel-pad">
-            <div class="d-flex align-items-center gap-3 mb-3">
-                <span class="crm-avatar lg">@Initials(Model.FullName)</span>
-                <div>
-                    <div style="font-family:'Oswald',sans-serif; font-weight:700; font-size:19px; color:#0b0b0c;">@Model.FullName</div>
-                    <div class="crm-muted" style="font-size:13px;">
-                        @(string.IsNullOrWhiteSpace(Model.ContactNumber) ? "No contact number" : Model.ContactNumber) · ID #@Model.CustomerID
-                    </div>
-                </div>
-            </div>
+<div class="zx-card">
+    <dl class="row mb-0">
+        <dt class="col-sm-4">@Html.DisplayNameFor(m => m.FullName)</dt>
+        <dd class="col-sm-8">@Html.DisplayFor(m => m.FullName)</dd>
 
-            @if (blocked)
-            {
-                <div class="alert d-flex gap-2 align-items-start border-0" style="border-radius:12px; background:#fff5f5; color:#9a1c22;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto; margin-top:1px;"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-                    <div>
-                        <strong>Can’t delete this customer.</strong><br>
-                        They still have <strong>@vehicleCount vehicle@(vehicleCount == 1 ? "" : "s")</strong> registered. Remove or reassign the vehicle@(vehicleCount == 1 ? "" : "s") first.
-                    </div>
-                </div>
-                <div class="crm-form-actions">
-                    <a asp-action="Details" asp-route-id="@Model.CustomerID" class="btn-zx">View customer</a>
-                    <a asp-action="Index" class="btn-outline-zx">Cancel</a>
-                </div>
-            }
-            else
-            {
-                <p style="color:#4a5160;">
-                    Are you sure you want to permanently delete this customer record? This will remove them from your customer list.
-                </p>
-                <form asp-action="Delete" asp-route-id="@Model.CustomerID" method="post" class="crm-form-actions">
-                    @Html.AntiForgeryToken()
-                    <button type="submit" class="btn-zx">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-                        Yes, delete customer
-                    </button>
-                    <a asp-action="Index" class="btn-outline-zx">Cancel</a>
-                </form>
-            }
-        </div>
+        <dt class="col-sm-4">@Html.DisplayNameFor(m => m.ContactNumber)</dt>
+        <dd class="col-sm-8">@(Model.ContactNumber ?? "—")</dd>
+
+        <dt class="col-sm-4">Registered Vehicles</dt>
+        <dd class="col-sm-8">@Model.Vehicles.Count</dd>
+    </dl>
+</div>
+
+@if (blocked)
+{
+    <div class="zx-card mt-3">
+        <h6 class="mb-3">Reassign these vehicles to another customer</h6>
+        <table class="table mb-0">
+            <thead>
+                <tr>
+                    <th>Plate Number</th>
+                    <th>Brand / Model</th>
+                    <th class="text-end pe-3">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var vehicle in Model.Vehicles)
+                {
+                    <tr>
+                        <td>@(vehicle.PlateNumber ?? "—")</td>
+                        <td>@vehicle.Brand @vehicle.Model</td>
+                        <td class="text-end pe-3">
+                            <a class="btn btn-sm btn-outline-secondary" asp-controller="Vehicle" asp-action="Edit" asp-route-id="@vehicle.VehicleID">Reassign</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
     </div>
+}
+
+<div class="mt-3">
+    @if (blocked)
+    {
+        <a asp-action="Index" class="btn btn-outline-secondary">Back to list</a>
+    }
+    else
+    {
+        <form asp-action="Delete" method="post" class="d-inline">
+            <input type="hidden" asp-for="CustomerID" />
+            <button type="submit" class="btn btn-danger">Delete</button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+        </form>
+    }
 </div>

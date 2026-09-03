@@ -1,80 +1,3 @@
-<<<<<<< HEAD
-@model Vehicle
-@{
-    ViewData["Title"] = "Delete Vehicle";
-    var usage = ViewData["UsageCount"] is int u ? u : 0;
-    var blocked = usage > 0;
-    var name = $"{Model.Brand} {Model.Model}".Trim();
-    if (name.Length == 0) { name = string.IsNullOrWhiteSpace(Model.PlateNumber) ? $"Vehicle #{Model.VehicleID}" : Model.PlateNumber!; }
-}
-
-@await Html.PartialAsync("_CrmStyles")
-
-<section class="crm-hero">
-    <a asp-action="Index" class="back d-inline-flex align-items-center gap-1 mb-2">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-        Back to vehicles
-    </a>
-    <h1>Delete Vehicle</h1>
-    <p>This action cannot be undone.</p>
-</section>
-
-@if (TempData["Error"] is string err)
-{
-    <div class="alert alert-danger d-flex align-items-center gap-2 border-0" style="border-radius:12px;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
-        <span>@err</span>
-    </div>
-}
-
-<div class="row justify-content-center">
-    <div class="col-12 col-lg-7 col-xl-6">
-        <div class="crm-panel crm-panel-pad">
-            <div class="d-flex align-items-center gap-3 mb-3">
-                <span class="crm-avatar lg">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/><circle cx="6.5" cy="16.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/></svg>
-                </span>
-                <div>
-                    <div style="font-family:'Oswald',sans-serif; font-weight:700; font-size:19px; color:#0b0b0c;">@name</div>
-                    <div class="crm-muted" style="font-size:13px;">
-                        @(string.IsNullOrWhiteSpace(Model.PlateNumber) ? "No plate" : Model.PlateNumber) ·
-                        @(Model.Customer?.FullName ?? "—") · ID #@Model.VehicleID
-                    </div>
-                </div>
-            </div>
-
-            @if (blocked)
-            {
-                <div class="alert d-flex gap-2 align-items-start border-0" style="border-radius:12px; background:#fff5f5; color:#9a1c22;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto; margin-top:1px;"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-                    <div>
-                        <strong>Can’t delete this vehicle.</strong><br>
-                        It is referenced by <strong>@usage record@(usage == 1 ? "" : "s")</strong> (job orders, sales, invoices or quotations). Those must be removed first.
-                    </div>
-                </div>
-                <div class="crm-form-actions">
-                    <a asp-action="Details" asp-route-id="@Model.VehicleID" class="btn-zx">View vehicle</a>
-                    <a asp-action="Index" class="btn-outline-zx">Cancel</a>
-                </div>
-            }
-            else
-            {
-                <p style="color:#4a5160;">
-                    Are you sure you want to permanently delete this vehicle record? It will be removed from the owner’s profile.
-                </p>
-                <form asp-action="Delete" asp-route-id="@Model.VehicleID" method="post" class="crm-form-actions">
-                    @Html.AntiForgeryToken()
-                    <button type="submit" class="btn-zx">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-                        Yes, delete vehicle
-                    </button>
-                    <a asp-action="Index" class="btn-outline-zx">Cancel</a>
-                </form>
-            }
-        </div>
-    </div>
-</div>
-=======
 @model ZEmpireAutoAccessories.Models.Vehicle
 
 @{
@@ -82,10 +5,35 @@
 }
 
 <style>
-    .zx-page-head h1 { font-family:'Oswald',system-ui,sans-serif; font-weight:700; font-size:22px; margin:0 0 18px; color:#0b0b0c; }
-    .zx-card { background:#fff; border:1px solid #f3c9cb; border-radius:14px; padding:24px; max-width:560px; }
-    dt { color:#7b8290; font-weight:600; font-size:12.5px; text-transform:uppercase; letter-spacing:.3px; }
-    dd { margin-bottom:14px; font-size:15px; color:#0b0b0c; }
+    .zx-page-head h1 {
+        font-family: 'Oswald',system-ui,sans-serif;
+        font-weight: 700;
+        font-size: 22px;
+        margin: 0 0 18px;
+        color: #0b0b0c;
+    }
+
+    .zx-card {
+        background: #fff;
+        border: 1px solid #f3c9cb;
+        border-radius: 14px;
+        padding: 24px;
+        max-width: 560px;
+    }
+
+    dt {
+        color: #7b8290;
+        font-weight: 600;
+        font-size: 12.5px;
+        text-transform: uppercase;
+        letter-spacing: .3px;
+    }
+
+    dd {
+        margin-bottom: 14px;
+        font-size: 15px;
+        color: #0b0b0c;
+    }
 </style>
 
 <div class="zx-page-head">
@@ -117,4 +65,3 @@
     <button type="submit" class="btn btn-danger">Delete</button>
     <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
 </form>
->>>>>>> 81fd72a823d036564500b2683e1360efac2371f6

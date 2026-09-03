@@ -1,7 +1,7 @@
-@model ZEmpireAutoAccessories.Models.Customer
+﻿@model ZEmpireAutoAccessories.Models.JobType
 
 @{
-    ViewData["Title"] = "New Customer";
+    ViewData["Title"] = "New Job Type";
 }
 
 <style>
@@ -18,7 +18,7 @@
         border: 1px solid #e8ebf0;
         border-radius: 14px;
         padding: 24px;
-        max-width: 560px;
+        max-width: 480px;
     }
 
     .btn-zx {
@@ -36,7 +36,7 @@
 </style>
 
 <div class="zx-page-head">
-    <h1>New Customer</h1>
+    <h1>New Job Type</h1>
 </div>
 
 <div class="zx-card">
@@ -44,15 +44,9 @@
         <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
         <div class="mb-3">
-            <label asp-for="FullName" class="form-label"></label>
-            <input asp-for="FullName" class="form-control" autofocus />
-            <span asp-validation-for="FullName" class="text-danger"></span>
-        </div>
-
-        <div class="mb-3">
-            <label asp-for="ContactNumber" class="form-label"></label>
-            <input asp-for="ContactNumber" class="form-control" />
-            <span asp-validation-for="ContactNumber" class="text-danger"></span>
+            <label asp-for="JobTypeName" class="form-label"></label>
+            <input asp-for="JobTypeName" class="form-control" autofocus />
+            <span asp-validation-for="JobTypeName" class="text-danger"></span>
         </div>
 
         <button type="submit" class="btn btn-zx">Save</button>

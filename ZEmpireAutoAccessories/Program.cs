@@ -1,11 +1,15 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 using ZEmpireAutoAccessories.Authorization;
 using ZEmpireAutoAccessories.Data;
 using ZEmpireAutoAccessories.Models;
 using ZEmpireAutoAccessories.Services;
 using ZEmpireAutoAccessories.Services.Interfaces;
 
+var phCulture = CultureInfo.GetCultureInfo("en-PH");
+CultureInfo.DefaultThreadCurrentCulture = phCulture;
+CultureInfo.DefaultThreadCurrentUICulture = phCulture;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add MVC services
