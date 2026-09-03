@@ -44,6 +44,7 @@
                     <th>Plate Number</th>
                     <th>Brand / Model</th>
                     <th>Year</th>
+                    <th>Classification</th>
                 </tr>
             </thead>
             <tbody>
@@ -53,6 +54,7 @@
                         <td>@(vehicle.PlateNumber ?? "—")</td>
                         <td>@vehicle.Brand @vehicle.Model</td>
                         <td>@(vehicle.ManufacturingYear?.ToString() ?? "—")</td>
+                        <td>@vehicle.VehicleClassification.ClassificationName</td>
                     </tr>
                 }
             </tbody>
