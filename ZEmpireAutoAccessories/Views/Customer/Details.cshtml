@@ -79,7 +79,13 @@
         <div class="crm-panel h-100">
             <div class="crm-toolbar">
                 <h2 class="crm-sec-title">Registered Vehicles</h2>
-                <span class="crm-count">@vehicles.Count total</span>
+                <div class="d-flex align-items-center gap-3">
+                    <span class="crm-count">@vehicles.Count total</span>
+                    <a asp-controller="Vehicle" asp-action="Create" asp-route-customerId="@Model.CustomerID" class="btn-outline-zx" style="padding:.35rem .75rem; font-size:13px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                        Add vehicle
+                    </a>
+                </div>
             </div>
 
             @if (vehicles.Count == 0)
@@ -90,6 +96,7 @@
                     </div>
                     <h3>No vehicles yet</h3>
                     <p>This customer has no registered vehicles.</p>
+                    <a asp-controller="Vehicle" asp-action="Create" asp-route-customerId="@Model.CustomerID" class="btn-zx d-inline-flex">Add vehicle</a>
                 </div>
             }
             else
@@ -109,7 +116,11 @@
                             @foreach (var v in vehicles)
                             {
                                 <tr>
-                                    <td><span class="fw-semibold">@(string.IsNullOrWhiteSpace(v.PlateNumber) ? "—" : v.PlateNumber)</span></td>
+                                    <td>
+                                        <a asp-controller="Vehicle" asp-action="Details" asp-route-id="@v.VehicleID" class="fw-semibold text-decoration-none text-reset">
+                                            @(string.IsNullOrWhiteSpace(v.PlateNumber) ? "—" : v.PlateNumber)
+                                        </a>
+                                    </td>
                                     <td>@($"{v.Brand} {v.Model}".Trim().Length == 0 ? "—" : $"{v.Brand} {v.Model}".Trim())</td>
                                     <td>@(v.ManufacturingYear?.ToString() ?? "—")</td>
                                     <td><span class="crm-chip">@(v.VehicleClassification?.ClassificationName ?? "—")</span></td>
@@ -122,7 +133,7 @@
                 <div class="d-sm-none">
                     @foreach (var v in vehicles)
                     {
-                        <div class="crm-mcard">
+                        <a asp-controller="Vehicle" asp-action="Details" asp-route-id="@v.VehicleID" class="crm-mcard d-block text-decoration-none text-reset">
                             <div class="d-flex justify-content-between align-items-center">
                                 <span class="fw-semibold" style="color:#0b0b0c;">@(string.IsNullOrWhiteSpace(v.PlateNumber) ? "No plate" : v.PlateNumber)</span>
                                 <span class="crm-chip">@(v.VehicleClassification?.ClassificationName ?? "—")</span>
@@ -131,7 +142,7 @@
                                 @($"{v.Brand} {v.Model}".Trim().Length == 0 ? "—" : $"{v.Brand} {v.Model}".Trim())
                                 @if (v.ManufacturingYear != null) { <span class="crm-muted"> · @v.ManufacturingYear</span> }
                             </div>
-                        </div>
+                        </a>
                     }
                 </div>
             }

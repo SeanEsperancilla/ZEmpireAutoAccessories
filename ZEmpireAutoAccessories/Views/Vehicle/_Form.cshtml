@@ -1,0 +1,49 @@
+@model Vehicle
+@{
+    var customers = ViewData["CustomerID"] as Microsoft.AspNetCore.Mvc.Rendering.SelectList;
+    var classes = ViewData["VehicleClassificationID"] as Microsoft.AspNetCore.Mvc.Rendering.SelectList;
+}
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger border-0" role="alert"
+     style="border-radius:12px;@(ViewData.ModelState.ErrorCount > 0 ? "" : "display:none")"></div>
+
+<div class="crm-field">
+    <label asp-for="CustomerID"></label>
+    <select asp-for="CustomerID" asp-items="customers" class="form-select">
+        <option value="">— Select a customer —</option>
+    </select>
+    <span asp-validation-for="CustomerID" class="field-validation-error"></span>
+</div>
+
+<div class="crm-field">
+    <label asp-for="VehicleClassificationID"></label>
+    <select asp-for="VehicleClassificationID" asp-items="classes" class="form-select">
+        <option value="">— Select a classification —</option>
+    </select>
+    <span asp-validation-for="VehicleClassificationID" class="field-validation-error"></span>
+</div>
+
+<div class="crm-field">
+    <label asp-for="PlateNumber"></label>
+    <input asp-for="PlateNumber" class="form-control text-uppercase" autocomplete="off" placeholder="e.g. ABC-1234" />
+    <span asp-validation-for="PlateNumber" class="field-validation-error"></span>
+</div>
+
+<div class="crm-grid-2">
+    <div class="crm-field">
+        <label asp-for="Brand"></label>
+        <input asp-for="Brand" class="form-control" autocomplete="off" placeholder="e.g. Toyota" />
+        <span asp-validation-for="Brand" class="field-validation-error"></span>
+    </div>
+    <div class="crm-field">
+        <label asp-for="Model"></label>
+        <input asp-for="Model" class="form-control" autocomplete="off" placeholder="e.g. Vios" />
+        <span asp-validation-for="Model" class="field-validation-error"></span>
+    </div>
+</div>
+
+<div class="crm-field" style="max-width:200px;">
+    <label asp-for="ManufacturingYear"></label>
+    <input asp-for="ManufacturingYear" class="form-control" type="number" min="1900" max="2100" inputmode="numeric" placeholder="e.g. 2022" />
+    <span asp-validation-for="ManufacturingYear" class="field-validation-error"></span>
+</div>

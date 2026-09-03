@@ -1,0 +1,39 @@
+@model Vehicle
+@{
+    ViewData["Title"] = "Edit Vehicle";
+    var name = $"{Model.Brand} {Model.Model}".Trim();
+    if (name.Length == 0) { name = string.IsNullOrWhiteSpace(Model.PlateNumber) ? $"Vehicle #{Model.VehicleID}" : Model.PlateNumber!; }
+}
+
+@await Html.PartialAsync("_CrmStyles")
+
+<section class="crm-hero">
+    <a asp-action="Index" class="back d-inline-flex align-items-center gap-1 mb-2">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        Back to vehicles
+    </a>
+    <h1>Edit Vehicle</h1>
+    <p>Update the details for <strong style="color:#fff;">@name</strong>.</p>
+</section>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-8 col-xl-7">
+        <div class="crm-panel crm-panel-pad">
+            <form asp-action="Edit" method="post" novalidate>
+                <input type="hidden" asp-for="VehicleID" />
+                <partial name="_Form" model="Model" />
+                <div class="crm-form-actions">
+                    <button type="submit" class="btn-zx">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
+                        Save changes
+                    </button>
+                    <a asp-action="Details" asp-route-id="@Model.VehicleID" class="btn-outline-zx">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

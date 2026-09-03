@@ -1,0 +1,106 @@
+@model Vehicle
+@{
+    ViewData["Title"] = "Vehicle Details";
+    var name = $"{Model.Brand} {Model.Model}".Trim();
+    if (name.Length == 0) { name = string.IsNullOrWhiteSpace(Model.PlateNumber) ? $"Vehicle #{Model.VehicleID}" : Model.PlateNumber!; }
+
+    string Initials(string? s)
+    {
+        var parts = (s ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) return "?";
+        var r = parts[0].Substring(0, 1);
+        if (parts.Length > 1) r += parts[^1].Substring(0, 1);
+        return r.ToUpperInvariant();
+    }
+}
+
+@await Html.PartialAsync("_CrmStyles")
+
+<section class="crm-hero">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+            <a asp-action="Index" class="back d-inline-flex align-items-center gap-1 mb-2">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                Back to vehicles
+            </a>
+            <h1>Vehicle Details</h1>
+        </div>
+        <div class="d-flex gap-2 hero-actions">
+            <a asp-action="Edit" asp-route-id="@Model.VehicleID" class="btn-zx">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                Edit
+            </a>
+            <a asp-action="Delete" asp-route-id="@Model.VehicleID" class="btn-zx-light">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                Delete
+            </a>
+        </div>
+    </div>
+</section>
+
+<div class="row g-3">
+    <!-- Vehicle info -->
+    <div class="col-12 col-lg-7">
+        <div class="crm-panel crm-panel-pad h-100">
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <span class="crm-avatar lg">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/><circle cx="6.5" cy="16.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/></svg>
+                </span>
+                <div class="min-w-0">
+                    <div style="font-family:'Oswald',sans-serif; font-weight:700; font-size:20px; color:#0b0b0c; line-height:1.15;">@name</div>
+                    <div class="crm-chip mt-2">@(Model.VehicleClassification?.ClassificationName ?? "—")</div>
+                </div>
+            </div>
+
+            <div class="crm-grid-2">
+                <div class="crm-dl">
+                    <div class="k">Plate number</div>
+                    <div class="v">@(string.IsNullOrWhiteSpace(Model.PlateNumber) ? "—" : Model.PlateNumber)</div>
+                </div>
+                <div class="crm-dl">
+                    <div class="k">Year</div>
+                    <div class="v">@(Model.ManufacturingYear?.ToString() ?? "—")</div>
+                </div>
+                <div class="crm-dl">
+                    <div class="k">Brand</div>
+                    <div class="v">@(string.IsNullOrWhiteSpace(Model.Brand) ? "—" : Model.Brand)</div>
+                </div>
+                <div class="crm-dl">
+                    <div class="k">Model</div>
+                    <div class="v">@(string.IsNullOrWhiteSpace(Model.Model) ? "—" : Model.Model)</div>
+                </div>
+                <div class="crm-dl">
+                    <div class="k">Classification</div>
+                    <div class="v">@(Model.VehicleClassification?.ClassificationName ?? "—")</div>
+                </div>
+                <div class="crm-dl">
+                    <div class="k">Vehicle ID</div>
+                    <div class="v">#@Model.VehicleID</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Owner -->
+    <div class="col-12 col-lg-5">
+        <div class="crm-panel h-100">
+            <div class="crm-toolbar">
+                <h2 class="crm-sec-title">Owner</h2>
+            </div>
+            <div class="crm-panel-pad">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <span class="crm-avatar">@Initials(Model.Customer?.FullName)</span>
+                    <div class="min-w-0">
+                        <div class="fw-semibold" style="color:#0b0b0c;">@(Model.Customer?.FullName ?? "—")</div>
+                        <div class="crm-muted" style="font-size:12.5px;">
+                            @(string.IsNullOrWhiteSpace(Model.Customer?.ContactNumber) ? "No contact number" : Model.Customer!.ContactNumber)
+                        </div>
+                    </div>
+                </div>
+                <a asp-controller="Customer" asp-action="Details" asp-route-id="@Model.CustomerID" class="btn-outline-zx w-100 text-center d-block">
+                    View customer profile
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

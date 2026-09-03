@@ -44,18 +44,28 @@ namespace ZEmpireAutoAccessories.Models
         [Key]
         public int VehicleID { get; set; }
 
+        [Display(Name = "Customer")]
+        [Range(1, int.MaxValue, ErrorMessage = "Please select a customer.")]
         public int CustomerID { get; set; }
+
+        [Display(Name = "Classification")]
+        [Range(1, int.MaxValue, ErrorMessage = "Please select a classification.")]
         public int VehicleClassificationID { get; set; }
 
-        [MaxLength(20)]
+        [MaxLength(20, ErrorMessage = "Plate number can't be longer than 20 characters.")]
+        [Display(Name = "Plate number")]
         public string? PlateNumber { get; set; }
 
-        [MaxLength(60)]
+        [MaxLength(60, ErrorMessage = "Brand can't be longer than 60 characters.")]
+        [Display(Name = "Brand")]
         public string? Brand { get; set; }
 
-        [MaxLength(60)]
+        [MaxLength(60, ErrorMessage = "Model can't be longer than 60 characters.")]
+        [Display(Name = "Model")]
         public string? Model { get; set; }
 
+        [Display(Name = "Year")]
+        [Range(1900, 2100, ErrorMessage = "Enter a valid year (1900–2100).")]
         public short? ManufacturingYear { get; set; }
 
         public Customer Customer { get; set; } = null!;
