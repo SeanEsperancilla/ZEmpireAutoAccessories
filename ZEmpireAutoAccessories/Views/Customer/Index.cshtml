@@ -2,6 +2,8 @@
 
 @{
     ViewData["Title"] = "Customers";
+    var search = ViewData["Search"] as string;
+    var successMessage = TempData["Success"] as string;
 }
 
 <style>
@@ -20,6 +22,20 @@
     <h1>Customers</h1>
     <a class="btn btn-zx" asp-action="Create">+ New Customer</a>
 </div>
+
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success">@successMessage</div>
+}
+
+<form asp-action="Index" method="get" class="d-flex gap-2 mb-3" style="max-width:420px;">
+    <input type="text" name="q" value="@search" class="form-control" placeholder="Search name or contact number" />
+    <button type="submit" class="btn btn-outline-secondary">Search</button>
+    @if (!string.IsNullOrEmpty(search))
+    {
+        <a asp-action="Index" class="btn btn-outline-secondary">Clear</a>
+    }
+</form>
 
 <div class="zx-card">
     <table class="table zx-table mb-0">
@@ -48,7 +64,9 @@
             @if (!Model.Any())
             {
                 <tr>
-                    <td colspan="4" class="text-center text-muted py-4">No customers yet.</td>
+                    <td colspan="4" class="text-center text-muted py-4">
+                        @(string.IsNullOrEmpty(search) ? "No customers yet." : $"No customers match \"{search}\".")
+                    </td>
                 </tr>
             }
         </tbody>
