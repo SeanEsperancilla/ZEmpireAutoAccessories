@@ -75,7 +75,7 @@ namespace ZEmpireAutoAccessories.Controllers
             customer.FullName = customer.FullName.Trim();
             customer.ContactNumber = string.IsNullOrWhiteSpace(customer.ContactNumber)
                 ? null : customer.ContactNumber.Trim();
-            customer.CreatedAt = DateTime.Now;   // DB default is bypassed by EF, so set it here
+            customer.CreatedAt = DateTime.UtcNow;
 
             _context.Customers.Add(customer);
             await _context.SaveChangesAsync();
@@ -154,19 +154,40 @@ namespace ZEmpireAutoAccessories.Controllers
             if (customer == null)
                 return RedirectToAction(nameof(Index));
 
-            // Vehicles use ON DELETE RESTRICT — block instead of throwing a DB error.
+            // Vehicles use ON DELETE RESTRICT - block instead of throwing a DB error.
             if (customer.Vehicles.Count > 0)
             {
-                TempData["Error"] =
-                    $"\"{customer.FullName}\" still has {customer.Vehicles.Count} vehicle(s) and cannot be deleted.";
+                var word = customer.Vehicles.Count == 1 ? "vehicle" : "vehicles";
+                TempData["DeleteError"] =
+                    $"Can't delete \"{customer.FullName}\" - they still have {customer.Vehicles.Count} {word} registered. " +
+                    $"Remove or reassign the {word} first.";
+
                 return RedirectToAction(nameof(Delete), new { id });
             }
 
-            _context.Customers.Remove(customer);
-            await _context.SaveChangesAsync();
+            try
+            {
+                _context.Customers.Remove(customer);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                TempData["DeleteError"] =
+                    "Can't delete this customer. They still have related records " +
+                    "(sales, job orders, quotations, or invoices) elsewhere in the system. " +
+                    "Remove or reassign those first.";
+
+                return RedirectToAction(nameof(Delete), new { id });
+            }
 
             TempData["Success"] = $"Customer \"{customer.FullName}\" was deleted.";
             return RedirectToAction(nameof(Index));
+        }
+
+        private bool CustomerExists(int id)
+        {
+            return _context.Customers
+                .Any(c => c.CustomerID == id);
         }
     }
 }

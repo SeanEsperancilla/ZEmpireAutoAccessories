@@ -1,151 +1,124 @@
-@model Customer
+@model ZEmpireAutoAccessories.Models.Customer
+
 @{
     ViewData["Title"] = "Customer Details";
-    var vehicles = Model.Vehicles.ToList();
-
-    string Initials(string name)
-    {
-        var parts = (name ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 0) return "?";
-        var s = parts[0].Substring(0, 1);
-        if (parts.Length > 1) s += parts[^1].Substring(0, 1);
-        return s.ToUpperInvariant();
-    }
 }
 
-@await Html.PartialAsync("_Styles")
+<style>
+    .zx-page-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+    }
 
-<section class="crm-hero">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
-        <div>
-            <a asp-action="Index" class="back d-inline-flex align-items-center gap-1 mb-2">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                Back to customers
-            </a>
-            <h1>Customer Details</h1>
-        </div>
-        <div class="d-flex gap-2 hero-actions">
-            <a asp-action="Edit" asp-route-id="@Model.CustomerID" class="btn-zx">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                Edit
-            </a>
-            <a asp-action="Delete" asp-route-id="@Model.CustomerID" class="btn-zx-light">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                Delete
-            </a>
-        </div>
-    </div>
-</section>
+        .zx-page-head h1 {
+            font-family: 'Oswald',system-ui,sans-serif;
+            font-weight: 700;
+            font-size: 22px;
+            margin: 0;
+            color: #0b0b0c;
+        }
 
-<div class="row g-3">
-    <!-- Profile -->
-    <div class="col-12 col-lg-5">
-        <div class="crm-panel crm-panel-pad h-100">
-            <div class="d-flex align-items-center gap-3 mb-4">
-                <span class="crm-avatar lg">@Initials(Model.FullName)</span>
-                <div class="min-w-0">
-                    <div style="font-family:'Oswald',sans-serif; font-weight:700; font-size:20px; color:#0b0b0c; line-height:1.15;">@Model.FullName</div>
-                    <div class="crm-chip @(vehicles.Count == 0 ? "zero" : "red") mt-2">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/><circle cx="6.5" cy="16.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/></svg>
-                        @vehicles.Count vehicle@(vehicles.Count == 1 ? "" : "s")
-                    </div>
-                </div>
-            </div>
+    .zx-card {
+        background: #fff;
+        border: 1px solid #e8ebf0;
+        border-radius: 14px;
+        padding: 22px;
+        margin-bottom: 18px;
+    }
 
-            <div class="crm-dl">
-                <div class="k">Contact number</div>
-                <div class="v">
-                    @if (string.IsNullOrWhiteSpace(Model.ContactNumber))
-                    {
-                        <span class="crm-muted">Not provided</span>
-                    }
-                    else
-                    {
-                        <a href="tel:@Model.ContactNumber" class="text-decoration-none text-reset">@Model.ContactNumber</a>
-                    }
-                </div>
+    dt {
+        color: #7b8290;
+        font-weight: 600;
+        font-size: 12.5px;
+        text-transform: uppercase;
+        letter-spacing: .3px;
+    }
 
-                <div class="k">Customer ID</div>
-                <div class="v">#@Model.CustomerID</div>
+    dd {
+        margin-bottom: 14px;
+        font-size: 15px;
+        color: #0b0b0c;
+    }
 
-                <div class="k">Date added</div>
-                <div class="v">@(Model.CreatedAt.Year > 1 ? Model.CreatedAt.ToString("MMMM d, yyyy 'at' h:mm tt") : "—")</div>
-            </div>
-        </div>
-    </div>
+    .btn-zx {
+        background: var(--zx-red);
+        border-color: var(--zx-red);
+        color: #fff;
+        font-weight: 600;
+    }
 
-    <!-- Vehicles -->
-    <div class="col-12 col-lg-7">
-        <div class="crm-panel h-100">
-            <div class="crm-toolbar">
-                <h2 class="crm-sec-title">Registered Vehicles</h2>
-                <div class="d-flex align-items-center gap-3">
-                    <span class="crm-count">@vehicles.Count total</span>
-                    <a asp-controller="Vehicle" asp-action="Create" asp-route-customerId="@Model.CustomerID" class="btn-outline-zx" style="padding:.35rem .75rem; font-size:13px;">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-                        Add vehicle
-                    </a>
-                </div>
-            </div>
+        .btn-zx:hover {
+            background: var(--zx-red2);
+            border-color: var(--zx-red2);
+            color: #fff;
+        }
 
-            @if (vehicles.Count == 0)
-            {
-                <div class="crm-empty">
-                    <div class="ic">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/><circle cx="6.5" cy="16.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/></svg>
-                    </div>
-                    <h3>No vehicles yet</h3>
-                    <p>This customer has no registered vehicles.</p>
-                    <a asp-controller="Vehicle" asp-action="Create" asp-route-customerId="@Model.CustomerID" class="btn-zx d-inline-flex">Add vehicle</a>
-                </div>
-            }
-            else
-            {
-                <!-- desktop -->
-                <div class="d-none d-sm-block">
-                    <table class="crm-table">
-                        <thead>
-                            <tr>
-                                <th>Plate</th>
-                                <th>Vehicle</th>
-                                <th>Year</th>
-                                <th>Class</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var v in vehicles)
-                            {
-                                <tr>
-                                    <td>
-                                        <a asp-controller="Vehicle" asp-action="Details" asp-route-id="@v.VehicleID" class="fw-semibold text-decoration-none text-reset">
-                                            @(string.IsNullOrWhiteSpace(v.PlateNumber) ? "—" : v.PlateNumber)
-                                        </a>
-                                    </td>
-                                    <td>@($"{v.Brand} {v.Model}".Trim().Length == 0 ? "—" : $"{v.Brand} {v.Model}".Trim())</td>
-                                    <td>@(v.ManufacturingYear?.ToString() ?? "—")</td>
-                                    <td><span class="crm-chip">@(v.VehicleClassification?.ClassificationName ?? "—")</span></td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-                <!-- mobile -->
-                <div class="d-sm-none">
-                    @foreach (var v in vehicles)
-                    {
-                        <a asp-controller="Vehicle" asp-action="Details" asp-route-id="@v.VehicleID" class="crm-mcard d-block text-decoration-none text-reset">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="fw-semibold" style="color:#0b0b0c;">@(string.IsNullOrWhiteSpace(v.PlateNumber) ? "No plate" : v.PlateNumber)</span>
-                                <span class="crm-chip">@(v.VehicleClassification?.ClassificationName ?? "—")</span>
-                            </div>
-                            <div class="mt-2" style="color:#5b6472; font-size:13.5px;">
-                                @($"{v.Brand} {v.Model}".Trim().Length == 0 ? "—" : $"{v.Brand} {v.Model}".Trim())
-                                @if (v.ManufacturingYear != null) { <span class="crm-muted"> · @v.ManufacturingYear</span> }
-                            </div>
-                        </a>
-                    }
-                </div>
-            }
-        </div>
-    </div>
+    .zx-table thead {
+        background: #0b0b0c;
+        color: #fff;
+    }
+
+        .zx-table thead th {
+            border-bottom: none;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+        }
+</style>
+
+<div class="zx-page-head">
+    <h1>Customer Details</h1>
+    <a class="btn btn-zx" asp-action="Edit" asp-route-id="@Model.CustomerID">Edit</a>
+</div>
+
+<div class="zx-card">
+    <dl class="row mb-0">
+        <dt class="col-sm-3">@Html.DisplayNameFor(m => m.FullName)</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(m => m.FullName)</dd>
+
+        <dt class="col-sm-3">@Html.DisplayNameFor(m => m.ContactNumber)</dt>
+        <dd class="col-sm-9">@(Model.ContactNumber ?? "—")</dd>
+
+        <dt class="col-sm-3">Customer Since</dt>
+        <dd class="col-sm-9">@Model.CreatedAt.ToString("MMM d, yyyy")</dd>
+    </dl>
+</div>
+
+<div class="zx-card">
+    <h6 class="mb-3">Registered Vehicles (@Model.Vehicles.Count)</h6>
+    @if (Model.Vehicles.Count > 0)
+    {
+        <table class="table zx-table mb-0">
+            <thead>
+                <tr>
+                    <th>Plate Number</th>
+                    <th>Brand / Model</th>
+                    <th>Year</th>
+                    <th>Classification</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var vehicle in Model.Vehicles)
+                {
+                    <tr>
+                        <td>@(vehicle.PlateNumber ?? "—")</td>
+                        <td>@vehicle.Brand @vehicle.Model</td>
+                        <td>@(vehicle.ManufacturingYear?.ToString() ?? "—")</td>
+                        <td>@vehicle.VehicleClassification.ClassificationName</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p class="text-muted mb-0">No vehicles registered for this customer.</p>
+    }
+</div>
+
+<div class="mt-3">
+    <a asp-action="Index">&larr; Back to list</a>
 </div>

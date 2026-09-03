@@ -1,0 +1,112 @@
+@model ZEmpireAutoAccessories.Models.SecurityMatrixViewModel
+
+@{
+    ViewData["Title"] = "Roles & Permissions";
+    var securityMessage = TempData["SecurityMessage"] as string;
+}
+
+<style>
+    .zx-page-head h1 { font-family:'Oswald',system-ui,sans-serif; font-weight:700; font-size:22px; margin:0 0 6px; color:#0b0b0c; }
+    .zx-page-head p { color:#7b8290; font-size:13.5px; margin:0 0 18px; }
+    .zx-card { background:#fff; border:1px solid #e8ebf0; border-radius:14px; padding:22px; margin-bottom:22px; }
+    .btn-zx { background:var(--zx-red); border-color:var(--zx-red); color:#fff; font-weight:600; }
+    .btn-zx:hover { background:var(--zx-red2); border-color:var(--zx-red2); color:#fff; }
+    .matrix-table thead th { background:#0b0b0c; color:#fff; font-weight:600; font-size:12.5px; text-transform:uppercase; letter-spacing:.3px; text-align:center; }
+    .matrix-table thead th:first-child { text-align:left; }
+    .matrix-table td { vertical-align:middle; text-align:center; }
+    .matrix-table td:first-child { text-align:left; font-weight:600; }
+    .matrix-table input[type=checkbox] { width:18px; height:18px; }
+    .module-row form { display:inline; }
+</style>
+
+<div class="zx-page-head">
+    <h1>Roles &amp; Permissions</h1>
+    <p>Controls which dashboard modules each role can see. Changes take effect the next time a user signs in.</p>
+</div>
+
+@if (!string.IsNullOrEmpty(securityMessage))
+{
+    <div class="alert alert-info">@securityMessage</div>
+}
+
+<div class="zx-card">
+    <h6 class="mb-3">Module Access Matrix</h6>
+
+    @if (Model.Modules.Count == 0)
+    {
+        <p class="text-muted mb-0">No modules defined yet. Add one below.</p>
+    }
+    else
+    {
+        <form asp-action="SavePermissions" method="post">
+            <div class="table-responsive">
+                <table class="table matrix-table">
+                    <thead>
+                        <tr>
+                            <th>Module</th>
+                            @foreach (var role in Model.Roles)
+                            {
+                                <th>@role.Name</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int m = 0; m < Model.Modules.Count; m++)
+                        {
+                            <tr>
+                                <td>@Model.Modules[m].ModuleName</td>
+                                @for (int r = 0; r < Model.Roles.Count; r++)
+                                {
+                                    var idx = (r * Model.Modules.Count) + m;
+                                    <td>
+                                        <input type="hidden" asp-for="Cells[idx].RoleId" />
+                                        <input type="hidden" asp-for="Cells[idx].ModuleID" />
+                                        <input type="checkbox" asp-for="Cells[idx].CanAccess" />
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <button type="submit" class="btn btn-zx mt-2">Save Permissions</button>
+        </form>
+    }
+</div>
+
+<div class="zx-card">
+    <h6 class="mb-3">Modules</h6>
+    <table class="table mb-3">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th class="text-end pe-3">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var module in Model.Modules)
+            {
+                <tr class="module-row">
+                    <td>@module.ModuleName</td>
+                    <td class="text-end pe-3">
+                        <form asp-action="DeleteModule" asp-route-id="@module.ModuleID" method="post"
+                              onsubmit="return confirm('Delete module &quot;@module.ModuleName&quot;? Any role permissions for it will also be removed.');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            @if (Model.Modules.Count == 0)
+            {
+                <tr>
+                    <td colspan="2" class="text-center text-muted py-3">No modules yet.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <form asp-action="CreateModule" method="post" class="d-flex gap-2" style="max-width:420px;">
+        <input type="text" name="moduleName" class="form-control" placeholder="New module name (e.g. Inventory)" required />
+        <button type="submit" class="btn btn-outline-secondary">Add Module</button>
+    </form>
+</div>
