@@ -11,10 +11,14 @@ namespace ZEmpireAutoAccessories.Models
         [Key]
         public int CustomerID { get; set; }
 
-        [Required, MaxLength(150)]
+        [Required(ErrorMessage = "Full name is required.")]
+        [MaxLength(150, ErrorMessage = "Full name can't be longer than 150 characters.")]
+        [Display(Name = "Full name")]
         public string FullName { get; set; } = string.Empty;
 
-        [MaxLength(30)]
+        [MaxLength(30, ErrorMessage = "Contact number can't be longer than 30 characters.")]
+        [Display(Name = "Contact number")]
+        [Phone(ErrorMessage = "Enter a valid contact number.")]
         public string? ContactNumber { get; set; }
 
         public DateTime CreatedAt { get; set; }

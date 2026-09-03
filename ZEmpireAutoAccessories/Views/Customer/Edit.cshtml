@@ -1,0 +1,52 @@
+@model Customer
+@{
+    ViewData["Title"] = "Edit Customer";
+}
+
+@await Html.PartialAsync("_Styles")
+
+<section class="crm-hero">
+    <a asp-action="Index" class="back d-inline-flex align-items-center gap-1 mb-2">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        Back to customers
+    </a>
+    <h1>Edit Customer</h1>
+    <p>Update the details for <strong style="color:#fff;">@Model.FullName</strong>.</p>
+</section>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-7 col-xl-6">
+        <div class="crm-panel crm-panel-pad">
+            <form asp-action="Edit" method="post" novalidate>
+                <input type="hidden" asp-for="CustomerID" />
+
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger border-0" role="alert"
+                     style="border-radius:12px;@(ViewData.ModelState.ErrorCount > 0 ? "" : "display:none")"></div>
+
+                <div class="crm-field">
+                    <label asp-for="FullName">Full name</label>
+                    <input asp-for="FullName" class="form-control" autocomplete="off" autofocus placeholder="e.g. Juan Dela Cruz" />
+                    <span asp-validation-for="FullName" class="field-validation-error"></span>
+                </div>
+
+                <div class="crm-field">
+                    <label asp-for="ContactNumber">Contact number <span class="text-muted fw-normal">(optional)</span></label>
+                    <input asp-for="ContactNumber" class="form-control" type="tel" inputmode="tel" autocomplete="off" placeholder="e.g. 0917 000 0000" />
+                    <span asp-validation-for="ContactNumber" class="field-validation-error"></span>
+                </div>
+
+                <div class="crm-form-actions">
+                    <button type="submit" class="btn-zx">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
+                        Save changes
+                    </button>
+                    <a asp-action="Details" asp-route-id="@Model.CustomerID" class="btn-outline-zx">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -72,6 +72,9 @@
               background:linear-gradient(135deg,#fde8e9,#fbd3d5);color:#c0202a; }
     .mod-card h6 { font-weight:700; margin:0 0 2px; color:#0b0b0c; }
     .mod-card .soon { font-size:11.5px; color:#98a0ad; }
+    a.mod-card, a.mod-card:hover { color:inherit; text-decoration:none; }
+    a.mod-card:hover { border-color:#e5464d; }
+    .mod-card .open { font-size:12px; font-weight:600; color:#c0202a; display:inline-flex; align-items:center; gap:5px; }
 </style>
 
 <section class="dash-hero">
@@ -93,16 +96,39 @@
         <div class="row g-3">
             @foreach (var module in mods)
             {
+                // Live modules link straight to their screen; the rest are still placeholders.
+                string? route = module switch
+                {
+                    "Customers" => Url.Action("Index", "Customer"),
+                    _ => null
+                };
                 <div class="col-6 col-md-4 col-lg-3">
-                    <div class="mod-card d-flex flex-column">
-                        <div class="mod-ic">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">@Html.Raw(ModuleIcon(module))</svg>
+                    @if (route != null)
+                    {
+                        <a href="@route" class="mod-card d-flex flex-column">
+                            <div class="mod-ic">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">@Html.Raw(ModuleIcon(module))</svg>
+                            </div>
+                            <h6>@module</h6>
+                            <div class="mt-auto pt-2">
+                                <span class="open">Open
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                                </span>
+                            </div>
+                        </a>
+                    }
+                    else
+                    {
+                        <div class="mod-card d-flex flex-column">
+                            <div class="mod-ic">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">@Html.Raw(ModuleIcon(module))</svg>
+                            </div>
+                            <h6>@module</h6>
+                            <div class="mt-auto pt-2">
+                                <span class="soon">Screen coming soon</span>
+                            </div>
                         </div>
-                        <h6>@module</h6>
-                        <div class="mt-auto pt-2">
-                            <span class="soon">Screen coming soon</span>
-                        </div>
-                    </div>
+                    }
                 </div>
             }
         </div>
