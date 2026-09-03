@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ZEmpireAutoAccessories.Authorization;
 using ZEmpireAutoAccessories.Data;
@@ -20,6 +21,7 @@ namespace ZEmpireAutoAccessories.Controllers
         public async Task<IActionResult> Index()
         {
             var products = await _context.Products
+                .Include(p => p.Category)
                 .OrderBy(p => p.ProductName)
                 .ToListAsync();
 
@@ -33,6 +35,7 @@ namespace ZEmpireAutoAccessories.Controllers
                 return NotFound();
 
             var product = await _context.Products
+                .Include(p => p.Category)
                 .Include(p => p.Pricings)
                 .FirstOrDefaultAsync(p =>
                     p.ProductID == id);
@@ -44,8 +47,10 @@ namespace ZEmpireAutoAccessories.Controllers
         }
 
         // GET: Product/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
+            await LoadDropdowns();
+
             return View();
         }
 
@@ -54,8 +59,13 @@ namespace ZEmpireAutoAccessories.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Product product)
         {
+            ModelState.Remove(nameof(Product.Category));
+
             if (!ModelState.IsValid)
+            {
+                await LoadDropdowns(product);
                 return View(product);
+            }
 
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
@@ -75,6 +85,8 @@ namespace ZEmpireAutoAccessories.Controllers
             if (product == null)
                 return NotFound();
 
+            await LoadDropdowns(product);
+
             return View(product);
         }
 
@@ -88,8 +100,13 @@ namespace ZEmpireAutoAccessories.Controllers
             if (id != product.ProductID)
                 return NotFound();
 
+            ModelState.Remove(nameof(Product.Category));
+
             if (!ModelState.IsValid)
+            {
+                await LoadDropdowns(product);
                 return View(product);
+            }
 
             try
             {
@@ -114,6 +131,7 @@ namespace ZEmpireAutoAccessories.Controllers
                 return NotFound();
 
             var product = await _context.Products
+                .Include(p => p.Category)
                 .FirstOrDefaultAsync(p =>
                     p.ProductID == id);
 
@@ -138,6 +156,17 @@ namespace ZEmpireAutoAccessories.Controllers
             }
 
             return RedirectToAction(nameof(Index));
+        }
+
+        private async Task LoadDropdowns(Product? product = null)
+        {
+            ViewData["CategoryID"] = new SelectList(
+                await _context.ProductCategories
+                    .OrderBy(c => c.CategoryName)
+                    .ToListAsync(),
+                "CategoryID",
+                "CategoryName",
+                product?.CategoryID);
         }
 
         private bool ProductExists(int id)

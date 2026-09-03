@@ -23,6 +23,8 @@
               background:linear-gradient(135deg,#fde8e9,#fbd3d5);color:#c0202a; }
     .mod-card h6 { font-weight:700; margin:0 0 2px; color:#0b0b0c; }
     .mod-card .soon { font-size:11.5px; color:#98a0ad; }
+    .mod-card .open { font-size:11.5px; color:#c0202a; font-weight:600; }
+    a.mod-card { text-decoration:none; }
 </style>
 
 <section class="dash-hero">
@@ -36,16 +38,38 @@
 <div class="row g-3">
     @foreach (var module in modules)
     {
+        var (moduleController, moduleAction) = module switch
+        {
+            "Products" => ("Product", "Index"),
+            "Vehicles" => ("Vehicle", "Index"),
+            _ => (null, null)
+        };
+
         <div class="col-6 col-md-4 col-lg-3">
-            <div class="mod-card d-flex flex-column">
-                <div class="mod-ic">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+            @if (moduleController != null)
+            {
+                <a class="mod-card d-flex flex-column" asp-controller="@moduleController" asp-action="@moduleAction">
+                    <div class="mod-ic">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+                    </div>
+                    <h6>@module</h6>
+                    <div class="mt-auto pt-2">
+                        <span class="open">Open module &rarr;</span>
+                    </div>
+                </a>
+            }
+            else
+            {
+                <div class="mod-card d-flex flex-column">
+                    <div class="mod-ic">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+                    </div>
+                    <h6>@module</h6>
+                    <div class="mt-auto pt-2">
+                        <span class="soon">Screen coming soon</span>
+                    </div>
                 </div>
-                <h6>@module</h6>
-                <div class="mt-auto pt-2">
-                    <span class="soon">Screen coming soon</span>
-                </div>
-            </div>
+            }
         </div>
     }
 </div>

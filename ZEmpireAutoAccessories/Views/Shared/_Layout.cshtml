@@ -72,10 +72,21 @@
                                     <ul class="dropdown-menu" style="max-height:60vh;overflow:auto;">
                                         @foreach (var m in myModules)
                                         {
-                                            <li><span class="dropdown-item disabled">@m</span></li>
+                                            @if (m == "Products")
+                                            {
+                                                <li><a class="dropdown-item" asp-controller="Product" asp-action="Index">Products</a></li>
+                                            }
+                                            else if (m == "Vehicles")
+                                            {
+                                                <li><a class="dropdown-item" asp-controller="Vehicle" asp-action="Index">Vehicles</a></li>
+                                            }
+                                            else
+                                            {
+                                                <li><span class="dropdown-item disabled">@m</span></li>
+                                            }
                                         }
                                         <li><hr class="dropdown-divider"></li>
-                                        <li><span class="dropdown-item-text text-muted small">Module screens coming soon</span></li>
+                                        <li><span class="dropdown-item-text text-muted small">More module screens coming soon</span></li>
                                     </ul>
                                 </li>
                             }

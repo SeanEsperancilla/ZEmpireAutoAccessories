@@ -20,6 +20,7 @@ namespace ZEmpireAutoAccessories.Controllers
         public async Task<IActionResult> Index()
         {
             var classifications = await _context.VehicleClassifications
+                .Include(v => v.Vehicles)
                 .OrderBy(v => v.ClassificationName)
                 .ToListAsync();
 
@@ -33,6 +34,7 @@ namespace ZEmpireAutoAccessories.Controllers
                 return NotFound();
 
             var classification = await _context.VehicleClassifications
+                .Include(v => v.Vehicles)
                 .FirstOrDefaultAsync(v =>
                     v.VehicleClassificationID == id);
 
@@ -118,6 +120,7 @@ namespace ZEmpireAutoAccessories.Controllers
 
             var classification =
                 await _context.VehicleClassifications
+                    .Include(v => v.Vehicles)
                     .FirstOrDefaultAsync(v =>
                         v.VehicleClassificationID == id);
 
