@@ -57,6 +57,8 @@ namespace ZEmpireAutoAccessories.Controllers
             if (!ModelState.IsValid)
                 return View(customer);
 
+            customer.CreatedAt = DateTime.UtcNow;
+
             _context.Customers.Add(customer);
             await _context.SaveChangesAsync();
 
@@ -114,6 +116,7 @@ namespace ZEmpireAutoAccessories.Controllers
                 return NotFound();
 
             var customer = await _context.Customers
+                .Include(c => c.Vehicles)
                 .FirstOrDefaultAsync(c =>
                     c.CustomerID == id);
 
@@ -128,13 +131,37 @@ namespace ZEmpireAutoAccessories.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var customer =
-                await _context.Customers.FindAsync(id);
+            var customer = await _context.Customers
+                .Include(c => c.Vehicles)
+                .FirstOrDefaultAsync(c =>
+                    c.CustomerID == id);
 
-            if (customer != null)
+            if (customer == null)
+                return RedirectToAction(nameof(Index));
+
+            if (customer.Vehicles.Count > 0)
+            {
+                var word = customer.Vehicles.Count == 1 ? "vehicle" : "vehicles";
+                TempData["DeleteError"] =
+                    $"Can't delete this customer. They still have {customer.Vehicles.Count} {word} registered. " +
+                    $"Remove or reassign the {word} first.";
+
+                return RedirectToAction(nameof(Delete), new { id });
+            }
+
+            try
             {
                 _context.Customers.Remove(customer);
                 await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                TempData["DeleteError"] =
+                    "Can't delete this customer. They still have related records " +
+                    "(sales, job orders, quotations, or invoices) elsewhere in the system. " +
+                    "Remove or reassign those first.";
+
+                return RedirectToAction(nameof(Delete), new { id });
             }
 
             return RedirectToAction(nameof(Index));
