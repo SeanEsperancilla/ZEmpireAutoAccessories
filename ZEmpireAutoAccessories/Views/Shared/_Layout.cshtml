@@ -80,6 +80,14 @@
                                             {
                                                 <li><a class="dropdown-item" asp-controller="Vehicle" asp-action="Index">Vehicles</a></li>
                                             }
+                                            else if (m == "Customers")
+                                            {
+                                                <li><a class="dropdown-item" asp-controller="Customer" asp-action="Index">Customers</a></li>
+                                            }
+                                            else if (m == "Employees")
+                                            {
+                                                <li><a class="dropdown-item" asp-controller="Employee" asp-action="Index">Employees</a></li>
+                                            }
                                             else
                                             {
                                                 <li><span class="dropdown-item disabled">@m</span></li>
@@ -88,6 +96,12 @@
                                         <li><hr class="dropdown-divider"></li>
                                         <li><span class="dropdown-item-text text-muted small">More module screens coming soon</span></li>
                                     </ul>
+                                </li>
+                            }
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Security" asp-action="Index">Roles &amp; Permissions</a>
                                 </li>
                             }
                         </ul>
