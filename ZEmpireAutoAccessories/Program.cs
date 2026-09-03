@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using ZEmpireAutoAccessories.Authorization;
@@ -5,6 +6,14 @@ using ZEmpireAutoAccessories.Data;
 using ZEmpireAutoAccessories.Models;
 using ZEmpireAutoAccessories.Services;
 using ZEmpireAutoAccessories.Services.Interfaces;
+
+// The shop prices everything in Philippine Pesos, so make that the app-wide
+// default rather than relying on the server's culture - this makes every
+// ToString("C") in the app (Products, Pricing, Sales, invoices, etc.) render
+// with the ₱ symbol without needing per-view formatting.
+var phCulture = CultureInfo.GetCultureInfo("en-PH");
+CultureInfo.DefaultThreadCurrentCulture = phCulture;
+CultureInfo.DefaultThreadCurrentUICulture = phCulture;
 
 var builder = WebApplication.CreateBuilder(args);
 
