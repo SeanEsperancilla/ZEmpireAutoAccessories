@@ -1,0 +1,63 @@
+@model IEnumerable<ZEmpireAutoAccessories.Models.Vehicle>
+
+@{
+    ViewData["Title"] = "Vehicles";
+}
+
+<style>
+    .zx-page-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+    .zx-page-head h1 { font-family:'Oswald',system-ui,sans-serif; font-weight:700; font-size:22px; margin:0; color:#0b0b0c; }
+    .btn-zx { background:var(--zx-red); border-color:var(--zx-red); color:#fff; font-weight:600; }
+    .btn-zx:hover { background:var(--zx-red2); border-color:var(--zx-red2); color:#fff; }
+    .zx-card { background:#fff; border:1px solid #e8ebf0; border-radius:14px; overflow:hidden; }
+    .zx-table thead { background:#0b0b0c; color:#fff; }
+    .zx-table thead th { border-bottom:none; font-weight:600; font-size:13px; text-transform:uppercase; letter-spacing:.3px; }
+    .zx-table td, .zx-table th { vertical-align:middle; }
+    .zx-actions a { margin-right:10px; font-weight:600; font-size:13.5px; }
+</style>
+
+<div class="zx-page-head">
+    <h1>Vehicles</h1>
+    <div>
+        <a class="btn btn-outline-secondary" asp-controller="VehicleClassification" asp-action="Index">Manage Classifications</a>
+        <a class="btn btn-zx" asp-action="Create">+ New Vehicle</a>
+    </div>
+</div>
+
+<div class="zx-card">
+    <table class="table zx-table mb-0">
+        <thead>
+            <tr>
+                <th>Plate Number</th>
+                <th>Brand / Model</th>
+                <th>Year</th>
+                <th>Classification</th>
+                <th>Owner</th>
+                <th class="text-end pe-3">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@(item.PlateNumber ?? "—")</td>
+                    <td>@item.Brand @item.Model</td>
+                    <td>@(item.ManufacturingYear?.ToString() ?? "—")</td>
+                    <td>@item.VehicleClassification.ClassificationName</td>
+                    <td>@item.Customer.FullName</td>
+                    <td class="text-end pe-3 zx-actions">
+                        <a asp-action="Edit" asp-route-id="@item.VehicleID">Edit</a>
+                        <a asp-action="Details" asp-route-id="@item.VehicleID">Details</a>
+                        <a asp-action="Delete" asp-route-id="@item.VehicleID" class="text-danger">Delete</a>
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">No vehicles yet.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
