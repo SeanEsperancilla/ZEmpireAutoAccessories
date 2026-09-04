@@ -67,6 +67,7 @@ namespace ZEmpireAutoAccessories.Controllers
             ModelState.Remove(nameof(Quotation.UserId));
             ModelState.Remove(nameof(Quotation.Customer));
             ModelState.Remove(nameof(Quotation.Vehicle));
+            ModelState.Remove(nameof(Quotation.User));
 
             if (!ModelState.IsValid)
             {
@@ -118,6 +119,7 @@ namespace ZEmpireAutoAccessories.Controllers
             ModelState.Remove(nameof(Quotation.UserId));
             ModelState.Remove(nameof(Quotation.Customer));
             ModelState.Remove(nameof(Quotation.Vehicle));
+            ModelState.Remove(nameof(Quotation.User));
 
             if (!ModelState.IsValid)
             {
