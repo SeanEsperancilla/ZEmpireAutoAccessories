@@ -76,6 +76,7 @@ namespace ZEmpireAutoAccessories.Controllers
             ModelState.Remove(nameof(ServiceInvoice.InvoiceNumber));
             ModelState.Remove(nameof(ServiceInvoice.UserId));
             ModelState.Remove(nameof(ServiceInvoice.Customer));
+            ModelState.Remove(nameof(ServiceInvoice.User));
             ModelState.Remove(nameof(ServiceInvoice.PaymentMode));
             ModelState.Remove(nameof(ServiceInvoice.InvoiceNoSeries));
 
@@ -128,6 +129,7 @@ namespace ZEmpireAutoAccessories.Controllers
             ModelState.Remove(nameof(ServiceInvoice.InvoiceNumber));
             ModelState.Remove(nameof(ServiceInvoice.UserId));
             ModelState.Remove(nameof(ServiceInvoice.Customer));
+            ModelState.Remove(nameof(ServiceInvoice.User));
             ModelState.Remove(nameof(ServiceInvoice.PaymentMode));
             ModelState.Remove(nameof(ServiceInvoice.InvoiceNoSeries));
 
