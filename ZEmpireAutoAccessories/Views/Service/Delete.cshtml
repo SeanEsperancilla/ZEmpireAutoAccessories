@@ -1,9 +1,10 @@
-@model ZEmpireAutoAccessories.Models.Customer
+﻿@model ZEmpireAutoAccessories.Models.Service
 
 @{
-    ViewData["Title"] = "Delete Customer";
-    var blocked = Model.Vehicles.Count > 0;
+    ViewData["Title"] = "Delete Service";
+    var blockReason = ViewData["BlockReason"] as string;
     var deleteError = TempData["DeleteError"] as string;
+    var blocked = !string.IsNullOrEmpty(blockReason) || !string.IsNullOrEmpty(deleteError);
 }
 
 <style>
@@ -39,38 +40,34 @@
 </style>
 
 <div class="zx-page-head">
-    <h1>Delete Customer</h1>
+    <h1>Delete Service</h1>
 </div>
 
 @if (!string.IsNullOrEmpty(deleteError))
 {
     <div class="alert alert-danger">@deleteError</div>
 }
-else if (blocked)
+else if (!string.IsNullOrEmpty(blockReason))
 {
-    var word = Model.Vehicles.Count == 1 ? "vehicle" : "vehicles";
-    <div class="alert alert-danger">
-        Can't delete this customer. They still have @Model.Vehicles.Count @word registered.
-        Remove or reassign the @word first, then come back and delete.
-    </div>
+    <div class="alert alert-danger">@blockReason</div>
 }
 else
 {
     <div class="alert alert-danger">
-        Are you sure you want to delete this customer? This cannot be undone.
+        Are you sure you want to delete this service? This cannot be undone.
     </div>
 }
 
 <div class="zx-card">
     <dl class="row mb-0">
-        <dt class="col-sm-4">@Html.DisplayNameFor(m => m.FullName)</dt>
-        <dd class="col-sm-8">@Html.DisplayFor(m => m.FullName)</dd>
+        <dt class="col-sm-4">Name</dt>
+        <dd class="col-sm-8">@Model.ServiceName</dd>
 
-        <dt class="col-sm-4">@Html.DisplayNameFor(m => m.ContactNumber)</dt>
-        <dd class="col-sm-8">@(Model.ContactNumber ?? "—")</dd>
+        <dt class="col-sm-4">Category</dt>
+        <dd class="col-sm-8">@Model.ServiceCategory.CategoryName</dd>
 
-        <dt class="col-sm-4">Registered Vehicles</dt>
-        <dd class="col-sm-8">@Model.Vehicles.Count</dd>
+        <dt class="col-sm-4">Default Price</dt>
+        <dd class="col-sm-8">@("₱" + Model.DefaultPrice.ToString("N2"))</dd>
     </dl>
 </div>
 
@@ -82,7 +79,7 @@ else
     else
     {
         <form asp-action="Delete" method="post" class="d-inline">
-            <input type="hidden" asp-for="CustomerID" />
+            <input type="hidden" asp-for="ServiceID" />
             <button type="submit" class="btn btn-danger">Delete</button>
             <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
         </form>

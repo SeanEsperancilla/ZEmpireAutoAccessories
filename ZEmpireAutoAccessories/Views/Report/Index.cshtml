@@ -1,0 +1,196 @@
+﻿@using ZEmpireAutoAccessories.Models
+@{
+    ViewData["Title"] = "Reports";
+    var dailySales = (decimal)ViewData["DailySales"]!;
+    var weeklySales = (decimal)ViewData["WeeklySales"]!;
+    var monthlySales = (decimal)ViewData["MonthlySales"]!;
+    var lowStock = (List<VwStockOnHand>)ViewData["LowStock"]!;
+    var recentSales = (List<Sale>)ViewData["RecentSales"]!;
+}
+
+<style>
+    .zx-page-head h1 {
+        font-family: 'Oswald',system-ui,sans-serif;
+        font-weight: 700;
+        font-size: 22px;
+        margin: 0 0 18px;
+        color: #0b0b0c;
+    }
+
+    .report-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+    }
+
+        .report-tabs a {
+            padding: 7px 16px;
+            border-radius: 999px;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: #4b5563;
+            background: #fff;
+            border: 1px solid #e8ebf0;
+            text-decoration: none;
+        }
+
+            .report-tabs a.active, .report-tabs a:hover {
+                background: #0b0b0c;
+                color: #fff;
+                border-color: #0b0b0c;
+            }
+
+    .stat-card {
+        background: #fff;
+        border: 1px solid #e8ebf0;
+        border-radius: 14px;
+        padding: 20px;
+    }
+
+        .stat-card .label {
+            font-size: 12.5px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+            color: #7b8290;
+            margin-bottom: 6px;
+        }
+
+        .stat-card .value {
+            font-family: 'Oswald',system-ui,sans-serif;
+            font-size: 26px;
+            font-weight: 700;
+            color: #0b0b0c;
+        }
+
+    .zx-card {
+        background: #fff;
+        border: 1px solid #e8ebf0;
+        border-radius: 14px;
+        overflow: hidden;
+        margin-bottom: 22px;
+    }
+
+    .zx-card-head {
+        padding: 16px 18px 0;
+        font-weight: 700;
+        color: #0b0b0c;
+    }
+
+    .zx-table thead {
+        background: #0b0b0c;
+        color: #fff;
+    }
+
+        .zx-table thead th {
+            border-bottom: none;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+        }
+
+    .zx-table td, .zx-table th {
+        vertical-align: middle;
+    }
+
+    .badge-low {
+        background: rgba(239,68,68,.15);
+        color: #b91c1c;
+        font-weight: 600;
+    }
+</style>
+
+<div class="zx-page-head">
+    <h1>Reports</h1>
+</div>
+
+<div class="report-tabs">
+    <a asp-action="Index" class="active">Overview</a>
+    <a asp-action="Sales">Sales</a>
+    <a asp-action="JobOrders">Job Orders</a>
+    <a asp-action="ServiceInvoices">Service Invoices</a>
+    <a asp-action="Quotations">Quotations</a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="label">Today's Sales</div>
+            <div class="value">@("₱" + dailySales.ToString("N2"))</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="label">This Week</div>
+            <div class="value">@("₱" + weeklySales.ToString("N2"))</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="label">This Month</div>
+            <div class="value">@("₱" + monthlySales.ToString("N2"))</div>
+        </div>
+    </div>
+</div>
+
+<div class="zx-card">
+    <div class="zx-card-head">Low Stock Alerts</div>
+    <table class="table zx-table mb-0 mt-2">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Stock On Hand</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in lowStock)
+            {
+                <tr>
+                    <td>@item.ProductName</td>
+                    <td>@(item.StockOnHand ?? 0)</td>
+                    <td><span class="badge badge-low">Low Stock</span></td>
+                </tr>
+            }
+            @if (!lowStock.Any())
+            {
+                <tr>
+                    <td colspan="3" class="text-center text-muted py-3">No low-stock products right now.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div class="zx-card">
+    <div class="zx-card-head">Recent Sales</div>
+    <table class="table zx-table mb-0 mt-2">
+        <thead>
+            <tr>
+                <th>Invoice #</th>
+                <th>Customer</th>
+                <th>Date</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var sale in recentSales)
+            {
+                <tr>
+                    <td>@sale.InvoiceNumber</td>
+                    <td>@sale.Customer.FullName</td>
+                    <td>@sale.SalesDate.ToString("MMM d, yyyy")</td>
+                    <td>@("₱" + sale.TotalAmount.ToString("N2"))</td>
+                </tr>
+            }
+            @if (!recentSales.Any())
+            {
+                <tr>
+                    <td colspan="4" class="text-center text-muted py-3">No sales recorded yet.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

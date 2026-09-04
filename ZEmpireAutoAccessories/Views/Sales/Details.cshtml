@@ -1,0 +1,114 @@
+﻿@model ZEmpireAutoAccessories.Models.Sale
+
+@{
+    ViewData["Title"] = "Sale Details";
+}
+
+<style>
+    .zx-page-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+    }
+
+        .zx-page-head h1 {
+            font-family: 'Oswald',system-ui,sans-serif;
+            font-weight: 700;
+            font-size: 22px;
+            margin: 0;
+            color: #0b0b0c;
+        }
+
+    .zx-card {
+        background: #fff;
+        border: 1px solid #e8ebf0;
+        border-radius: 14px;
+        padding: 22px;
+        margin-bottom: 18px;
+    }
+
+    dt {
+        color: #7b8290;
+        font-weight: 600;
+        font-size: 12.5px;
+        text-transform: uppercase;
+        letter-spacing: .3px;
+    }
+
+    dd {
+        margin-bottom: 14px;
+        font-size: 15px;
+        color: #0b0b0c;
+    }
+
+    .zx-table thead {
+        background: #0b0b0c;
+        color: #fff;
+    }
+
+        .zx-table thead th {
+            border-bottom: none;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+        }
+
+    .totals-row td {
+        font-weight: 700;
+    }
+</style>
+
+<div class="zx-page-head">
+    <h1>Sale @Model.InvoiceNumber</h1>
+    <a class="btn btn-outline-secondary" asp-action="Index">Back to list</a>
+</div>
+
+<div class="zx-card">
+    <dl class="row mb-0">
+        <dt class="col-sm-3">Customer</dt>
+        <dd class="col-sm-9">@Model.Customer.FullName</dd>
+
+        <dt class="col-sm-3">Vehicle</dt>
+        <dd class="col-sm-9">@(Model.Vehicle != null ? $"{Model.Vehicle.PlateNumber} - {Model.Vehicle.Brand} {Model.Vehicle.Model}" : "—")</dd>
+
+        <dt class="col-sm-3">Payment Mode</dt>
+        <dd class="col-sm-9">@Model.PaymentMode.PaymentModeName</dd>
+
+        <dt class="col-sm-3">Date</dt>
+        <dd class="col-sm-9">@Model.SalesDate.ToString("MMM d, yyyy h:mm tt")</dd>
+
+        <dt class="col-sm-3">Processed By</dt>
+        <dd class="col-sm-9">@Model.User.UserName</dd>
+    </dl>
+</div>
+
+<div class="zx-card">
+    <h6 class="mb-3">Line Items</h6>
+    <table class="table zx-table mb-0">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Unit Price</th>
+                <th>Sub Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var line in Model.SaleDetails)
+            {
+                <tr>
+                    <td>@line.Product.ProductName</td>
+                    <td>@line.Quantity</td>
+                    <td>@("₱" + line.UnitPrice.ToString("N2"))</td>
+                    <td>@("₱" + line.SubTotal.ToString("N2"))</td>
+                </tr>
+            }
+            <tr class="totals-row">
+                <td colspan="3" class="text-end">Total</td>
+                <td>@("₱" + Model.TotalAmount.ToString("N2"))</td>
+            </tr>
+        </tbody>
+    </table>
+</div>

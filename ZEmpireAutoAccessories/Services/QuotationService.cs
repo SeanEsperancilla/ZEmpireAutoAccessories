@@ -63,7 +63,7 @@ namespace ZEmpireAutoAccessories.Services
             return (int)pJobOrderId.Value;
         }
 
-        public async Task<string> GetNextInvoiceNumber(string userId)
+        public async Task<(string InvoiceNumber, int InvoiceNoSeriesID)> GetNextInvoiceNumber(string userId)
         {
             var pUser = new SqlParameter("@UserId", userId);
             var pSeriesId = new SqlParameter("@InvoiceNoSeriesID", SqlDbType.Int)
@@ -79,7 +79,7 @@ namespace ZEmpireAutoAccessories.Services
                 "EXEC dbo.GetNextInvoiceNumber @UserId, @InvoiceNoSeriesID OUTPUT, @InvoiceNumber OUTPUT",
                 pUser, pSeriesId, pInvoiceNumber);
 
-            return (string)pInvoiceNumber.Value;
+            return ((string)pInvoiceNumber.Value, (int)pSeriesId.Value);
         }
     }
 }

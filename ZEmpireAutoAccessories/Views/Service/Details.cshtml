@@ -1,0 +1,91 @@
+﻿@model ZEmpireAutoAccessories.Models.Service
+
+@{
+    ViewData["Title"] = "Service Details";
+}
+
+<style>
+    .zx-page-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+    }
+
+        .zx-page-head h1 {
+            font-family: 'Oswald',system-ui,sans-serif;
+            font-weight: 700;
+            font-size: 22px;
+            margin: 0;
+            color: #0b0b0c;
+        }
+
+    .zx-card {
+        background: #fff;
+        border: 1px solid #e8ebf0;
+        border-radius: 14px;
+        padding: 22px;
+    }
+
+    dt {
+        color: #7b8290;
+        font-weight: 600;
+        font-size: 12.5px;
+        text-transform: uppercase;
+        letter-spacing: .3px;
+    }
+
+    dd {
+        margin-bottom: 14px;
+        font-size: 15px;
+        color: #0b0b0c;
+    }
+
+    .badge-active {
+        background: rgba(34,197,94,.15);
+        color: #15803d;
+        font-weight: 600;
+    }
+
+    .badge-inactive {
+        background: rgba(148,163,184,.2);
+        color: #64748b;
+        font-weight: 600;
+    }
+</style>
+
+<div class="zx-page-head">
+    <h1>@Model.ServiceName</h1>
+    <div>
+        <a class="btn btn-outline-secondary" asp-action="Edit" asp-route-id="@Model.ServiceID">Edit</a>
+        <a class="btn btn-outline-secondary" asp-action="Index">Back to list</a>
+    </div>
+</div>
+
+<div class="zx-card">
+    <dl class="row mb-0">
+        <dt class="col-sm-3">Category</dt>
+        <dd class="col-sm-9">@Model.ServiceCategory.CategoryName</dd>
+
+        <dt class="col-sm-3">Default Price</dt>
+        <dd class="col-sm-9">@("₱" + Model.DefaultPrice.ToString("N2"))</dd>
+
+        <dt class="col-sm-3">Status</dt>
+        <dd class="col-sm-9">
+            @if (Model.IsActive)
+            {
+                <span class="badge badge-active">Active</span>
+            }
+            else
+            {
+                <span class="badge badge-inactive">Inactive</span>
+            }
+        </dd>
+
+        @if (!string.IsNullOrEmpty(Model.Description))
+        {
+            <dt class="col-sm-3">Description</dt>
+            <dd class="col-sm-9">@Model.Description</dd>
+        }
+    </dl>
+</div>

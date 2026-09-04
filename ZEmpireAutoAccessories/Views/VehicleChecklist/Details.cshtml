@@ -1,0 +1,94 @@
+﻿@model ZEmpireAutoAccessories.Models.VehicleChecklist
+
+@{
+    ViewData["Title"] = "Vehicle Checklist";
+    var panels = ViewData["Panels"] as List<ZEmpireAutoAccessories.Models.Panel> ?? new();
+}
+
+<style>
+    .zx-page-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+    .zx-page-head h1 { font-family:'Oswald',system-ui,sans-serif; font-weight:700; font-size:22px; margin:0; color:#0b0b0c; }
+    .zx-card { background:#fff; border:1px solid #e8ebf0; border-radius:14px; padding:22px; margin-bottom:18px; }
+    dt { color:#7b8290; font-weight:600; font-size:12.5px; text-transform:uppercase; letter-spacing:.3px; }
+    dd { margin-bottom:14px; font-size:15px; color:#0b0b0c; }
+
+    /* Panel grid uses CSS grid rows instead of a <table>, since each row
+       needs to be its own form - form can't be a direct child of
+       <table>/<tbody> per HTML rules. */
+    .panel-grid { display:flex; flex-direction:column; }
+    .panel-row { display:grid; grid-template-columns: 1fr 1.3fr 1.3fr auto; gap:12px; align-items:center;
+                 padding:10px 0; border-bottom:1px solid #eef0f3; }
+    .panel-row.panel-header { font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.3px; color:#7b8290; border-bottom:2px solid #e8ebf0; }
+    .panel-row .form-control { font-size:13.5px; padding:.35rem .6rem; }
+</style>
+
+<div class="zx-page-head">
+    <h1>Vehicle Checklist</h1>
+    <a class="btn btn-outline-secondary" asp-action="Index">Back to list</a>
+</div>
+
+<div class="zx-card">
+    <dl class="row mb-0">
+        <dt class="col-sm-3">Job Order</dt>
+        <dd class="col-sm-9">@Model.JobOrder.JobOrderNumber</dd>
+
+        <dt class="col-sm-3">Customer</dt>
+        <dd class="col-sm-9">@Model.JobOrder.Customer.FullName</dd>
+
+        <dt class="col-sm-3">Vehicle</dt>
+        <dd class="col-sm-9">@(Model.JobOrder.Vehicle.PlateNumber ?? "—") — @Model.JobOrder.Vehicle.Brand @Model.JobOrder.Vehicle.Model</dd>
+
+        <dt class="col-sm-3">Date</dt>
+        <dd class="col-sm-9">@Model.ChecklistDate.ToString("MMM d, yyyy")</dd>
+
+        <dt class="col-sm-3">Recorded By</dt>
+        <dd class="col-sm-9">@Model.User.UserName</dd>
+
+        @if (!string.IsNullOrEmpty(Model.AdditionalNotes))
+        {
+            <dt class="col-sm-3">Additional Notes</dt>
+            <dd class="col-sm-9">@Model.AdditionalNotes</dd>
+        }
+
+        @if (!string.IsNullOrEmpty(Model.ClientSignature))
+        {
+            <dt class="col-sm-3">Client Confirmation</dt>
+            <dd class="col-sm-9">@Model.ClientSignature</dd>
+        }
+    </dl>
+</div>
+
+<div class="zx-card">
+    <h6 class="mb-3">Panel Conditions</h6>
+    <div class="panel-grid">
+        <div class="panel-row panel-header">
+            <div>Panel</div>
+            <div>Existing Condition</div>
+            <div>Notes</div>
+            <div></div>
+        </div>
+        @foreach (var panel in panels)
+        {
+            var detail = Model.Details.FirstOrDefault(d => d.PanelID == panel.PanelID);
+            <form asp-action="SaveDetail" method="post" class="panel-row">
+                <input type="hidden" name="checklistId" value="@Model.ChecklistID" />
+                <input type="hidden" name="panelId" value="@panel.PanelID" />
+                <div>@panel.PanelName</div>
+                <div>
+                    <input type="text" name="existingCondition" class="form-control"
+                           value="@(detail?.ExistingCondition)" placeholder="e.g. Good, Scratched, Dented" />
+                </div>
+                <div>
+                    <input type="text" name="notes" class="form-control" value="@(detail?.Notes)" />
+                </div>
+                <div>
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">Save</button>
+                </div>
+            </form>
+        }
+        @if (!panels.Any())
+        {
+            <p class="text-muted mb-0 mt-2">No panels defined in the catalog yet.</p>
+        }
+    </div>
+</div>

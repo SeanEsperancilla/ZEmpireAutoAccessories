@@ -1,0 +1,170 @@
+﻿@model IEnumerable<ZEmpireAutoAccessories.Models.Warranty>
+
+@{
+    ViewData["Title"] = "Warranty";
+    var status = ViewData["Status"] as string;
+}
+
+<style>
+    .zx-page-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+    }
+
+        .zx-page-head h1 {
+            font-family: 'Oswald',system-ui,sans-serif;
+            font-weight: 700;
+            font-size: 22px;
+            margin: 0;
+            color: #0b0b0c;
+        }
+
+    .btn-zx {
+        background: var(--zx-red);
+        border-color: var(--zx-red);
+        color: #fff;
+        font-weight: 600;
+    }
+
+        .btn-zx:hover {
+            background: var(--zx-red2);
+            border-color: var(--zx-red2);
+            color: #fff;
+        }
+
+    .zx-card {
+        background: #fff;
+        border: 1px solid #e8ebf0;
+        border-radius: 14px;
+        overflow: hidden;
+    }
+
+    .zx-table thead {
+        background: #0b0b0c;
+        color: #fff;
+    }
+
+        .zx-table thead th {
+            border-bottom: none;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+        }
+
+    .zx-table td, .zx-table th {
+        vertical-align: middle;
+    }
+
+    .zx-actions a {
+        margin-right: 10px;
+        font-weight: 600;
+        font-size: 13.5px;
+    }
+
+    .badge-active {
+        background: rgba(34,197,94,.15);
+        color: #15803d;
+        font-weight: 600;
+    }
+
+    .badge-expired {
+        background: rgba(148,163,184,.2);
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    .badge-voided {
+        background: rgba(239,68,68,.15);
+        color: #b91c1c;
+        font-weight: 600;
+    }
+
+    .badge-claimed {
+        background: rgba(245,158,11,.15);
+        color: #b45309;
+        font-weight: 600;
+    }
+
+    .status-filters a {
+        margin-right: 8px;
+        font-size: 13px;
+    }
+</style>
+
+<div class="zx-page-head">
+    <h1>Warranty</h1>
+    <a class="btn btn-zx" asp-action="Create">+ New Warranty</a>
+</div>
+
+<div class="status-filters mb-3">
+    <a asp-action="Index" class="@(status == null ? "fw-bold" : "")">All</a>
+    <a asp-action="Index" asp-route-status="Active" class="@(status == "Active" ? "fw-bold" : "")">Active</a>
+    <a asp-action="Index" asp-route-status="Expired" class="@(status == "Expired" ? "fw-bold" : "")">Expired</a>
+    <a asp-action="Index" asp-route-status="Claimed" class="@(status == "Claimed" ? "fw-bold" : "")">Claimed</a>
+    <a asp-action="Index" asp-route-status="Voided" class="@(status == "Voided" ? "fw-bold" : "")">Voided</a>
+</div>
+
+<div class="zx-card">
+    <table class="table zx-table mb-0">
+        <thead>
+            <tr>
+                <th>Linked To</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Status</th>
+                <th class="text-end pe-3">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>
+                        @if (item.SalesDetail != null)
+                        {
+                            @($"Sale {item.SalesDetail.Sale.InvoiceNumber} — {item.SalesDetail.Product.ProductName}")
+                        }
+                        else if (item.ServiceInvoiceDetail != null)
+                        {
+                            @($"Invoice {item.ServiceInvoiceDetail.ServiceInvoice.InvoiceNumber}")
+                        }
+                        else if (item.JobOrder != null)
+                        {
+                            @($"Job Order {item.JobOrder.JobOrderNumber}")
+                        }
+                        else
+                        {
+                            @:—
+                        }
+                    </td>
+                    <td>@(item.WarrantyStartDate?.ToString("MMM d, yyyy") ?? "—")</td>
+                    <td>@(item.WarrantyEndDate?.ToString("MMM d, yyyy") ?? "—")</td>
+                    <td>
+                        @if (!string.IsNullOrEmpty(item.WarrantyStatus))
+                        {
+                            <span class="badge badge-@item.WarrantyStatus.ToLower()">@item.WarrantyStatus</span>
+                        }
+                        else
+                        {
+                            @:—
+                        }
+                    </td>
+                    <td class="text-end pe-3 zx-actions">
+                        <a asp-action="Details" asp-route-id="@item.WarrantyID">View</a>
+                        <a asp-action="Edit" asp-route-id="@item.WarrantyID">Edit</a>
+                        <a asp-action="Delete" asp-route-id="@item.WarrantyID" class="text-danger">Delete</a>
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-4">No warranty records yet.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

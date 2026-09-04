@@ -1,0 +1,162 @@
+﻿@using ZEmpireAutoAccessories.Models
+@{
+    ViewData["Title"] = "New Sale";
+    var products = ViewData["Products"] as List<Product> ?? new();
+}
+
+<style>
+    .zx-page-head h1 {
+        font-family: 'Oswald',system-ui,sans-serif;
+        font-weight: 700;
+        font-size: 22px;
+        margin: 0 0 18px;
+        color: #0b0b0c;
+    }
+
+    .zx-card {
+        background: #fff;
+        border: 1px solid #e8ebf0;
+        border-radius: 14px;
+        padding: 24px;
+        max-width: 900px;
+    }
+
+    .btn-zx {
+        background: var(--zx-red);
+        border-color: var(--zx-red);
+        color: #fff;
+        font-weight: 600;
+    }
+
+        .btn-zx:hover {
+            background: var(--zx-red2);
+            border-color: var(--zx-red2);
+            color: #fff;
+        }
+
+    .zx-table thead {
+        background: #0b0b0c;
+        color: #fff;
+    }
+
+        .zx-table thead th {
+            border-bottom: none;
+            font-weight: 600;
+            font-size: 12.5px;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+        }
+
+    #grandTotal {
+        font-weight: 700;
+        font-size: 18px;
+    }
+</style>
+
+<div class="zx-page-head">
+    <h1>New Sale</h1>
+</div>
+
+<div class="zx-card">
+    <form asp-action="Create" method="post" id="saleForm">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Customer</label>
+                <select name="customerId" class="form-select" asp-items="ViewBag.CustomerID" required>
+                    <option value="">-- Select Customer --</option>
+                </select>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Vehicle <span class="text-muted fw-normal">(optional)</span></label>
+                <select name="vehicleId" class="form-select" asp-items="ViewBag.VehicleID">
+                    <option value="">-- None --</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="mb-3 col-md-4">
+            <label class="form-label">Payment Mode</label>
+            <select name="paymentModeId" class="form-select" asp-items="ViewBag.PaymentModeID" required>
+                <option value="">-- Select Payment Mode --</option>
+            </select>
+        </div>
+
+        <h6 class="mt-4 mb-2">Line Items</h6>
+        <table class="table zx-table" id="linesTable">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th style="width:110px;">Qty</th>
+                    <th style="width:150px;">Unit Price</th>
+                    <th style="width:60px;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="line-row">
+                    <td>
+                        <select name="productId" class="form-select product-select" required>
+                            <option value="">-- Select Product --</option>
+                            @foreach (var p in products)
+                            {
+                                <option value="@p.ProductID" data-price="@p.DefaultPrice">@p.ProductName</option>
+                            }
+                        </select>
+                    </td>
+                    <td><input type="number" name="quantity" class="form-control" value="1" min="1" required /></td>
+                    <td><input type="number" step="0.01" name="unitPrice" class="form-control unit-price" min="0" required /></td>
+                    <td><button type="button" class="btn btn-sm btn-outline-danger remove-row">&times;</button></td>
+                </tr>
+            </tbody>
+        </table>
+        <button type="button" class="btn btn-outline-secondary btn-sm mb-3" id="addRow">+ Add Line</button>
+
+        <div class="text-end mb-3">
+            Total: <span id="grandTotal">₱0.00</span>
+        </div>
+
+        <button type="submit" class="btn btn-zx">Complete Sale</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        $(function() {
+            function recalcTotal() {
+                var total = 0;
+                $('.line-row').each(function() {
+                    var qty = parseFloat($(this).find('input[name=quantity]').val()) || 0;
+                    var price = parseFloat($(this).find('input[name=unitPrice]').val()) || 0;
+                    total += qty * price;
+                });
+                $('#grandTotal').text('₱' + total.toFixed(2));
+            }
+
+            $(document).on('change', '.product-select', function() {
+                var price = $(this).find(':selected').data('price');
+                if (price !== undefined && price !== '') {
+                    $(this).closest('tr').find('.unit-price').val(parseFloat(price).toFixed(2));
+                }
+                recalcTotal();
+            });
+
+            $(document).on('input', 'input[name=quantity], input[name=unitPrice]', recalcTotal);
+
+            $('#addRow').on('click', function() {
+                var newRow = $('.line-row').first().clone();
+                newRow.find('select, input').val('');
+                newRow.find('input[name=quantity]').val(1);
+                $('#linesTable tbody').append(newRow);
+            });
+
+            $(document).on('click', '.remove-row', function() {
+                if ($('.line-row').length > 1) {
+                    $(this).closest('tr').remove();
+                    recalcTotal();
+                }
+            });
+        });
+    </script>
+}

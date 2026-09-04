@@ -1,0 +1,188 @@
+﻿@model IEnumerable<ZEmpireAutoAccessories.Models.VwServiceInvoiceSummary>
+
+@{
+    ViewData["Title"] = "Service Invoices Report";
+    var from = ViewData["From"] as DateOnly?;
+    var to = ViewData["To"] as DateOnly?;
+    var status = ViewData["Status"] as string;
+    var total = (decimal)ViewData["Total"]!;
+}
+
+<style>
+    .zx-page-head h1 {
+        font-family: 'Oswald',system-ui,sans-serif;
+        font-weight: 700;
+        font-size: 22px;
+        margin: 0 0 18px;
+        color: #0b0b0c;
+    }
+
+    .report-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+    }
+
+        .report-tabs a {
+            padding: 7px 16px;
+            border-radius: 999px;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: #4b5563;
+            background: #fff;
+            border: 1px solid #e8ebf0;
+            text-decoration: none;
+        }
+
+            .report-tabs a.active, .report-tabs a:hover {
+                background: #0b0b0c;
+                color: #fff;
+                border-color: #0b0b0c;
+            }
+
+    .zx-card {
+        background: #fff;
+        border: 1px solid #e8ebf0;
+        border-radius: 14px;
+        overflow: hidden;
+    }
+
+    .zx-table thead {
+        background: #0b0b0c;
+        color: #fff;
+    }
+
+        .zx-table thead th {
+            border-bottom: none;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+        }
+
+    .zx-table td, .zx-table th {
+        vertical-align: middle;
+    }
+
+    .totals-row td {
+        font-weight: 600;
+    }
+
+    .btn-zx {
+        background: var(--zx-red);
+        border-color: var(--zx-red);
+        color: #fff;
+        font-weight: 600;
+    }
+
+        .btn-zx:hover {
+            background: var(--zx-red2);
+            border-color: var(--zx-red2);
+            color: #fff;
+        }
+
+    .badge-paid {
+        background: rgba(34,197,94,.15);
+        color: #15803d;
+        font-weight: 600;
+    }
+
+    .badge-pending {
+        background: rgba(148,163,184,.2);
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    .badge-cancelled {
+        background: rgba(239,68,68,.15);
+        color: #b91c1c;
+        font-weight: 600;
+    }
+
+    .badge-refunded {
+        background: rgba(245,158,11,.15);
+        color: #b45309;
+        font-weight: 600;
+    }
+</style>
+
+<div class="zx-page-head">
+    <h1>Service Invoices Report</h1>
+</div>
+
+<div class="report-tabs">
+    <a asp-action="Index">Overview</a>
+    <a asp-action="Sales">Sales</a>
+    <a asp-action="JobOrders">Job Orders</a>
+    <a asp-action="ServiceInvoices" class="active">Service Invoices</a>
+    <a asp-action="Quotations">Quotations</a>
+</div>
+
+<form method="get" class="row g-2 align-items-end mb-3">
+    <div class="col-auto">
+        <label class="form-label">From</label>
+        <input type="date" name="from" class="form-control" value="@from?.ToString("yyyy-MM-dd")" />
+    </div>
+    <div class="col-auto">
+        <label class="form-label">To</label>
+        <input type="date" name="to" class="form-control" value="@to?.ToString("yyyy-MM-dd")" />
+    </div>
+    <div class="col-auto">
+        <label class="form-label">Status</label>
+        <select name="status" class="form-select">
+            <option value="">All</option>
+            <option value="Paid" selected="@(status == "Paid")">Paid</option>
+            <option value="Pending" selected="@(status == "Pending")">Pending</option>
+            <option value="Cancelled" selected="@(status == "Cancelled")">Cancelled</option>
+            <option value="Refunded" selected="@(status == "Refunded")">Refunded</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-zx">Filter</button>
+        <a asp-action="ServiceInvoices" class="btn btn-outline-secondary">Clear</a>
+    </div>
+</form>
+
+<div class="zx-card">
+    <table class="table zx-table mb-0">
+        <thead>
+            <tr>
+                <th>Invoice #</th>
+                <th>Date</th>
+                <th>Customer</th>
+                <th>Job Order</th>
+                <th>Status</th>
+                <th>Processed By</th>
+                <th>Total</th>
+                <th>Amount Paid</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.InvoiceNumber</td>
+                    <td>@item.InvoiceDate.ToString("MMM d, yyyy")</td>
+                    <td>@item.CustomerName</td>
+                    <td>@(item.JobOrderNumber ?? "—")</td>
+                    <td><span class="badge badge-@item.Status.ToLower()">@item.Status</span></td>
+                    <td>@item.ProcessedBy</td>
+                    <td>@("₱" + item.TotalAmount.ToString("N2"))</td>
+                    <td>@("₱" + item.AmountPaid.ToString("N2"))</td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-4">No service invoices found for this range.</td>
+                </tr>
+            }
+            <tr class="totals-row">
+                <td colspan="6" class="text-end">Total</td>
+                <td>@("₱" + total.ToString("N2"))</td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+</div>

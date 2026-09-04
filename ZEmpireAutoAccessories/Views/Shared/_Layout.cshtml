@@ -108,6 +108,38 @@
                                             {
                                                 <li><a class="dropdown-item" asp-controller="Inventory" asp-action="Index">Inventory</a></li>
                                             }
+                                            else if (m == "Sales")
+                                            {
+                                            <li><a class="dropdown-item" asp-controller="Sales" asp-action="Index">Sales</a></li>
+                                            }
+                                            else if (m == "Vehicle Checklist")
+                                            {
+                                                <li><a class="dropdown-item" asp-controller="VehicleChecklist" asp-action="Index">Vehicle Checklist</a></li>
+                                            }
+                                            else if (m == "Service Invoices")
+                                            {
+                                                <li><a class="dropdown-item" asp-controller="ServiceInvoice" asp-action="Index">Service Invoices</a></li>
+                                            }
+                                            else if (m == "Warranty")
+                                            {
+                                                <li><a class="dropdown-item" asp-controller="Warranty" asp-action="Index">Warranty</a></li>
+                                            }
+                                            else if (m == "Reports")
+                                            {
+                                                <li><a class="dropdown-item" asp-controller="Report" asp-action="Index">Reports</a></li>
+                                            }
+                                            else if (m == "Services")
+                                            {
+                                                <li><a class="dropdown-item" asp-controller="Service" asp-action="Index">Services</a></li>
+                                            }
+                                            else if (m == "Roles")
+                                            {
+                                                <li><a class="dropdown-item" asp-controller="Security" asp-action="Index">Roles</a></li>
+                                            }
+                                            else if (m == "Quotation")
+                                            {
+                                                <li><a class="dropdown-item" asp-controller="Quotation" asp-action="Index">Quotation</a></li>
+                                            }
                                             else
                                             {
                                                 <li><span class="dropdown-item disabled">@m</span></li>

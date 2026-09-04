@@ -14,7 +14,11 @@ namespace ZEmpireAutoAccessories.Services.Interfaces
         /// </summary>
         Task<int> ConvertToJobOrder(int quotationId, string userId, string jobOrderNumber);
 
-        /// <summary>Reserve the next invoice number via dbo.GetNextInvoiceNumber.</summary>
-        Task<string> GetNextInvoiceNumber(string userId);
+        /// <summary>
+        /// Reserve the next invoice number via dbo.GetNextInvoiceNumber. Also
+        /// returns the InvoiceNoSeriesID the number was drawn from, since
+        /// ServiceInvoice.InvoiceNoSeriesID is a required FK back to it.
+        /// </summary>
+        Task<(string InvoiceNumber, int InvoiceNoSeriesID)> GetNextInvoiceNumber(string userId);
     }
 }

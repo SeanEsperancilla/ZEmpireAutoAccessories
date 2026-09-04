@@ -1,0 +1,288 @@
+﻿@model ZEmpireAutoAccessories.Models.ServiceInvoice
+
+@{
+    ViewData["Title"] = "Service Invoice Details";
+}
+
+<style>
+    .zx-page-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+    }
+
+        .zx-page-head h1 {
+            font-family: 'Oswald',system-ui,sans-serif;
+            font-weight: 700;
+            font-size: 22px;
+            margin: 0;
+            color: #0b0b0c;
+        }
+
+    .zx-card {
+        background: #fff;
+        border: 1px solid #e8ebf0;
+        border-radius: 14px;
+        padding: 22px;
+        margin-bottom: 18px;
+    }
+
+    dt {
+        color: #7b8290;
+        font-weight: 600;
+        font-size: 12.5px;
+        text-transform: uppercase;
+        letter-spacing: .3px;
+    }
+
+    dd {
+        margin-bottom: 14px;
+        font-size: 15px;
+        color: #0b0b0c;
+    }
+
+    .btn-zx {
+        background: var(--zx-red);
+        border-color: var(--zx-red);
+        color: #fff;
+        font-weight: 600;
+    }
+
+        .btn-zx:hover {
+            background: var(--zx-red2);
+            border-color: var(--zx-red2);
+            color: #fff;
+        }
+
+    .zx-table thead {
+        background: #0b0b0c;
+        color: #fff;
+    }
+
+        .zx-table thead th {
+            border-bottom: none;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+        }
+
+    .badge-paid {
+        background: rgba(34,197,94,.15);
+        color: #15803d;
+        font-weight: 600;
+    }
+
+    .badge-pending {
+        background: rgba(148,163,184,.2);
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    .badge-cancelled {
+        background: rgba(239,68,68,.15);
+        color: #b91c1c;
+        font-weight: 600;
+    }
+
+    .badge-refunded {
+        background: rgba(245,158,11,.15);
+        color: #b45309;
+        font-weight: 600;
+    }
+
+    .totals-row td {
+        font-weight: 600;
+    }
+
+    .status-actions form {
+        display: inline;
+        margin-right: 8px;
+    }
+</style>
+
+<div class="zx-page-head">
+    <h1>Invoice @Model.InvoiceNumber</h1>
+    <div>
+        <a class="btn btn-outline-secondary" asp-action="Edit" asp-route-id="@Model.ServiceInvoiceID">Edit</a>
+        <a class="btn btn-outline-secondary" asp-action="Index">Back to list</a>
+    </div>
+</div>
+
+<div class="zx-card">
+    <dl class="row mb-3">
+        <dt class="col-sm-3">Customer</dt>
+        <dd class="col-sm-9">@Model.Customer.FullName</dd>
+
+        <dt class="col-sm-3">Vehicle</dt>
+        <dd class="col-sm-9">@(Model.Vehicle != null ? $"{Model.Vehicle.PlateNumber ?? "No Plate"} — {Model.Vehicle.Brand} {Model.Vehicle.Model}" : "—")</dd>
+
+        <dt class="col-sm-3">Job Order</dt>
+        <dd class="col-sm-9">@(Model.JobOrder?.JobOrderNumber ?? "—")</dd>
+
+        <dt class="col-sm-3">Payment Mode</dt>
+        <dd class="col-sm-9">@Model.PaymentMode.PaymentModeName</dd>
+
+        <dt class="col-sm-3">Invoice Date</dt>
+        <dd class="col-sm-9">@Model.InvoiceDate.ToString("MMM d, yyyy")</dd>
+
+        <dt class="col-sm-3">Status</dt>
+        <dd class="col-sm-9"><span class="badge badge-@Model.Status.ToLower()">@Model.Status</span></dd>
+
+        <dt class="col-sm-3">Sub Total</dt>
+        <dd class="col-sm-9">@("₱" + Model.SubTotal.ToString("N2"))</dd>
+
+        <dt class="col-sm-3">Discount</dt>
+        <dd class="col-sm-9">@("₱" + Model.DiscountAmount.ToString("N2"))</dd>
+
+        <dt class="col-sm-3">Tax</dt>
+        <dd class="col-sm-9">@("₱" + Model.TaxAmount.ToString("N2"))</dd>
+
+        <dt class="col-sm-3">Total Amount</dt>
+        <dd class="col-sm-9">@("₱" + Model.TotalAmount.ToString("N2"))</dd>
+
+        <dt class="col-sm-3">Amount Paid</dt>
+        <dd class="col-sm-9">@("₱" + Model.AmountPaid.ToString("N2"))</dd>
+
+        <dt class="col-sm-3">Change</dt>
+        <dd class="col-sm-9">@("₱" + Model.ChangeAmount.ToString("N2"))</dd>
+
+        @if (!string.IsNullOrEmpty(Model.Remarks))
+        {
+            <dt class="col-sm-3">Remarks</dt>
+            <dd class="col-sm-9">@Model.Remarks</dd>
+        }
+    </dl>
+
+    <div class="status-actions">
+        @if (Model.Status != "Paid")
+        {
+            <form asp-action="SetStatus" method="post">
+                <input type="hidden" name="id" value="@Model.ServiceInvoiceID" />
+                <input type="hidden" name="status" value="Paid" />
+                <button type="submit" class="btn btn-sm btn-zx">Mark Paid</button>
+            </form>
+        }
+        @if (Model.Status != "Pending")
+        {
+            <form asp-action="SetStatus" method="post">
+                <input type="hidden" name="id" value="@Model.ServiceInvoiceID" />
+                <input type="hidden" name="status" value="Pending" />
+                <button type="submit" class="btn btn-sm btn-outline-secondary">Mark Pending</button>
+            </form>
+        }
+        @if (Model.Status != "Refunded")
+        {
+            <form asp-action="SetStatus" method="post">
+                <input type="hidden" name="id" value="@Model.ServiceInvoiceID" />
+                <input type="hidden" name="status" value="Refunded" />
+                <button type="submit" class="btn btn-sm btn-outline-secondary">Mark Refunded</button>
+            </form>
+        }
+        @if (Model.Status != "Cancelled")
+        {
+            <form asp-action="SetStatus" method="post">
+                <input type="hidden" name="id" value="@Model.ServiceInvoiceID" />
+                <input type="hidden" name="status" value="Cancelled" />
+                <button type="submit" class="btn btn-sm btn-outline-secondary">Cancel Invoice</button>
+            </form>
+        }
+    </div>
+</div>
+
+<div class="zx-card">
+    <h6 class="mb-3">Line Items</h6>
+    <table class="table zx-table mb-3">
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th>Qty</th>
+                <th>Unit</th>
+                <th>Unit Price</th>
+                <th>Discount</th>
+                <th>Sub Total</th>
+                <th class="text-end pe-3">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var line in Model.Details)
+            {
+                <tr>
+                    <td>
+                        @(line.Product?.ProductName ?? line.Service?.ServiceName ?? "—")
+                        @if (!string.IsNullOrEmpty(line.Description))
+                        {
+                            <div class="text-muted small">@line.Description</div>
+                        }
+                    </td>
+                    <td>@line.Quantity</td>
+                    <td>@line.Unit</td>
+                    <td>@("₱" + line.UnitPrice.ToString("N2"))</td>
+                    <td>@("₱" + line.DiscountAmount.ToString("N2"))</td>
+                    <td>@("₱" + line.SubTotal.ToString("N2"))</td>
+                    <td class="text-end pe-3">
+                        <form asp-action="RemoveLine" method="post" class="d-inline"
+                              onsubmit="return confirm('Remove this line item?');">
+                            <input type="hidden" name="detailId" value="@line.ServiceInvoiceDetailID" />
+                            <input type="hidden" name="serviceInvoiceId" value="@Model.ServiceInvoiceID" />
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            @if (!Model.Details.Any())
+            {
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-3">No line items yet.</td>
+                </tr>
+            }
+            <tr class="totals-row">
+                <td colspan="5" class="text-end">Total</td>
+                <td colspan="2">@("₱" + Model.TotalAmount.ToString("N2"))</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h6 class="mb-3">Add Line Item</h6>
+    <form asp-action="AddLine" method="post" class="row g-2 align-items-end">
+        <input type="hidden" name="serviceInvoiceId" value="@Model.ServiceInvoiceID" />
+
+        <div class="col-md-2">
+            <label class="form-label">Product</label>
+            <select name="productId" class="form-select" asp-items="ViewBag.ProductID">
+                <option value="">-- None --</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Service</label>
+            <select name="serviceId" class="form-select" asp-items="ViewBag.ServiceID">
+                <option value="">-- None --</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Description</label>
+            <input type="text" name="description" class="form-control" placeholder="Required" />
+        </div>
+        <div class="col-md-1">
+            <label class="form-label">Qty</label>
+            <input type="number" step="0.01" name="quantity" class="form-control" value="1" min="0.01" />
+        </div>
+        <div class="col-md-1">
+            <label class="form-label">Unit</label>
+            <input type="text" name="unit" class="form-control" value="Unit" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Price</label>
+            <input type="number" step="0.01" name="unitPrice" class="form-control" value="0" min="0" />
+        </div>
+        <div class="col-md-1">
+            <label class="form-label">Disc.</label>
+            <input type="number" step="0.01" name="discountAmount" class="form-control" value="0" min="0" />
+        </div>
+        <div class="col-md-1">
+            <button type="submit" class="btn btn-zx w-100">Add</button>
+        </div>
+    </form>
+    <div class="form-text mt-2">Pick either a Product or a Service for the line item. Description is required.</div>
+</div>
