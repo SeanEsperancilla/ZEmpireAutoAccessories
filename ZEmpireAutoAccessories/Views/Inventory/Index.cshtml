@@ -49,6 +49,25 @@
         color: #b91c1c;
         font-weight: 600;
     }
+
+    .icon-btn {
+        width: 32px;
+        height: 32px;
+        display: inline-grid;
+        place-items: center;
+        border-radius: 8px;
+        border: 1px solid #e8ebf0;
+        background: #fff;
+        color: #4b5563;
+        transition: all .15s ease;
+        text-decoration: none;
+    }
+
+        .icon-btn:hover {
+            background: #0b0b0c;
+            color: #fff;
+            border-color: #0b0b0c;
+        }
 </style>
 
 <div class="zx-page-head">
@@ -83,7 +102,9 @@
                         }
                     </td>
                     <td class="text-end pe-3">
-                        <a asp-action="Details" asp-route-id="@item.ProductID">Manage Stock</a>
+                        <a asp-action="Details" asp-route-id="@item.ProductID" class="icon-btn" title="Manage stock">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1" /><path d="M4 8v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V8" /><path d="M10 12h4" /></svg>
+                        </a>
                     </td>
                 </tr>
             }

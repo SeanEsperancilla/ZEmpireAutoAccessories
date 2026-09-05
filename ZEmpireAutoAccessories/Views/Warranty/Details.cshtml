@@ -5,20 +5,73 @@
 }
 
 <style>
-    .zx-page-head {
+    .wty-hero {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        margin-bottom: 18px;
+        gap: 18px;
+        background: #fff;
+        border: 1px solid #e8ebf0;
+        border-radius: 14px;
+        padding: 22px 24px;
+        margin-bottom: 22px;
     }
 
-        .zx-page-head h1 {
-            font-family: 'Oswald',system-ui,sans-serif;
-            font-weight: 700;
-            font-size: 22px;
-            margin: 0;
-            color: #0b0b0c;
+    .wty-hero-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        flex: none;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg,#fde8e9,#fbd3d5);
+        color: #c0202a;
+    }
+
+    .wty-hero h1 {
+        font-family: 'Oswald',system-ui,sans-serif;
+        font-weight: 700;
+        font-size: 21px;
+        margin: 0 0 4px;
+        color: #0b0b0c;
+    }
+
+    .wty-hero .meta {
+        color: #7b8290;
+        font-size: 13.5px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .wty-hero .actions {
+        margin-left: auto;
+        display: flex;
+        gap: 8px;
+        flex: none;
+    }
+
+    .btn-zx {
+        background: var(--zx-red);
+        border-color: var(--zx-red);
+        color: #fff;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+    }
+
+        .btn-zx:hover {
+            background: var(--zx-red2);
+            border-color: var(--zx-red2);
+            color: #fff;
         }
+
+    .btn-outline-secondary {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+    }
 
     .zx-card {
         background: #fff;
@@ -65,55 +118,68 @@
         color: #b45309;
         font-weight: 600;
     }
+
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: #4b5563;
+        font-weight: 600;
+        font-size: 13.5px;
+        text-decoration: none;
+    }
+
+        .back-link:hover {
+            color: #0b0b0c;
+        }
 </style>
 
-<div class="zx-page-head">
-    <h1>Warranty #@Model.WarrantyID</h1>
+<div class="wty-hero">
+    <span class="wty-hero-icon">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /><path d="m9 12 2 2 4-4" /></svg>
+    </span>
     <div>
-        <a class="btn btn-outline-secondary" asp-action="Edit" asp-route-id="@Model.WarrantyID">Edit</a>
-        <a class="btn btn-outline-secondary" asp-action="Index">Back to list</a>
+        <h1>Warranty #@Model.WarrantyID</h1>
+        <div class="meta">
+            <span>
+                @if (Model.SalesDetail != null)
+                {
+                    @:Sale @Model.SalesDetail.Sale.InvoiceNumber — @Model.SalesDetail.Product.ProductName (Qty @Model.SalesDetail.Quantity)
+                }
+                else if (Model.ServiceInvoiceDetail != null)
+                {
+                    @:Service Invoice @Model.ServiceInvoiceDetail.ServiceInvoice.InvoiceNumber — @Model.ServiceInvoiceDetail.Description
+                }
+                else if (Model.JobOrder != null)
+                {
+                    @:Job Order @Model.JobOrder.JobOrderNumber — @Model.JobOrder.Customer.FullName
+                }
+                else
+                {
+                    @:Not linked to any record
+                }
+            </span>
+            @if (!string.IsNullOrEmpty(Model.WarrantyStatus))
+            {
+                <span class="badge badge-@Model.WarrantyStatus.ToLower()">@Model.WarrantyStatus</span>
+            }
+        </div>
+    </div>
+    <div class="actions">
+        <a class="btn btn-zx" asp-action="Edit" asp-route-id="@Model.WarrantyID">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+            Edit
+        </a>
     </div>
 </div>
 
 <div class="zx-card">
     <dl class="row mb-0">
-        <dt class="col-sm-3">Linked To</dt>
-        <dd class="col-sm-9">
-            @if (Model.SalesDetail != null)
-            {
-                @:Sale @Model.SalesDetail.Sale.InvoiceNumber — @Model.SalesDetail.Product.ProductName (Qty @Model.SalesDetail.Quantity)
-            }
-            else if (Model.ServiceInvoiceDetail != null)
-            {
-                @:Service Invoice @Model.ServiceInvoiceDetail.ServiceInvoice.InvoiceNumber — @Model.ServiceInvoiceDetail.Description
-            }
-            else if (Model.JobOrder != null)
-            {
-                @:Job Order @Model.JobOrder.JobOrderNumber — @Model.JobOrder.Customer.FullName
-            }
-            else
-            {
-                @:—
-            }
-        </dd>
-
         <dt class="col-sm-3">Warranty Start</dt>
         <dd class="col-sm-9">@(Model.WarrantyStartDate?.ToString("MMM d, yyyy") ?? "—")</dd>
 
         <dt class="col-sm-3">Warranty End</dt>
         <dd class="col-sm-9">@(Model.WarrantyEndDate?.ToString("MMM d, yyyy") ?? "—")</dd>
-
-        <dt class="col-sm-3">Status</dt>
-        <dd class="col-sm-9">
-            @if (!string.IsNullOrEmpty(Model.WarrantyStatus))
-            {
-                <span class="badge badge-@Model.WarrantyStatus.ToLower()">@Model.WarrantyStatus</span>
-            }
-            else
-            {
-                @:—
-            }
-        </dd>
 
         @if (!string.IsNullOrEmpty(Model.WarrantyTerms))
         {
@@ -134,3 +200,8 @@
         }
     </dl>
 </div>
+
+<a asp-action="Index" class="back-link">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></svg>
+    Back to list
+</a>

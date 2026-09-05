@@ -37,6 +37,26 @@
         vertical-align: middle;
     }
 
+    .icon-btn {
+        width: 32px;
+        height: 32px;
+        display: inline-grid;
+        place-items: center;
+        border-radius: 8px;
+        border: 1px solid #e8ebf0;
+        background: #fff;
+        color: #4b5563;
+        margin-left: 6px;
+        transition: all .15s ease;
+        text-decoration: none;
+    }
+
+        .icon-btn:hover {
+            background: #0b0b0c;
+            color: #fff;
+            border-color: #0b0b0c;
+        }
+
     .up {
         color: #b91c1c;
         font-weight: 600;
@@ -78,7 +98,9 @@
                     <td class="@(h.NewPrice > h.OldPrice ? "up" : "down")">@("₱" + h.NewPrice.ToString("N2"))</td>
                     <td>@h.User.UserName</td>
                     <td class="text-end pe-3">
-                        <a asp-controller="Pricing" asp-action="Details" asp-route-id="@h.PricingID">View Pricing</a>
+                        <a asp-controller="Pricing" asp-action="Details" asp-route-id="@h.PricingID" class="icon-btn" title="View pricing">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /><circle cx="12" cy="12" r="3" /></svg>
+                        </a>
                     </td>
                 </tr>
             }

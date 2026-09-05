@@ -58,11 +58,31 @@
         vertical-align: middle;
     }
 
-    .zx-actions a {
-        margin-right: 10px;
-        font-weight: 600;
-        font-size: 13.5px;
+    .icon-btn {
+        width: 32px;
+        height: 32px;
+        display: inline-grid;
+        place-items: center;
+        border-radius: 8px;
+        border: 1px solid #e8ebf0;
+        background: #fff;
+        color: #4b5563;
+        margin-left: 6px;
+        transition: all .15s ease;
+        text-decoration: none;
     }
+
+        .icon-btn:hover {
+            background: #0b0b0c;
+            color: #fff;
+            border-color: #0b0b0c;
+        }
+
+        .icon-btn.danger:hover {
+            background: #dc2626;
+            color: #fff;
+            border-color: #dc2626;
+        }
 
     .badge-draft {
         background: rgba(148,163,184,.2);
@@ -88,10 +108,54 @@
         font-weight: 600;
     }
 
-    .status-filters a {
-        margin-right: 8px;
-        font-size: 13px;
+    .status-filters {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
     }
+
+    .status-pill {
+        padding: 7px 16px;
+        border-radius: 999px;
+        font-size: 13.5px;
+        font-weight: 600;
+        text-decoration: none;
+        border: 1px solid #e8ebf0;
+        background: #fff;
+        color: #4b5563;
+        transition: all .15s ease;
+    }
+
+        .status-pill:hover {
+            border-color: #c7ccd6;
+            color: #0b0b0c;
+        }
+
+        .status-pill.active {
+            color: #fff;
+            border-color: transparent;
+        }
+
+        .status-pill.all.active {
+            background: #0b0b0c;
+        }
+
+        .status-pill.status-draft.active {
+            background: #64748b;
+        }
+
+        .status-pill.status-sent.active {
+            background: #2563eb;
+        }
+
+        .status-pill.status-accepted.active {
+            background: #16a34a;
+        }
+
+        .status-pill.status-rejected.active {
+            background: #dc2626;
+        }
 </style>
 
 <div class="zx-page-head">
@@ -99,12 +163,12 @@
     <a class="btn btn-zx" asp-action="Create">+ New Quotation</a>
 </div>
 
-<div class="status-filters mb-3">
-    <a asp-action="Index" class="@(status == null ? "fw-bold" : "")">All</a>
-    <a asp-action="Index" asp-route-status="Draft" class="@(status == "Draft" ? "fw-bold" : "")">Draft</a>
-    <a asp-action="Index" asp-route-status="Sent" class="@(status == "Sent" ? "fw-bold" : "")">Sent</a>
-    <a asp-action="Index" asp-route-status="Accepted" class="@(status == "Accepted" ? "fw-bold" : "")">Accepted</a>
-    <a asp-action="Index" asp-route-status="Rejected" class="@(status == "Rejected" ? "fw-bold" : "")">Rejected</a>
+<div class="status-filters">
+    <a asp-action="Index" class="status-pill all @(status == null ? "active" : "")">All</a>
+    <a asp-action="Index" asp-route-status="Draft" class="status-pill status-draft @(status == "Draft" ? "active" : "")">Draft</a>
+    <a asp-action="Index" asp-route-status="Sent" class="status-pill status-sent @(status == "Sent" ? "active" : "")">Sent</a>
+    <a asp-action="Index" asp-route-status="Accepted" class="status-pill status-accepted @(status == "Accepted" ? "active" : "")">Accepted</a>
+    <a asp-action="Index" asp-route-status="Rejected" class="status-pill status-rejected @(status == "Rejected" ? "active" : "")">Rejected</a>
 </div>
 
 <div class="zx-card">
@@ -136,10 +200,16 @@
                             <span class="badge badge-accepted">Converted</span>
                         }
                     </td>
-                    <td class="text-end pe-3 zx-actions">
-                        <a asp-action="Details" asp-route-id="@item.QuotationID">View</a>
-                        <a asp-action="Edit" asp-route-id="@item.QuotationID">Edit</a>
-                        <a asp-action="Delete" asp-route-id="@item.QuotationID" class="text-danger">Delete</a>
+                    <td class="text-end pe-3">
+                        <a asp-action="Details" asp-route-id="@item.QuotationID" class="icon-btn" title="View details">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /><circle cx="12" cy="12" r="3" /></svg>
+                        </a>
+                        <a asp-action="Edit" asp-route-id="@item.QuotationID" class="icon-btn" title="Edit">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+                        </a>
+                        <a asp-action="Delete" asp-route-id="@item.QuotationID" class="icon-btn danger" title="Delete">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                        </a>
                     </td>
                 </tr>
             }

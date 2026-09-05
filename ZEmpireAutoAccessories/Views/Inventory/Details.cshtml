@@ -76,11 +76,20 @@
         color: #b91c1c;
         font-weight: 600;
     }
+
+    .btn-zx, .btn-outline-secondary, .btn-outline-danger {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+    }
 </style>
 
 <div class="zx-page-head">
     <h1>@Model.ProductName</h1>
-    <a asp-action="Index" class="btn btn-outline-secondary">Back to Inventory</a>
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></svg>
+        Back to Inventory
+    </a>
 </div>
 
 @if (!string.IsNullOrEmpty(successMessage))
@@ -104,7 +113,10 @@
             <form asp-action="StockIn" method="post" class="d-flex gap-2">
                 <input type="hidden" name="productId" value="@Model.ProductID" />
                 <input type="number" step="0.01" name="quantity" class="form-control" min="0.01" required />
-                <button type="submit" class="btn btn-zx">Add</button>
+                <button type="submit" class="btn btn-zx">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
+                    Add
+                </button>
             </form>
         </div>
     </div>
@@ -114,7 +126,10 @@
             <form asp-action="StockOut" method="post" class="d-flex gap-2">
                 <input type="hidden" name="productId" value="@Model.ProductID" />
                 <input type="number" step="0.01" name="quantity" class="form-control" min="0.01" required />
-                <button type="submit" class="btn btn-outline-danger">Remove</button>
+                <button type="submit" class="btn btn-outline-danger">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /></svg>
+                    Remove
+                </button>
             </form>
         </div>
     </div>

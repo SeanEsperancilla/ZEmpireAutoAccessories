@@ -9,8 +9,14 @@
         font-family: 'Oswald',system-ui,sans-serif;
         font-weight: 700;
         font-size: 22px;
-        margin: 0 0 18px;
+        margin: 0 0 4px;
         color: #0b0b0c;
+    }
+
+    .zx-page-sub {
+        color: #7b8290;
+        font-size: 13.5px;
+        margin: 0 0 18px;
     }
 
     .zx-card {
@@ -26,6 +32,9 @@
         border-color: var(--zx-red);
         color: #fff;
         font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
     }
 
         .btn-zx:hover {
@@ -38,6 +47,7 @@
 <div class="zx-page-head">
     <h1>New Job Order</h1>
 </div>
+<p class="zx-page-sub">Create the job order header, then add line items on the next screen.</p>
 
 <div class="zx-card">
     <form asp-action="Create" method="post">
@@ -106,7 +116,10 @@
             <textarea asp-for="SpecialInstruction" class="form-control" rows="2"></textarea>
         </div>
 
-        <button type="submit" class="btn btn-zx">Save &amp; Add Line Items</button>
+        <button type="submit" class="btn btn-zx">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" /><path d="M17 21v-8H7v8" /><path d="M7 3v5h8" /></svg>
+            Save &amp; Add Line Items
+        </button>
         <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
     </form>
 </div>

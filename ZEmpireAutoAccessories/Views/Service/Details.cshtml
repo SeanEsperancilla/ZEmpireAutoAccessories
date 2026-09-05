@@ -5,20 +5,73 @@
 }
 
 <style>
-    .zx-page-head {
+    .svc-hero {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        margin-bottom: 18px;
+        gap: 18px;
+        background: #fff;
+        border: 1px solid #e8ebf0;
+        border-radius: 14px;
+        padding: 22px 24px;
+        margin-bottom: 22px;
     }
 
-        .zx-page-head h1 {
-            font-family: 'Oswald',system-ui,sans-serif;
-            font-weight: 700;
-            font-size: 22px;
-            margin: 0;
-            color: #0b0b0c;
+    .svc-hero-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        flex: none;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg,#fde8e9,#fbd3d5);
+        color: #c0202a;
+    }
+
+    .svc-hero h1 {
+        font-family: 'Oswald',system-ui,sans-serif;
+        font-weight: 700;
+        font-size: 21px;
+        margin: 0 0 4px;
+        color: #0b0b0c;
+    }
+
+    .svc-hero .meta {
+        color: #7b8290;
+        font-size: 13.5px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .svc-hero .actions {
+        margin-left: auto;
+        display: flex;
+        gap: 8px;
+        flex: none;
+    }
+
+    .btn-zx {
+        background: var(--zx-red);
+        border-color: var(--zx-red);
+        color: #fff;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+    }
+
+        .btn-zx:hover {
+            background: var(--zx-red2);
+            border-color: var(--zx-red2);
+            color: #fff;
         }
+
+    .btn-outline-secondary {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+    }
 
     .zx-card {
         background: #fff;
@@ -52,13 +105,47 @@
         color: #64748b;
         font-weight: 600;
     }
+
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: #4b5563;
+        font-weight: 600;
+        font-size: 13.5px;
+        text-decoration: none;
+        margin-top: 16px;
+    }
+
+        .back-link:hover {
+            color: #0b0b0c;
+        }
 </style>
 
-<div class="zx-page-head">
-    <h1>@Model.ServiceName</h1>
+<div class="svc-hero">
+    <span class="svc-hero-icon">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" /></svg>
+    </span>
     <div>
-        <a class="btn btn-outline-secondary" asp-action="Edit" asp-route-id="@Model.ServiceID">Edit</a>
-        <a class="btn btn-outline-secondary" asp-action="Index">Back to list</a>
+        <h1>@Model.ServiceName</h1>
+        <div class="meta">
+            <span>@Model.ServiceCategory.CategoryName</span>
+            <span>@("₱" + Model.DefaultPrice.ToString("N2"))</span>
+            @if (Model.IsActive)
+            {
+                <span class="badge badge-active">Active</span>
+            }
+            else
+            {
+                <span class="badge badge-inactive">Inactive</span>
+            }
+        </div>
+    </div>
+    <div class="actions">
+        <a class="btn btn-zx" asp-action="Edit" asp-route-id="@Model.ServiceID">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+            Edit
+        </a>
     </div>
 </div>
 
@@ -89,3 +176,8 @@
         }
     </dl>
 </div>
+
+<a asp-action="Index" class="back-link">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></svg>
+    Back to list
+</a>

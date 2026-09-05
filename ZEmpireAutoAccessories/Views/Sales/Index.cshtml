@@ -57,10 +57,32 @@
         vertical-align: middle;
     }
 
-    .zx-actions a {
-        margin-right: 10px;
-        font-weight: 600;
-        font-size: 13.5px;
+    .icon-btn {
+        width: 32px;
+        height: 32px;
+        display: inline-grid;
+        place-items: center;
+        border-radius: 8px;
+        border: 1px solid #e8ebf0;
+        background: #fff;
+        color: #4b5563;
+        margin-left: 6px;
+        transition: all .15s ease;
+        text-decoration: none;
+    }
+
+        .icon-btn:hover {
+            background: #0b0b0c;
+            color: #fff;
+            border-color: #0b0b0c;
+        }
+
+        .icon-btn.danger:hover {
+            background: #dc2626;
+            color: #fff;
+            border-color: #dc2626;
+        }
+
     }
 </style>
 
@@ -90,9 +112,13 @@
                     <td>@item.PaymentMode.PaymentModeName</td>
                     <td>@item.SalesDate.ToString("MMM d, yyyy")</td>
                     <td>@("₱" + item.TotalAmount.ToString("N2"))</td>
-                    <td class="text-end pe-3 zx-actions">
-                        <a asp-action="Details" asp-route-id="@item.SalesID">View</a>
-                        <a asp-action="Delete" asp-route-id="@item.SalesID" class="text-danger">Delete</a>
+                    <td class="text-end pe-3">
+                        <a asp-action="Details" asp-route-id="@item.SalesID" class="icon-btn" title="View details">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /><circle cx="12" cy="12" r="3" /></svg>
+                        </a>
+                        <a asp-action="Delete" asp-route-id="@item.SalesID" class="icon-btn danger" title="Delete">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                        </a>
                     </td>
                 </tr>
             }

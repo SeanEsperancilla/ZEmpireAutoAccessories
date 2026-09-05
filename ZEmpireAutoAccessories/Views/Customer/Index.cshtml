@@ -7,105 +7,128 @@
 }
 
 <style>
-    .zx-page-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 18px;
-    }
+    .zx-page-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+    .zx-page-head h1 { font-family:'Oswald',system-ui,sans-serif; font-weight:700; font-size:22px; margin:0; color:#0b0b0c; }
+    .zx-page-sub { color:#7b8290; font-size:13.5px; margin:0 0 18px; }
+    .btn-zx { background:var(--zx-red); border-color:var(--zx-red); color:#fff; font-weight:600; display:inline-flex; align-items:center; gap:7px; }
+    .btn-zx:hover { background:var(--zx-red2); border-color:var(--zx-red2); color:#fff; }
+    .zx-card { background:#fff; border:1px solid #e8ebf0; border-radius:14px; overflow:hidden; }
+    .zx-table thead { background:#0b0b0c; color:#fff; }
+    .zx-table thead th { border-bottom:none; font-weight:600; font-size:13px; text-transform:uppercase; letter-spacing:.3px; }
+    .zx-table td, .zx-table th { vertical-align:middle; }
 
-        .zx-page-head h1 {
-            font-family: 'Oswald',system-ui,sans-serif;
-            font-weight: 700;
-            font-size: 22px;
-            margin: 0;
-            color: #0b0b0c;
-        }
+    .search-wrap { position:relative; max-width:420px; margin-bottom:20px; }
+    .search-wrap svg { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:#98a0ad; }
+    .search-input { padding-left:38px; border-radius:10px; }
+    .search-actions { display:flex; gap:8px; margin-top:8px; }
 
-    .btn-zx {
-        background: var(--zx-red);
-        border-color: var(--zx-red);
-        color: #fff;
-        font-weight: 600;
-    }
+    .cust-cell { display:flex; align-items:center; gap:11px; }
+    .cust-avatar { width:38px; height:38px; border-radius:50%; flex:none; display:grid; place-items:center;
+                   font-weight:700; font-size:13px; color:#fff; background:linear-gradient(135deg,var(--zx-red),var(--zx-red2)); }
+    .cust-name { font-weight:600; color:#0b0b0c; }
+    .cust-since { font-size:12px; color:#98a0ad; }
 
-        .btn-zx:hover {
-            background: var(--zx-red2);
-            border-color: var(--zx-red2);
-            color: #fff;
-        }
+    .contact-cell { display:inline-flex; align-items:center; gap:7px; color:#4b5563; }
+    .contact-cell svg { color:#98a0ad; flex:none; }
 
-    .zx-card {
-        background: #fff;
-        border: 1px solid #e8ebf0;
-        border-radius: 14px;
-        overflow: hidden;
-    }
+    .veh-badge { background:#eef2ff; color:#4338ca; font-weight:600; font-size:12px; padding:3px 10px; border-radius:999px; display:inline-flex; align-items:center; gap:5px; }
+    .veh-badge.zero { background:#f1f3f7; color:#98a0ad; }
 
-    .zx-table thead {
-        background: #0b0b0c;
-        color: #fff;
-    }
-
-        .zx-table thead th {
-            border-bottom: none;
-            font-weight: 600;
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: .3px;
-        }
-
-    .zx-table td, .zx-table th {
-        vertical-align: middle;
-    }
-
-    .zx-actions a {
-        margin-right: 10px;
-        font-weight: 600;
-        font-size: 13.5px;
-    }
+    .icon-btn { width:32px; height:32px; display:inline-grid; place-items:center; border-radius:8px; border:1px solid #e8ebf0;
+                background:#fff; color:#4b5563; margin-left:6px; transition:all .15s ease; text-decoration:none; }
+    .icon-btn:hover { background:#0b0b0c; color:#fff; border-color:#0b0b0c; }
+    .icon-btn.danger:hover { background:#dc2626; color:#fff; border-color:#dc2626; }
 </style>
 
 <div class="zx-page-head">
     <h1>Customers</h1>
-    <a class="btn btn-zx" asp-action="Create">+ New Customer</a>
+    <a class="btn btn-zx" asp-action="Create">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+        New Customer
+    </a>
 </div>
+<p class="zx-page-sub">@Model.Count() customer@(Model.Count() == 1 ? "" : "s") on record.</p>
 
 @if (!string.IsNullOrEmpty(successMessage))
 {
     <div class="alert alert-success">@successMessage</div>
 }
 
-<form asp-action="Index" method="get" class="d-flex gap-2 mb-3" style="max-width:420px;">
-    <input type="text" name="q" value="@search" class="form-control" placeholder="Search name or contact number" />
-    <button type="submit" class="btn btn-outline-secondary">Search</button>
-    @if (!string.IsNullOrEmpty(search))
-    {
-        <a asp-action="Index" class="btn btn-outline-secondary">Clear</a>
-    }
+<form asp-action="Index" method="get">
+    <div class="search-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" name="q" value="@search" class="form-control search-input" placeholder="Search name or contact number" />
+    </div>
+    <div class="search-actions mb-3">
+        <button type="submit" class="btn btn-outline-secondary btn-sm">Search</button>
+        @if (!string.IsNullOrEmpty(search))
+        {
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Clear</a>
+        }
+    </div>
 </form>
 
 <div class="zx-card">
     <table class="table zx-table mb-0">
         <thead>
             <tr>
-                <th>@Html.DisplayNameFor(m => m.FullName)</th>
-                <th>@Html.DisplayNameFor(m => m.ContactNumber)</th>
-                <th>Customer Since</th>
+                <th>Customer</th>
+                <th>Contact</th>
+                <th>Vehicles</th>
                 <th class="text-end pe-3">Actions</th>
             </tr>
         </thead>
         <tbody>
             @foreach (var item in Model)
             {
+                var initials = string.Join("", item.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                                    .Take(2).Select(p => char.ToUpper(p[0])));
                 <tr>
-                    <td>@Html.DisplayFor(modelItem => item.FullName)</td>
-                    <td>@(item.ContactNumber ?? "—")</td>
-                    <td>@item.CreatedAt.ToString("MMM d, yyyy")</td>
-                    <td class="text-end pe-3 zx-actions">
-                        <a asp-action="Edit" asp-route-id="@item.CustomerID">Edit</a>
-                        <a asp-action="Details" asp-route-id="@item.CustomerID">Details</a>
-                        <a asp-action="Delete" asp-route-id="@item.CustomerID" class="text-danger">Delete</a>
+                    <td>
+                        <div class="cust-cell">
+                            <span class="cust-avatar">@(string.IsNullOrEmpty(initials) ? "?" : initials)</span>
+                            <div>
+                                <div class="cust-name">@item.FullName</div>
+                                <div class="cust-since">Since @item.CreatedAt.ToString("MMM yyyy")</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        @if (!string.IsNullOrEmpty(item.ContactNumber))
+                        {
+                            <span class="contact-cell">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"/></svg>
+                                @item.ContactNumber
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">—</span>
+                        }
+                    </td>
+                    <td>
+                        @if (item.Vehicles.Count > 0)
+                        {
+                            <span class="veh-badge">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/><circle cx="6.5" cy="16.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/></svg>
+                                @item.Vehicles.Count
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="veh-badge zero">0</span>
+                        }
+                    </td>
+                    <td class="text-end pe-3">
+                        <a asp-action="Details" asp-route-id="@item.CustomerID" class="icon-btn" title="View details">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
+                        </a>
+                        <a asp-action="Edit" asp-route-id="@item.CustomerID" class="icon-btn" title="Edit">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                        </a>
+                        <a asp-action="Delete" asp-route-id="@item.CustomerID" class="icon-btn danger" title="Delete">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        </a>
                     </td>
                 </tr>
             }

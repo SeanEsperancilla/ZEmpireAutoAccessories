@@ -17,16 +17,30 @@ namespace ZEmpireAutoAccessories.Controllers
             _context = context;
         }
 
-        // GET: Vehicle
-        public async Task<IActionResult> Index()
+        // GET: Vehicle?q=...
+        public async Task<IActionResult> Index(string? q)
         {
-            var vehicles = await _context.Vehicles
+            var query = _context.Vehicles
                 .Include(v => v.Customer)
                 .Include(v => v.VehicleClassification)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var term = q.Trim();
+                query = query.Where(v =>
+                    v.Customer.FullName.Contains(term) ||
+                    (v.PlateNumber != null && v.PlateNumber.Contains(term)) ||
+                    (v.Brand != null && v.Brand.Contains(term)) ||
+                    (v.Model != null && v.Model.Contains(term)));
+            }
+
+            var vehicles = await query
                 .OrderBy(v => v.Brand)
                 .ThenBy(v => v.Model)
                 .ToListAsync();
 
+            ViewData["Search"] = q;
             return View(vehicles);
         }
 
