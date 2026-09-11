@@ -1,4 +1,4 @@
-﻿@model IEnumerable<ZEmpireAutoAccessories.Models.VwQuotationSummary>
+@model IEnumerable<ZEmpireAutoAccessories.Models.VwQuotationSummary>
 
 @{
     ViewData["Title"] = "Quotations Report";
@@ -9,114 +9,26 @@
 }
 
 <style>
-    .zx-page-head h1 {
-        font-family: 'Oswald',system-ui,sans-serif;
-        font-weight: 700;
-        font-size: 22px;
-        margin: 0 0 18px;
-        color: #0b0b0c;
-    }
-
-    .report-tabs {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 18px;
-        flex-wrap: wrap;
-    }
-
-        .report-tabs a {
-            padding: 7px 16px;
-            border-radius: 999px;
-            font-size: 13.5px;
-            font-weight: 600;
-            color: #4b5563;
-            background: #fff;
-            border: 1px solid #e8ebf0;
-            text-decoration: none;
-        }
-
-            .report-tabs a.active, .report-tabs a:hover {
-                background: #0b0b0c;
-                color: #fff;
-                border-color: #0b0b0c;
-            }
-
-    .zx-card {
-        background: #fff;
-        border: 1px solid #e8ebf0;
-        border-radius: 14px;
-        overflow: hidden;
-    }
-
-    .zx-table thead {
-        background: #0b0b0c;
-        color: #fff;
-    }
-
-        .zx-table thead th {
-            border-bottom: none;
-            font-weight: 600;
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: .3px;
-        }
-
-    .zx-table td, .zx-table th {
-        vertical-align: middle;
-    }
-
-    .totals-row td {
-        font-weight: 600;
-    }
-
-    .btn-zx {
-        background: var(--zx-red);
-        border-color: var(--zx-red);
-        color: #fff;
-        font-weight: 600;
-    }
-
-        .btn-zx:hover {
-            background: var(--zx-red2);
-            border-color: var(--zx-red2);
-            color: #fff;
-        }
-
-    .badge-draft {
-        background: rgba(148,163,184,.2);
-        color: #64748b;
-        font-weight: 600;
-    }
-
-    .badge-sent {
-        background: rgba(59,130,246,.15);
-        color: #1d4ed8;
-        font-weight: 600;
-    }
-
-    .badge-accepted {
-        background: rgba(34,197,94,.15);
-        color: #15803d;
-        font-weight: 600;
-    }
-
-    .badge-converted {
-        background: rgba(34,197,94,.15);
-        color: #15803d;
-        font-weight: 600;
-    }
-
-    .badge-rejected {
-        background: rgba(239,68,68,.15);
-        color: #b91c1c;
-        font-weight: 600;
-    }
-
-    .badge-expired {
-        background: rgba(245,158,11,.15);
-        color: #b45309;
-        font-weight: 600;
-    }
+    .zx-page-head h1 { font-family:'Oswald',system-ui,sans-serif; font-weight:700; font-size:22px; margin:0 0 18px; color:#0b0b0c; }
+    .report-tabs { display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; }
+    .report-tabs a { padding:7px 16px; border-radius:999px; font-size:13.5px; font-weight:600; color:#4b5563;
+                     background:#fff; border:1px solid #e8ebf0; text-decoration:none; }
+    .report-tabs a.active, .report-tabs a:hover { background:#0b0b0c; color:#fff; border-color:#0b0b0c; }
+    .zx-card { background:#fff; border:1px solid #e8ebf0; border-radius:14px; overflow:hidden; }
+    .zx-table thead { background:#0b0b0c; color:#fff; }
+    .zx-table thead th { border-bottom:none; font-weight:600; font-size:13px; text-transform:uppercase; letter-spacing:.3px; }
+    .zx-table td, .zx-table th { vertical-align:middle; }
+    .totals-row td { font-weight:600; }
+    .btn-zx { background:var(--zx-red); border-color:var(--zx-red); color:#fff; font-weight:600; }
+    .btn-zx:hover { background:var(--zx-red2); border-color:var(--zx-red2); color:#fff; }
+    .btn-pdf { display:inline-flex; align-items:center; gap:7px; background:#0b0b0c; border-color:#0b0b0c; color:#fff; font-weight:600; }
+    .btn-pdf:hover { background:#262626; border-color:#262626; color:#fff; }
+    .badge-draft { background:rgba(148,163,184,.2); color:#64748b; font-weight:600; }
+    .badge-sent { background:rgba(59,130,246,.15); color:#1d4ed8; font-weight:600; }
+    .badge-accepted { background:rgba(34,197,94,.15); color:#15803d; font-weight:600; }
+    .badge-converted { background:rgba(34,197,94,.15); color:#15803d; font-weight:600; }
+    .badge-rejected { background:rgba(239,68,68,.15); color:#b91c1c; font-weight:600; }
+    .badge-expired { background:rgba(245,158,11,.15); color:#b45309; font-weight:600; }
 </style>
 
 <div class="zx-page-head">
@@ -155,6 +67,10 @@
     <div class="col-auto">
         <button type="submit" class="btn btn-zx">Filter</button>
         <a asp-action="Quotations" class="btn btn-outline-secondary">Clear</a>
+        <a asp-action="QuotationsPdf" asp-route-from="@from?.ToString("yyyy-MM-dd")" asp-route-to="@to?.ToString("yyyy-MM-dd")" asp-route-status="@status" class="btn btn-pdf">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
+            Generate PDF
+        </a>
     </div>
 </form>
 

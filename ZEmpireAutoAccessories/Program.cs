@@ -1,11 +1,16 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Infrastructure;
 using System.Globalization;
 using ZEmpireAutoAccessories.Authorization;
 using ZEmpireAutoAccessories.Data;
 using ZEmpireAutoAccessories.Models;
 using ZEmpireAutoAccessories.Services;
 using ZEmpireAutoAccessories.Services.Interfaces;
+
+// QuestPDF Community license - free for orgs/individuals under its revenue
+// threshold, which this shop system qualifies for.
+QuestPDF.Settings.License = LicenseType.Community;
 
 var phCulture = CultureInfo.GetCultureInfo("en-PH");
 CultureInfo.DefaultThreadCurrentCulture = phCulture;
