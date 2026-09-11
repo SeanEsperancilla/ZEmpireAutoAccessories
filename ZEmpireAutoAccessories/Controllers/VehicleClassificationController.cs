@@ -127,6 +127,8 @@ namespace ZEmpireAutoAccessories.Controllers
             if (classification == null)
                 return NotFound();
 
+            ViewData["BlockReason"] = await BuildBlockReason(id.Value);
+
             return View(classification);
         }
 
@@ -138,13 +140,42 @@ namespace ZEmpireAutoAccessories.Controllers
             var classification =
                 await _context.VehicleClassifications.FindAsync(id);
 
-            if (classification != null)
+            if (classification == null)
+                return RedirectToAction(nameof(Index));
+
+            var blockReason = await BuildBlockReason(id);
+            if (blockReason != null)
+            {
+                TempData["DeleteError"] = blockReason;
+                return RedirectToAction(nameof(Delete), new { id });
+            }
+
+            try
             {
                 _context.VehicleClassifications.Remove(classification);
                 await _context.SaveChangesAsync();
             }
+            catch (DbUpdateException)
+            {
+                TempData["DeleteError"] =
+                    "Can't delete this classification. It still has related records elsewhere in the system.";
+
+                return RedirectToAction(nameof(Delete), new { id });
+            }
 
             return RedirectToAction(nameof(Index));
+        }
+
+        // VehicleClassification is ON DELETE RESTRICT from Vehicle.
+        private async Task<string?> BuildBlockReason(int classificationId)
+        {
+            var vehicles = await _context.Vehicles.CountAsync(v => v.VehicleClassificationID == classificationId);
+
+            if (vehicles == 0)
+                return null;
+
+            var word = vehicles == 1 ? "vehicle" : "vehicles";
+            return $"Can't delete this classification. It's used by {vehicles} {word}. Reassign those vehicles first.";
         }
 
         private bool VehicleClassificationExists(int id)
