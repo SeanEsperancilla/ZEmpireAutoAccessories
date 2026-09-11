@@ -2,148 +2,67 @@
 
 @{
     ViewData["Title"] = "Vehicle Details";
+    var ownerInitials = string.Join("", Model.Customer.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                            .Take(2).Select(p => char.ToUpper(p[0])));
 }
 
 <style>
-    .veh-hero {
-        display: flex;
-        align-items: center;
-        gap: 18px;
-        background: #fff;
-        border: 1px solid #e8ebf0;
-        border-radius: 14px;
-        padding: 22px 24px;
-        margin-bottom: 22px;
-    }
+    .veh-hero { display:flex; align-items:center; gap:18px; background:#fff; border:1px solid #e8ebf0; border-radius:14px;
+                padding:22px 24px; margin-bottom:22px; }
+    .veh-hero-icon { width:56px; height:56px; border-radius:14px; flex:none; display:grid; place-items:center;
+                      background:linear-gradient(135deg,#fde8e9,#fbd3d5); color:#c0202a; }
+    .veh-hero h1 { font-family:'Oswald',system-ui,sans-serif; font-weight:700; font-size:21px; margin:0 0 4px; color:#0b0b0c; }
+    .veh-hero .meta { color:#7b8290; font-size:13.5px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+    .veh-hero .meta span { display:inline-flex; align-items:center; gap:6px; }
+    .veh-hero .meta svg { color:#98a0ad; }
+    .veh-hero .actions { margin-left:auto; display:flex; gap:8px; flex:none; }
 
-    .veh-hero-icon {
-        width: 56px;
-        height: 56px;
-        border-radius: 14px;
-        flex: none;
-        display: grid;
-        place-items: center;
-        background: linear-gradient(135deg,#fde8e9,#fbd3d5);
-        color: #c0202a;
-    }
+    .btn-zx { background:var(--zx-red); border-color:var(--zx-red); color:#fff; font-weight:600; display:inline-flex; align-items:center; gap:7px; }
+    .btn-zx:hover { background:var(--zx-red2); border-color:var(--zx-red2); color:#fff; }
+    .btn-outline-secondary { display:inline-flex; align-items:center; gap:7px; }
 
-    .veh-hero h1 {
-        font-family: 'Oswald',system-ui,sans-serif;
-        font-weight: 700;
-        font-size: 21px;
-        margin: 0 0 4px;
-        color: #0b0b0c;
-    }
+    .zx-card { background:#fff; border:1px solid #e8ebf0; border-radius:14px; padding:22px; }
+    dt { color:#7b8290; font-weight:600; font-size:12.5px; text-transform:uppercase; letter-spacing:.3px; }
+    dd { margin-bottom:14px; font-size:15px; color:#0b0b0c; }
 
-    .veh-hero .meta {
-        color: #7b8290;
-        font-size: 13.5px;
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        flex-wrap: wrap;
-    }
+    .back-link { display:inline-flex; align-items:center; gap:6px; color:#4b5563; font-weight:600; font-size:13.5px;
+                 text-decoration:none; margin-top:16px; }
+    .back-link:hover { color:#0b0b0c; }
 
-        .veh-hero .meta span {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .veh-hero .meta svg {
-            color: #98a0ad;
-        }
-
-    .veh-hero .actions {
-        margin-left: auto;
-        display: flex;
-        gap: 8px;
-        flex: none;
-    }
-
-    .btn-zx {
-        background: var(--zx-red);
-        border-color: var(--zx-red);
-        color: #fff;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-    }
-
-        .btn-zx:hover {
-            background: var(--zx-red2);
-            border-color: var(--zx-red2);
-            color: #fff;
-        }
-
-    .btn-outline-secondary {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-    }
-
-    .zx-card {
-        background: #fff;
-        border: 1px solid #e8ebf0;
-        border-radius: 14px;
-        padding: 22px;
-    }
-
-    dt {
-        color: #7b8290;
-        font-weight: 600;
-        font-size: 12.5px;
-        text-transform: uppercase;
-        letter-spacing: .3px;
-    }
-
-    dd {
-        margin-bottom: 14px;
-        font-size: 15px;
-        color: #0b0b0c;
-    }
-
-    .back-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        color: #4b5563;
-        font-weight: 600;
-        font-size: 13.5px;
-        text-decoration: none;
-        margin-top: 16px;
-    }
-
-        .back-link:hover {
-            color: #0b0b0c;
-        }
+    .owner-link { color:inherit; text-decoration:none; }
+    .owner-link:hover { color:var(--zx-red); text-decoration:underline; }
+    .owner-card { display:flex; align-items:center; gap:14px; }
+    .owner-avatar { width:44px; height:44px; border-radius:50%; flex:none; display:grid; place-items:center;
+                    font-weight:700; font-size:15px; color:#fff; background:linear-gradient(135deg,var(--zx-red),var(--zx-red2)); }
+    .owner-card .name { font-weight:700; color:#0b0b0c; text-decoration:none; }
+    .owner-card .name:hover { color:var(--zx-red); text-decoration:underline; }
+    .owner-card .contact { color:#7b8290; font-size:13px; }
 </style>
 
 <div class="veh-hero">
     <span class="veh-hero-icon">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2" /><circle cx="6.5" cy="16.5" r="2.5" /><circle cx="16.5" cy="16.5" r="2.5" /></svg>
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/><circle cx="6.5" cy="16.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/></svg>
     </span>
     <div>
         <h1>@(Model.PlateNumber ?? "No Plate") — @Model.Brand @Model.Model</h1>
         <div class="meta">
             <span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><line x1="16" x2="16" y1="2" y2="6" /><line x1="8" x2="8" y1="2" y2="6" /><line x1="3" x2="21" y1="10" y2="10" /></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
                 @(Model.ManufacturingYear?.ToString() ?? "Year unknown")
             </span>
             <span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z" /></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/></svg>
                 @Model.VehicleClassification.ClassificationName
             </span>
             <span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></svg>
-                @Model.Customer.FullName
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                <a asp-controller="Customer" asp-action="Details" asp-route-id="@Model.CustomerID" class="owner-link">@Model.Customer.FullName</a>
             </span>
         </div>
     </div>
     <div class="actions">
         <a class="btn btn-zx" asp-action="Edit" asp-route-id="@Model.VehicleID">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
             Edit
         </a>
     </div>
@@ -167,11 +86,19 @@
         <dd class="col-sm-9">@Model.VehicleClassification.ClassificationName</dd>
 
         <dt class="col-sm-3">Owner</dt>
-        <dd class="col-sm-9">@Model.Customer.FullName</dd>
+        <dd class="col-sm-9">
+            <a asp-controller="Customer" asp-action="Details" asp-route-id="@Model.CustomerID" class="owner-card" style="text-decoration:none;">
+                <span class="owner-avatar">@(string.IsNullOrEmpty(ownerInitials) ? "?" : ownerInitials)</span>
+                <span>
+                    <div class="name">@Model.Customer.FullName</div>
+                    <div class="contact">@(Model.Customer.ContactNumber ?? "No contact number")</div>
+                </span>
+            </a>
+        </dd>
     </dl>
 </div>
 
 <a asp-action="Index" class="back-link">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></svg>
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
     Back to list
 </a>

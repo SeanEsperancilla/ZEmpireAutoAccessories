@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ZEmpireAutoAccessories.Authorization;
@@ -17,13 +17,16 @@ namespace ZEmpireAutoAccessories.Controllers
             _context = context;
         }
 
-        // GET: Vehicle?q=...
-        public async Task<IActionResult> Index(string? q)
+        // GET: Vehicle?q=...&customerId=...
+        public async Task<IActionResult> Index(string? q, int? customerId)
         {
             var query = _context.Vehicles
                 .Include(v => v.Customer)
                 .Include(v => v.VehicleClassification)
                 .AsQueryable();
+
+            if (customerId.HasValue)
+                query = query.Where(v => v.CustomerID == customerId.Value);
 
             if (!string.IsNullOrWhiteSpace(q))
             {
@@ -41,6 +44,16 @@ namespace ZEmpireAutoAccessories.Controllers
                 .ToListAsync();
 
             ViewData["Search"] = q;
+
+            if (customerId.HasValue)
+            {
+                ViewData["CustomerId"] = customerId;
+                ViewData["CustomerName"] = await _context.Customers
+                    .Where(c => c.CustomerID == customerId.Value)
+                    .Select(c => c.FullName)
+                    .FirstOrDefaultAsync();
+            }
+
             return View(vehicles);
         }
 
@@ -62,10 +75,10 @@ namespace ZEmpireAutoAccessories.Controllers
             return View(vehicle);
         }
 
-        // GET: Vehicle/Create
-        public async Task<IActionResult> Create()
+        // GET: Vehicle/Create?customerId=...
+        public async Task<IActionResult> Create(int? customerId)
         {
-            await LoadDropdowns();
+            await LoadDropdowns(customerId.HasValue ? new Vehicle { CustomerID = customerId.Value } : null);
 
             return View();
         }

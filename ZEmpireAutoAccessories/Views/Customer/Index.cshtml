@@ -31,8 +31,9 @@
     .contact-cell { display:inline-flex; align-items:center; gap:7px; color:#4b5563; }
     .contact-cell svg { color:#98a0ad; flex:none; }
 
-    .veh-badge { background:#eef2ff; color:#4338ca; font-weight:600; font-size:12px; padding:3px 10px; border-radius:999px; display:inline-flex; align-items:center; gap:5px; }
-    .veh-badge.zero { background:#f1f3f7; color:#98a0ad; }
+    .veh-badge { background:#eef2ff; color:#4338ca; font-weight:600; font-size:12px; padding:3px 10px; border-radius:999px; display:inline-flex; align-items:center; gap:5px; text-decoration:none; transition:background .15s ease; }
+    .veh-badge:hover { background:#dfe4ff; color:#4338ca; }
+    .veh-badge.zero { background:#f1f3f7; color:#98a0ad; pointer-events:none; }
 
     .icon-btn { width:32px; height:32px; display:inline-grid; place-items:center; border-radius:8px; border:1px solid #e8ebf0;
                 background:#fff; color:#4b5563; margin-left:6px; transition:all .15s ease; text-decoration:none; }
@@ -109,10 +110,10 @@
                     <td>
                         @if (item.Vehicles.Count > 0)
                         {
-                            <span class="veh-badge">
+                            <a asp-controller="Vehicle" asp-action="Index" asp-route-customerId="@item.CustomerID" class="veh-badge" title="View this customer's vehicles">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/><circle cx="6.5" cy="16.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/></svg>
                                 @item.Vehicles.Count
-                            </span>
+                            </a>
                         }
                         else
                         {
