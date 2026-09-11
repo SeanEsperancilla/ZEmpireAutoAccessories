@@ -1,124 +1,46 @@
-﻿@model ZEmpireAutoAccessories.Models.Quotation
+@model ZEmpireAutoAccessories.Models.Quotation
 
 @{
     ViewData["Title"] = "Quotation Details";
     var successMessage = TempData["Success"] as string;
     var convertError = TempData["ConvertError"] as string;
+    var lockError = TempData["LockError"] as string;
 }
 
 <style>
-    .zx-page-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 18px;
-    }
-
-        .zx-page-head h1 {
-            font-family: 'Oswald',system-ui,sans-serif;
-            font-weight: 700;
-            font-size: 22px;
-            margin: 0;
-            color: #0b0b0c;
-        }
-
-    .zx-card {
-        background: #fff;
-        border: 1px solid #e8ebf0;
-        border-radius: 14px;
-        padding: 22px;
-        margin-bottom: 18px;
-    }
-
-    dt {
-        color: #7b8290;
-        font-weight: 600;
-        font-size: 12.5px;
-        text-transform: uppercase;
-        letter-spacing: .3px;
-    }
-
-    dd {
-        margin-bottom: 14px;
-        font-size: 15px;
-        color: #0b0b0c;
-    }
-
-    .btn-zx {
-        background: var(--zx-red);
-        border-color: var(--zx-red);
-        color: #fff;
-        font-weight: 600;
-    }
-
-        .btn-zx:hover {
-            background: var(--zx-red2);
-            border-color: var(--zx-red2);
-            color: #fff;
-        }
-
-    .zx-table thead {
-        background: #0b0b0c;
-        color: #fff;
-    }
-
-        .zx-table thead th {
-            border-bottom: none;
-            font-weight: 600;
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: .3px;
-        }
-
-    .badge-draft {
-        background: rgba(148,163,184,.2);
-        color: #64748b;
-        font-weight: 600;
-    }
-
-    .badge-sent {
-        background: rgba(59,130,246,.15);
-        color: #1d4ed8;
-        font-weight: 600;
-    }
-
-    .badge-accepted {
-        background: rgba(34,197,94,.15);
-        color: #15803d;
-        font-weight: 600;
-    }
-
-    .badge-rejected {
-        background: rgba(239,68,68,.15);
-        color: #b91c1c;
-        font-weight: 600;
-    }
-
-    .totals-row td {
-        font-weight: 600;
-    }
-
-    .status-actions form {
-        display: inline;
-        margin-right: 8px;
-    }
-
-    .btn-zx, .btn-outline-secondary {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-    }
+    .zx-page-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+    .zx-page-head h1 { font-family:'Oswald',system-ui,sans-serif; font-weight:700; font-size:22px; margin:0; color:#0b0b0c; }
+    .zx-card { background:#fff; border:1px solid #e8ebf0; border-radius:14px; padding:22px; margin-bottom:18px; }
+    dt { color:#7b8290; font-weight:600; font-size:12.5px; text-transform:uppercase; letter-spacing:.3px; }
+    dd { margin-bottom:14px; font-size:15px; color:#0b0b0c; }
+    .btn-zx { background:var(--zx-red); border-color:var(--zx-red); color:#fff; font-weight:600; }
+    .btn-zx:hover { background:var(--zx-red2); border-color:var(--zx-red2); color:#fff; }
+    .zx-table thead { background:#0b0b0c; color:#fff; }
+    .zx-table thead th { border-bottom:none; font-weight:600; font-size:13px; text-transform:uppercase; letter-spacing:.3px; }
+    .badge-draft { background:rgba(148,163,184,.2); color:#64748b; font-weight:600; }
+    .badge-sent { background:rgba(59,130,246,.15); color:#1d4ed8; font-weight:600; }
+    .badge-accepted { background:rgba(34,197,94,.15); color:#15803d; font-weight:600; }
+    .badge-rejected { background:rgba(239,68,68,.15); color:#b91c1c; font-weight:600; }
+    .badge-posted { background:rgba(124,58,237,.15); color:#6d28d9; font-weight:600; }
+    .btn-post { background:#7c3aed; border-color:#7c3aed; color:#fff; }
+    .btn-post:hover { background:#6d28d9; border-color:#6d28d9; color:#fff; }
+    .totals-row td { font-weight:600; }
+    .status-actions form { display:inline; margin-right:8px; }
+    .btn-zx, .btn-outline-secondary { display:inline-flex; align-items:center; gap:7px; }
 </style>
 
 <div class="zx-page-head">
     <h1>Quotation @Model.QuotationNumber</h1>
     <div>
-        <a class="btn btn-outline-secondary" asp-action="Edit" asp-route-id="@Model.QuotationID">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
-            Edit
-        </a>
+        @if (Model.Status != "Posted")
+        {
+            <a class="btn btn-outline-secondary" asp-action="Edit" asp-route-id="@Model.QuotationID">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                Edit
+            </a>
+        }
         <a class="btn btn-outline-secondary" asp-action="Index">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
             Back to list
         </a>
     </div>
@@ -131,6 +53,10 @@
 @if (!string.IsNullOrEmpty(convertError))
 {
     <div class="alert alert-danger">@convertError</div>
+}
+@if (!string.IsNullOrEmpty(lockError))
+{
+    <div class="alert alert-danger">@lockError</div>
 }
 
 <div class="zx-card">
@@ -196,6 +122,20 @@
                 <button type="submit" class="btn btn-sm btn-zx">Convert to Job Order</button>
             </form>
         }
+        @if (Model.Status == "Accepted")
+        {
+            <a asp-action="Post" asp-route-id="@Model.QuotationID" class="btn btn-sm btn-post">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:-2px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Post &amp; Lock
+            </a>
+        }
+        @if (Model.Status == "Posted")
+        {
+            <span class="text-muted small">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                This quotation is posted and locked from further edits.
+            </span>
+        }
     </div>
 </div>
 
@@ -228,12 +168,15 @@
                     <td>@("₱" + line.UnitPrice.ToString("N2"))</td>
                     <td>@("₱" + line.SubTotal.ToString("N2"))</td>
                     <td class="text-end pe-3">
-                        <form asp-action="RemoveLine" method="post" class="d-inline"
-                              onsubmit="return confirm('Remove this line item?');">
-                            <input type="hidden" name="detailId" value="@line.QuotationDetailID" />
-                            <input type="hidden" name="quotationId" value="@Model.QuotationID" />
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
-                        </form>
+                        @if (Model.Status != "Posted")
+                        {
+                            <form asp-action="RemoveLine" method="post" class="d-inline"
+                                  onsubmit="return confirm('Remove this line item?');">
+                                <input type="hidden" name="detailId" value="@line.QuotationDetailID" />
+                                <input type="hidden" name="quotationId" value="@Model.QuotationID" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                            </form>
+                        }
                     </td>
                 </tr>
             }
@@ -262,41 +205,44 @@
         </tbody>
     </table>
 
-    <h6 class="mb-3">Add Line Item</h6>
-    <form asp-action="AddLine" method="post" class="row g-2 align-items-end">
-        <input type="hidden" name="quotationId" value="@Model.QuotationID" />
+    @if (Model.Status != "Posted")
+    {
+        <h6 class="mb-3">Add Line Item</h6>
+        <form asp-action="AddLine" method="post" class="row g-2 align-items-end">
+            <input type="hidden" name="quotationId" value="@Model.QuotationID" />
 
-        <div class="col-md-3">
-            <label class="form-label">Product</label>
-            <select name="productId" class="form-select" asp-items="ViewBag.ProductID">
-                <option value="">-- None --</option>
-            </select>
-        </div>
-        <div class="col-md-3">
-            <label class="form-label">Service</label>
-            <select name="serviceId" class="form-select" asp-items="ViewBag.ServiceID">
-                <option value="">-- None --</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <label class="form-label">Description</label>
-            <input type="text" name="description" class="form-control" placeholder="Optional" />
-        </div>
-        <div class="col-md-1">
-            <label class="form-label">Qty</label>
-            <input type="number" name="quantity" class="form-control" value="1" min="1" />
-        </div>
-        <div class="col-md-1">
-            <label class="form-label">Unit</label>
-            <input type="text" name="unit" class="form-control" value="Unit" />
-        </div>
-        <div class="col-md-1">
-            <label class="form-label">Price</label>
-            <input type="number" step="0.01" name="unitPrice" class="form-control" value="0" min="0" />
-        </div>
-        <div class="col-md-1">
-            <button type="submit" class="btn btn-zx w-100">Add</button>
-        </div>
-    </form>
-    <div class="form-text mt-2">Pick either a Product or a Service for the line item.</div>
+            <div class="col-md-3">
+                <label class="form-label">Product</label>
+                <select name="productId" class="form-select" asp-items="ViewBag.ProductID">
+                    <option value="">-- None --</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Service</label>
+                <select name="serviceId" class="form-select" asp-items="ViewBag.ServiceID">
+                    <option value="">-- None --</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Description</label>
+                <input type="text" name="description" class="form-control" placeholder="Optional" />
+            </div>
+            <div class="col-md-1">
+                <label class="form-label">Qty</label>
+                <input type="number" name="quantity" class="form-control" value="1" min="1" />
+            </div>
+            <div class="col-md-1">
+                <label class="form-label">Unit</label>
+                <input type="text" name="unit" class="form-control" value="Unit" />
+            </div>
+            <div class="col-md-1">
+                <label class="form-label">Price</label>
+                <input type="number" step="0.01" name="unitPrice" class="form-control" value="0" min="0" />
+            </div>
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-zx w-100">Add</button>
+            </div>
+        </form>
+        <div class="form-text mt-2">Pick either a Product or a Service for the line item.</div>
+    }
 </div>

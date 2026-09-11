@@ -121,6 +121,12 @@ namespace ZEmpireAutoAccessories.Controllers
             if (jobOrder == null)
                 return NotFound();
 
+            if (jobOrder.Status == "Posted")
+            {
+                TempData["LockError"] = "This job order is posted and can no longer be edited.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
             await LoadHeaderDropdowns(jobOrder);
             return View(jobOrder);
         }
@@ -151,6 +157,12 @@ namespace ZEmpireAutoAccessories.Controllers
             var existing = await _context.JobOrders.FindAsync(id);
             if (existing == null)
                 return NotFound();
+
+            if (existing.Status == "Posted")
+            {
+                TempData["LockError"] = "This job order is posted and can no longer be edited.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
 
             existing.CustomerID = jobOrder.CustomerID;
             existing.VehicleID = jobOrder.VehicleID;
@@ -234,6 +246,12 @@ namespace ZEmpireAutoAccessories.Controllers
             if (jobOrder == null)
                 return NotFound();
 
+            if (jobOrder.Status == "Posted")
+            {
+                TempData["LockError"] = "This job order is posted and can no longer be edited.";
+                return RedirectToAction(nameof(Details), new { id = jobOrderId });
+            }
+
             if (quantity > 0 && unitPrice >= 0 && (productId != null || serviceId != null))
             {
                 _context.JobOrderDetails.Add(new JobOrderDetail
@@ -258,6 +276,13 @@ namespace ZEmpireAutoAccessories.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RemoveLine(int detailId, int jobOrderId)
         {
+            var owner = await _context.JobOrders.FindAsync(jobOrderId);
+            if (owner?.Status == "Posted")
+            {
+                TempData["LockError"] = "This job order is posted and can no longer be edited.";
+                return RedirectToAction(nameof(Details), new { id = jobOrderId });
+            }
+
             var detail = await _context.JobOrderDetails.FindAsync(detailId);
             if (detail != null)
             {
@@ -280,6 +305,12 @@ namespace ZEmpireAutoAccessories.Controllers
             var jobOrder = await _context.JobOrders.FindAsync(id);
             if (jobOrder != null)
             {
+                if (jobOrder.Status == "Posted")
+                {
+                    TempData["LockError"] = "This job order is posted and can no longer be edited.";
+                    return RedirectToAction(nameof(Details), new { id });
+                }
+
                 jobOrder.Status = status;
                 await _context.SaveChangesAsync();
             }
@@ -287,9 +318,58 @@ namespace ZEmpireAutoAccessories.Controllers
             return RedirectToAction(nameof(Details), new { id });
         }
 
+        // GET: JobOrder/Post/5
+        public async Task<IActionResult> Post(int? id)
+        {
+            if (id == null)
+                return NotFound();
+
+            var jobOrder = await _context.JobOrders
+                .Include(j => j.Customer)
+                .Include(j => j.Vehicle)
+                .FirstOrDefaultAsync(j => j.JobOrderID == id);
+
+            if (jobOrder == null)
+                return NotFound();
+
+            if (jobOrder.Status != "Completed")
+            {
+                TempData["LockError"] = "Only a Completed job order can be posted.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            return View(jobOrder);
+        }
+
+        // POST: JobOrder/Post/5
+        [HttpPost, ActionName("Post")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PostConfirmed(int id)
+        {
+            var jobOrder = await _context.JobOrders.FindAsync(id);
+            if (jobOrder == null)
+                return NotFound();
+
+            if (jobOrder.Status != "Completed")
+            {
+                TempData["LockError"] = "Only a Completed job order can be posted.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            jobOrder.Status = "Posted";
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Job order posted. It's now locked from further edits.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
         // JobOrder is ON DELETE RESTRICT from ServiceInvoice, VehicleChecklist and Warranty.
         private async Task<string?> BuildBlockReason(int jobOrderId)
         {
+            var jobOrder = await _context.JobOrders.FindAsync(jobOrderId);
+            if (jobOrder?.Status == "Posted")
+                return "Can't delete this job order. It has been posted and is locked.";
+
             var invoices = await _context.ServiceInvoices.CountAsync(i => i.JobOrderID == jobOrderId);
             var checklists = await _context.VehicleChecklists.CountAsync(c => c.JobOrderID == jobOrderId);
             var warranties = await _context.Warranties.CountAsync(w => w.JobOrderID == jobOrderId);

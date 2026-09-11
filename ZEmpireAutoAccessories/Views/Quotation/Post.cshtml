@@ -1,0 +1,53 @@
+@model ZEmpireAutoAccessories.Models.Quotation
+
+@{
+    ViewData["Title"] = "Post Quotation";
+}
+
+<style>
+    .zx-page-head h1 { font-family:'Oswald',system-ui,sans-serif; font-weight:700; font-size:22px; margin:0 0 4px; color:#0b0b0c; }
+    .zx-page-sub { color:#7b8290; font-size:13.5px; margin:0 0 18px; }
+    .zx-card { background:#fff; border:1px solid #e8ebf0; border-radius:14px; padding:24px; max-width:560px; }
+    dt { color:#7b8290; font-weight:600; font-size:12.5px; text-transform:uppercase; letter-spacing:.3px; }
+    dd { margin-bottom:14px; font-size:15px; color:#0b0b0c; }
+    .btn-zx, .btn-outline-secondary { display:inline-flex; align-items:center; gap:7px; }
+    .btn-zx { background:#7c3aed; border-color:#7c3aed; color:#fff; font-weight:600; }
+    .btn-zx:hover { background:#6d28d9; border-color:#6d28d9; color:#fff; }
+    .alert-info { display:flex; align-items:flex-start; gap:10px; background:rgba(124,58,237,.08); border:1px solid rgba(124,58,237,.25); color:#5b21b6; }
+    .alert-info svg { flex:none; margin-top:2px; }
+</style>
+
+<div class="zx-page-head">
+    <h1>Post Quotation</h1>
+</div>
+<p class="zx-page-sub">Posting locks this quotation from further edits, line item changes, or status changes.</p>
+
+<div class="alert alert-info">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    <div>This cannot be undone from the app. Make sure the quotation is final before posting.</div>
+</div>
+
+<div class="zx-card">
+    <dl class="row mb-3">
+        <dt class="col-sm-4">Number</dt>
+        <dd class="col-sm-8">@Model.QuotationNumber</dd>
+
+        <dt class="col-sm-4">Customer</dt>
+        <dd class="col-sm-8">@Model.Customer.FullName</dd>
+
+        <dt class="col-sm-4">Vehicle</dt>
+        <dd class="col-sm-8">@(Model.Vehicle.PlateNumber ?? "—")</dd>
+
+        <dt class="col-sm-4">Total</dt>
+        <dd class="col-sm-8">@("₱" + Model.TotalAmount.ToString("N2"))</dd>
+    </dl>
+
+    <form asp-action="Post" method="post">
+        <input type="hidden" name="id" value="@Model.QuotationID" />
+        <button type="submit" class="btn btn-zx">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Post &amp; Lock
+        </button>
+        <a asp-action="Details" asp-route-id="@Model.QuotationID" class="btn btn-outline-secondary">Cancel</a>
+    </form>
+</div>
