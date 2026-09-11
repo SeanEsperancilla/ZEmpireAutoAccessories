@@ -29,6 +29,11 @@
     .btn-zx, .btn-outline-secondary { display:inline-flex; align-items:center; gap:7px; }
     .btn-pdf { display:inline-flex; align-items:center; gap:7px; background:#0b0b0c; border-color:#0b0b0c; color:#fff; font-weight:600; }
     .btn-pdf:hover { background:#262626; border-color:#262626; color:#fff; }
+    .icon-btn { width:32px; height:32px; display:inline-grid; place-items:center; border-radius:8px; border:1px solid #e8ebf0;
+                background:#fff; color:#4b5563; transition:all .15s ease; }
+    .icon-btn.danger:hover { background:#dc2626; color:#fff; border-color:#dc2626; }
+    #removeLineModal .modal-content { border-radius:14px; border:none; }
+    #removeLineModal .modal-title { font-family:'Oswald',system-ui,sans-serif; font-weight:700; font-size:19px; }
 </style>
 
 <div class="zx-page-head">
@@ -193,12 +198,12 @@
                     <td class="text-end pe-3">
                         @if (Model.Status != "Posted")
                         {
-                            <form asp-action="RemoveLine" method="post" class="d-inline"
-                                  onsubmit="return confirm('Remove this line item?');">
-                                <input type="hidden" name="detailId" value="@line.JobOrderDetailID" />
-                                <input type="hidden" name="jobOrderId" value="@Model.JobOrderID" />
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
-                            </form>
+                            <button type="button" class="icon-btn danger remove-line-btn" title="Remove line item"
+                                    data-bs-toggle="modal" data-bs-target="#removeLineModal"
+                                    data-detail-id="@line.JobOrderDetailID"
+                                    data-detail-name="@(line.Product?.ProductName ?? line.Service?.ServiceName ?? "this line item")">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            </button>
                         }
                     </td>
                 </tr>
@@ -257,3 +262,39 @@
         <div class="form-text mt-2">Pick either a Product or a Service for the line item.</div>
     }
 </div>
+
+<div class="modal fade" id="removeLineModal" tabindex="-1" aria-labelledby="removeLineModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="RemoveLine" method="post" id="removeLineForm">
+                <input type="hidden" name="detailId" id="removeLineDetailId" value="" />
+                <input type="hidden" name="jobOrderId" value="@Model.JobOrderID" />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="removeLineModalLabel">Remove Line Item</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">Remove <strong id="removeLineDetailName">this line item</strong> from this job order? This can't be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Remove</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var modalEl = document.getElementById('removeLineModal');
+            if (!modalEl) return;
+            modalEl.addEventListener('show.bs.modal', function (event) {
+                var btn = event.relatedTarget;
+                document.getElementById('removeLineDetailId').value = btn.getAttribute('data-detail-id');
+                document.getElementById('removeLineDetailName').textContent = btn.getAttribute('data-detail-name');
+            });
+        });
+    </script>
+}
