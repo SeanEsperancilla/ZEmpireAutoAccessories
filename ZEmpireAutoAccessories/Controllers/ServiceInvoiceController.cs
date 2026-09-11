@@ -1,10 +1,11 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ZEmpireAutoAccessories.Authorization;
 using ZEmpireAutoAccessories.Data;
 using ZEmpireAutoAccessories.Models;
+using ZEmpireAutoAccessories.Services;
 using ZEmpireAutoAccessories.Services.Interfaces;
 
 namespace ZEmpireAutoAccessories.Controllers
@@ -58,6 +59,31 @@ namespace ZEmpireAutoAccessories.Controllers
 
             await LoadLineDropdowns();
             return View(invoice);
+        }
+
+        // GET: ServiceInvoice/Pdf/5
+        public async Task<IActionResult> Pdf(int? id)
+        {
+            if (id == null)
+                return NotFound();
+
+            var invoice = await _context.ServiceInvoices
+                .Include(i => i.Customer)
+                .Include(i => i.Vehicle)
+                .Include(i => i.JobOrder)
+                .Include(i => i.PaymentMode)
+                .Include(i => i.User)
+                .Include(i => i.Details)
+                    .ThenInclude(d => d.Product)
+                .Include(i => i.Details)
+                    .ThenInclude(d => d.Service)
+                .FirstOrDefaultAsync(i => i.ServiceInvoiceID == id);
+
+            if (invoice == null)
+                return NotFound();
+
+            var pdf = DocumentPdfBuilder.BuildServiceInvoicePdf(invoice);
+            return File(pdf, "application/pdf", $"{invoice.InvoiceNumber}.pdf");
         }
 
         // GET: ServiceInvoice/Create

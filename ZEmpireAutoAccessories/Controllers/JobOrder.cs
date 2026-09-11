@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using ZEmpireAutoAccessories.Authorization;
 using ZEmpireAutoAccessories.Data;
 using ZEmpireAutoAccessories.Models;
+using ZEmpireAutoAccessories.Services;
 
 namespace ZEmpireAutoAccessories.Controllers
 {
@@ -68,6 +69,30 @@ namespace ZEmpireAutoAccessories.Controllers
 
             await LoadLineDropdowns();
             return View(jobOrder);
+        }
+
+        // GET: JobOrder/Pdf/5
+        public async Task<IActionResult> Pdf(int? id)
+        {
+            if (id == null)
+                return NotFound();
+
+            var jobOrder = await _context.JobOrders
+                .Include(j => j.Customer)
+                .Include(j => j.Vehicle)
+                .Include(j => j.JobType)
+                .Include(j => j.AssignedEmployee)
+                .Include(j => j.Details)
+                    .ThenInclude(d => d.Product)
+                .Include(j => j.Details)
+                    .ThenInclude(d => d.Service)
+                .FirstOrDefaultAsync(j => j.JobOrderID == id);
+
+            if (jobOrder == null)
+                return NotFound();
+
+            var pdf = DocumentPdfBuilder.BuildJobOrderPdf(jobOrder);
+            return File(pdf, "application/pdf", $"{jobOrder.JobOrderNumber}.pdf");
         }
 
         // GET: JobOrder/Create

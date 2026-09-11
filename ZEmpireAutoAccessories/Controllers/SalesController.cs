@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using ZEmpireAutoAccessories.Authorization;
 using ZEmpireAutoAccessories.Data;
 using ZEmpireAutoAccessories.Models;
+using ZEmpireAutoAccessories.Services;
 using ZEmpireAutoAccessories.Services.Interfaces;
 
 namespace ZEmpireAutoAccessories.Controllers
@@ -45,6 +46,20 @@ namespace ZEmpireAutoAccessories.Controllers
                 return NotFound();
 
             return View(sale);
+        }
+
+        // GET: Sale/Pdf/5
+        public async Task<IActionResult> Pdf(int? id)
+        {
+            if (id == null)
+                return NotFound();
+
+            var sale = await _salesService.GetSale(id.Value);
+            if (sale == null)
+                return NotFound();
+
+            var pdf = DocumentPdfBuilder.BuildSalePdf(sale);
+            return File(pdf, "application/pdf", $"{sale.InvoiceNumber}.pdf");
         }
 
         // GET: Sale/Create

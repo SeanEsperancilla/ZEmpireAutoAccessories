@@ -23,6 +23,7 @@ namespace ZEmpireAutoAccessories.Services
         {
             return await _context.Sales
                 .Include(s => s.Customer)
+                .Include(s => s.Vehicle)
                 .Include(s => s.User)
                 .Include(s => s.PaymentMode)
                 .Include(s => s.SaleDetails)

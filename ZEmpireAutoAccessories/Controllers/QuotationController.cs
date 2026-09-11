@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using ZEmpireAutoAccessories.Authorization;
 using ZEmpireAutoAccessories.Data;
 using ZEmpireAutoAccessories.Models;
+using ZEmpireAutoAccessories.Services;
 using ZEmpireAutoAccessories.Services.Interfaces;
 
 namespace ZEmpireAutoAccessories.Controllers
@@ -60,6 +61,20 @@ namespace ZEmpireAutoAccessories.Controllers
 
             await LoadLineDropdowns();
             return View(quotation);
+        }
+
+        // GET: Quotation/Pdf/5
+        public async Task<IActionResult> Pdf(int? id)
+        {
+            if (id == null)
+                return NotFound();
+
+            var quotation = await _quotationService.GetQuotation(id.Value);
+            if (quotation == null)
+                return NotFound();
+
+            var pdf = DocumentPdfBuilder.BuildQuotationPdf(quotation);
+            return File(pdf, "application/pdf", $"{quotation.QuotationNumber}.pdf");
         }
 
         // GET: Quotation/Create
