@@ -79,8 +79,11 @@
         <div class="row">
             <div class="col-md-4 mb-3">
                 <label asp-for="PlateNumber" class="form-label"></label>
-                <input asp-for="PlateNumber" class="form-control" placeholder="e.g. ABC 1234" />
+                <input asp-for="PlateNumber" class="form-control" placeholder="e.g. ABC 1234"
+                       style="text-transform:uppercase" maxlength="8"
+                       pattern="[A-Za-z]{3}[- ]?\d{4}" title="3 letters followed by 4 digits, e.g. ABC 1234" />
                 <span asp-validation-for="PlateNumber" class="text-danger"></span>
+                <div class="form-text">Format: 3 letters + 4 digits (e.g. ABC 1234). Leave blank if unknown.</div>
             </div>
             <div class="col-md-4 mb-3">
                 <label asp-for="Brand" class="form-label"></label>

@@ -84,6 +84,8 @@ namespace ZEmpireAutoAccessories.Controllers
                 return View(vehicle);
             }
 
+            NormalizePlateNumber(vehicle);
+
             _context.Vehicles.Add(vehicle);
             await _context.SaveChangesAsync();
 
@@ -125,6 +127,8 @@ namespace ZEmpireAutoAccessories.Controllers
                 await LoadDropdowns(vehicle);
                 return View(vehicle);
             }
+
+            NormalizePlateNumber(vehicle);
 
             try
             {
@@ -242,6 +246,19 @@ namespace ZEmpireAutoAccessories.Controllers
         {
             return _context.Vehicles
                 .Any(v => v.VehicleID == id);
+        }
+
+        // Regex on the model already confirmed the format is 3 letters + 4 digits
+        // (optionally separated by a space or dash) - collapse whatever the user
+        // typed into one canonical "ABC 1234" form before saving.
+        private static void NormalizePlateNumber(Vehicle vehicle)
+        {
+            if (string.IsNullOrWhiteSpace(vehicle.PlateNumber))
+                return;
+
+            var letters = vehicle.PlateNumber.Substring(0, 3).ToUpperInvariant();
+            var digits = vehicle.PlateNumber[^4..];
+            vehicle.PlateNumber = $"{letters} {digits}";
         }
     }
 }
