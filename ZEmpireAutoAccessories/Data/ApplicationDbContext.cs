@@ -22,6 +22,7 @@ namespace ZEmpireAutoAccessories.Data
         public DbSet<Customer> Customers => Set<Customer>();
         public DbSet<Vehicle> Vehicles => Set<Vehicle>();
         public DbSet<VehicleClassification> VehicleClassifications => Set<VehicleClassification>();
+        public DbSet<VehicleModelGuide> VehicleModelGuides => Set<VehicleModelGuide>();
 
         // ----- cat -----
         public DbSet<ProductCategory> ProductCategories => Set<ProductCategory>();

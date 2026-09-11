@@ -72,4 +72,26 @@ namespace ZEmpireAutoAccessories.Models
         public Customer Customer { get; set; } = null!;
         public VehicleClassification VehicleClassification { get; set; } = null!;
     }
+
+    // Reference guide only - which classification a given brand/model
+    // normally falls under. Used to help staff pick the right
+    // VehicleClassification when registering a vehicle; not linked to any
+    // specific Vehicle record.
+    [Table("VehicleModelGuide", Schema = "crm")]
+    public class VehicleModelGuide
+    {
+        [Key]
+        public int VehicleModelGuideID { get; set; }
+
+        [Required, MaxLength(60)]
+        public string Brand { get; set; } = string.Empty;
+
+        [Required, MaxLength(80)]
+        [Display(Name = "Model")]
+        public string ModelName { get; set; } = string.Empty;
+
+        public int VehicleClassificationID { get; set; }
+
+        public VehicleClassification VehicleClassification { get; set; } = null!;
+    }
 }
