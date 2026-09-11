@@ -62,6 +62,22 @@ namespace ZEmpireAutoAccessories.Controllers
             return File(pdf, "application/pdf", $"{sale.InvoiceNumber}.pdf");
         }
 
+        // GET: Sale/VehiclesForCustomer?customerId=5
+        public async Task<IActionResult> VehiclesForCustomer(int customerId)
+        {
+            var vehicles = await _context.Vehicles
+                .Where(v => v.CustomerID == customerId)
+                .OrderBy(v => v.PlateNumber)
+                .Select(v => new
+                {
+                    value = v.VehicleID,
+                    text = (v.PlateNumber ?? "No Plate") + " - " + v.Brand + " " + v.Model
+                })
+                .ToListAsync();
+
+            return Json(vehicles);
+        }
+
         // GET: Sale/Create
         public async Task<IActionResult> Create()
         {

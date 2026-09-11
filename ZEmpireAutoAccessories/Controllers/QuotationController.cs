@@ -63,6 +63,22 @@ namespace ZEmpireAutoAccessories.Controllers
             return View(quotation);
         }
 
+        // GET: Quotation/VehiclesForCustomer?customerId=5
+        public async Task<IActionResult> VehiclesForCustomer(int customerId)
+        {
+            var vehicles = await _context.Vehicles
+                .Where(v => v.CustomerID == customerId)
+                .OrderBy(v => v.PlateNumber)
+                .Select(v => new
+                {
+                    value = v.VehicleID,
+                    text = (v.PlateNumber ?? "No Plate") + " - " + v.Brand + " " + v.Model
+                })
+                .ToListAsync();
+
+            return Json(vehicles);
+        }
+
         // GET: Quotation/Pdf/5
         public async Task<IActionResult> Pdf(int? id)
         {

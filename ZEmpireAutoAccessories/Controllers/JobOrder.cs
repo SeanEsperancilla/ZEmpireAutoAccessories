@@ -71,6 +71,22 @@ namespace ZEmpireAutoAccessories.Controllers
             return View(jobOrder);
         }
 
+        // GET: JobOrder/VehiclesForCustomer?customerId=5
+        public async Task<IActionResult> VehiclesForCustomer(int customerId)
+        {
+            var vehicles = await _context.Vehicles
+                .Where(v => v.CustomerID == customerId)
+                .OrderBy(v => v.PlateNumber)
+                .Select(v => new
+                {
+                    value = v.VehicleID,
+                    text = (v.PlateNumber ?? "No Plate") + " - " + v.Brand + " " + v.Model
+                })
+                .ToListAsync();
+
+            return Json(vehicles);
+        }
+
         // GET: JobOrder/Pdf/5
         public async Task<IActionResult> Pdf(int? id)
         {

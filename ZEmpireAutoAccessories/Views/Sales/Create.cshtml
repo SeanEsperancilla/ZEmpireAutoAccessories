@@ -1,71 +1,22 @@
-﻿@using ZEmpireAutoAccessories.Models
+@using ZEmpireAutoAccessories.Models
 @{
     ViewData["Title"] = "New Sale";
     var products = ViewData["Products"] as List<Product> ?? new();
 }
 
 <style>
-    .zx-page-head h1 {
-        font-family: 'Oswald',system-ui,sans-serif;
-        font-weight: 700;
-        font-size: 22px;
-        margin: 0 0 4px;
-        color: #0b0b0c;
-    }
-
-    .zx-page-sub {
-        color: #7b8290;
-        font-size: 13.5px;
-        margin: 0 0 18px;
-    }
-
-    .zx-card {
-        background: #fff;
-        border: 1px solid #e8ebf0;
-        border-radius: 14px;
-        padding: 24px;
-        max-width: 900px;
-    }
-
-    .btn-zx {
-        background: var(--zx-red);
-        border-color: var(--zx-red);
-        color: #fff;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-    }
-
-        .btn-zx:hover {
-            background: var(--zx-red2);
-            border-color: var(--zx-red2);
-            color: #fff;
-        }
-
-    .zx-table thead {
-        background: #0b0b0c;
-        color: #fff;
-    }
-
-        .zx-table thead th {
-            border-bottom: none;
-            font-weight: 600;
-            font-size: 12.5px;
-            text-transform: uppercase;
-            letter-spacing: .3px;
-        }
-
-    #grandTotal {
-        font-weight: 700;
-        font-size: 18px;
-    }
+    .zx-page-head h1 { font-family:'Oswald',system-ui,sans-serif; font-weight:700; font-size:22px; margin:0 0 18px; color:#0b0b0c; }
+    .zx-card { background:#fff; border:1px solid #e8ebf0; border-radius:14px; padding:24px; max-width:900px; }
+    .btn-zx { background:var(--zx-red); border-color:var(--zx-red); color:#fff; font-weight:600; }
+    .btn-zx:hover { background:var(--zx-red2); border-color:var(--zx-red2); color:#fff; }
+    .zx-table thead { background:#0b0b0c; color:#fff; }
+    .zx-table thead th { border-bottom:none; font-weight:600; font-size:12.5px; text-transform:uppercase; letter-spacing:.3px; }
+    #grandTotal { font-weight:700; font-size:18px; }
 </style>
 
 <div class="zx-page-head">
     <h1>New Sale</h1>
 </div>
-<p class="zx-page-sub">Add line items, then complete the sale to deduct stock.</p>
 
 <div class="zx-card">
     <form asp-action="Create" method="post" id="saleForm">
@@ -74,14 +25,14 @@
         <div class="row">
             <div class="col-md-6 mb-3">
                 <label class="form-label">Customer</label>
-                <select name="customerId" class="form-select" asp-items="ViewBag.CustomerID" required>
+                <select id="customerId" name="customerId" class="form-select" asp-items="ViewBag.CustomerID" required>
                     <option value="">-- Select Customer --</option>
                 </select>
             </div>
             <div class="col-md-6 mb-3">
                 <label class="form-label">Vehicle <span class="text-muted fw-normal">(optional)</span></label>
-                <select name="vehicleId" class="form-select" asp-items="ViewBag.VehicleID">
-                    <option value="">-- None --</option>
+                <select id="vehicleId" name="vehicleId" class="form-select" disabled>
+                    <option value="">-- Select Customer First --</option>
                 </select>
             </div>
         </div>
@@ -126,20 +77,43 @@
             Total: <span id="grandTotal">₱0.00</span>
         </div>
 
-        <button type="submit" class="btn btn-zx">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" /><path d="M17 21v-8H7v8" /><path d="M7 3v5h8" /></svg>
-            Complete Sale
-        </button>
+        <button type="submit" class="btn btn-zx">Complete Sale</button>
         <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
     </form>
 </div>
 
 @section Scripts {
     <script>
-        $(function() {
+        $(function () {
+            var $customer = $('#customerId');
+            var $vehicle = $('#vehicleId');
+
+            function loadVehicles(customerId) {
+                $vehicle.prop('disabled', true).empty();
+
+                if (!customerId) {
+                    $vehicle.append($('<option></option>').val('').text('-- Select Customer First --'));
+                    return;
+                }
+
+                $.getJSON('@Url.Action("VehiclesForCustomer")', { customerId: customerId })
+                    .done(function (data) {
+                        $vehicle.empty();
+                        $vehicle.append($('<option></option>').val('').text('-- None --'));
+                        $.each(data, function (i, v) {
+                            $vehicle.append($('<option></option>').val(v.value).text(v.text));
+                        });
+                        $vehicle.prop('disabled', false);
+                    });
+            }
+
+            $customer.on('change', function () {
+                loadVehicles($(this).val());
+            });
+
             function recalcTotal() {
                 var total = 0;
-                $('.line-row').each(function() {
+                $('.line-row').each(function () {
                     var qty = parseFloat($(this).find('input[name=quantity]').val()) || 0;
                     var price = parseFloat($(this).find('input[name=unitPrice]').val()) || 0;
                     total += qty * price;
@@ -147,7 +121,7 @@
                 $('#grandTotal').text('₱' + total.toFixed(2));
             }
 
-            $(document).on('change', '.product-select', function() {
+            $(document).on('change', '.product-select', function () {
                 var price = $(this).find(':selected').data('price');
                 if (price !== undefined && price !== '') {
                     $(this).closest('tr').find('.unit-price').val(parseFloat(price).toFixed(2));
@@ -157,14 +131,14 @@
 
             $(document).on('input', 'input[name=quantity], input[name=unitPrice]', recalcTotal);
 
-            $('#addRow').on('click', function() {
+            $('#addRow').on('click', function () {
                 var newRow = $('.line-row').first().clone();
                 newRow.find('select, input').val('');
                 newRow.find('input[name=quantity]').val(1);
                 $('#linesTable tbody').append(newRow);
             });
 
-            $(document).on('click', '.remove-row', function() {
+            $(document).on('click', '.remove-row', function () {
                 if ($('.line-row').length > 1) {
                     $(this).closest('tr').remove();
                     recalcTotal();
