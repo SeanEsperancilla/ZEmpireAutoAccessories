@@ -2,6 +2,7 @@
 
 @{
     ViewData["Title"] = "Pricing";
+    var search = ViewData["Search"] as string;
 }
 
 <style>
@@ -17,12 +18,30 @@
                 background:#fff; color:#4b5563; margin-left:6px; transition:all .15s ease; text-decoration:none; }
     .icon-btn:hover { background:#0b0b0c; color:#fff; border-color:#0b0b0c; }
     .icon-btn.danger:hover { background:#dc2626; color:#fff; border-color:#dc2626; }
+    .search-wrap { position:relative; max-width:420px; margin-bottom:10px; }
+    .search-wrap svg { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:#98a0ad; }
+    .search-input { padding-left:38px; border-radius:10px; }
+    .search-actions { display:flex; gap:8px; margin-top:8px; margin-bottom:18px; }
 </style>
 
 <div class="zx-page-head">
     <h1>Pricing</h1>
     <a class="btn btn-zx" asp-action="Create">+ New Pricing</a>
 </div>
+
+<form asp-action="Index" method="get">
+    <div class="search-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+        <input type="text" name="q" value="@search" class="form-control search-input" placeholder="Search product" />
+    </div>
+    <div class="search-actions">
+        <button type="submit" class="btn btn-outline-secondary btn-sm">Search</button>
+        @if (!string.IsNullOrEmpty(search))
+        {
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Clear</a>
+        }
+    </div>
+</form>
 
 <div class="zx-card">
     <table class="table zx-table mb-0">
@@ -61,7 +80,9 @@
             @if (!Model.Any())
             {
                 <tr>
-                    <td colspan="6" class="text-center text-muted py-4">No pricing records yet.</td>
+                    <td colspan="6" class="text-center text-muted py-4">
+                        @(string.IsNullOrEmpty(search) ? "No pricing records yet." : $"No pricing records match \"{search}\".")
+                    </td>
                 </tr>
             }
         </tbody>
