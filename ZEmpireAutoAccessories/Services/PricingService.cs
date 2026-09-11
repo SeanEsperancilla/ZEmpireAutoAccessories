@@ -49,7 +49,11 @@ namespace ZEmpireAutoAccessories.Services
             if (!string.IsNullOrWhiteSpace(q))
             {
                 var term = q.Trim();
-                query = query.Where(p => p.Product.ProductName.Contains(term));
+                query = query.Where(p =>
+                    p.Product.ProductName.Contains(term) ||
+                    (p.TintVariant != null && p.TintVariant.VariantName.Contains(term)) ||
+                    p.VehicleClassification.ClassificationName.Contains(term) ||
+                    p.Panel.PanelName.Contains(term));
             }
 
             return await query
