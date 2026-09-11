@@ -30,12 +30,23 @@ namespace ZEmpireAutoAccessories.Services
                 .FirstOrDefaultAsync(s => s.SalesID == saleId);
         }
 
-        public async Task<List<Sale>> GetSales()
+        public async Task<List<Sale>> GetSales(string? q = null)
         {
-            return await _context.Sales
+            var query = _context.Sales
                 .Include(s => s.Customer)
                 .Include(s => s.User)
                 .Include(s => s.PaymentMode)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var term = q.Trim();
+                query = query.Where(s =>
+                    s.InvoiceNumber.Contains(term) ||
+                    s.Customer.FullName.Contains(term));
+            }
+
+            return await query
                 .OrderByDescending(s => s.SalesDate)
                 .ToListAsync();
         }

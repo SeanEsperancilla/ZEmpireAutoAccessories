@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -26,10 +26,11 @@ namespace ZEmpireAutoAccessories.Controllers
             _quotationService = quotationService;
         }
 
-        // GET: Sale
-        public async Task<IActionResult> Index()
+        // GET: Sale?q=...
+        public async Task<IActionResult> Index(string? q)
         {
-            var sales = await _salesService.GetSales();
+            var sales = await _salesService.GetSales(q);
+            ViewData["Search"] = q;
             return View(sales);
         }
 

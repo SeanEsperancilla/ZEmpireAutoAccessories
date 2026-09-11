@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -21,18 +21,30 @@ namespace ZEmpireAutoAccessories.Controllers
             _quotationService = quotationService;
         }
 
-        // GET: Quotation?status=Draft
-        public async Task<IActionResult> Index(string? status)
+        // GET: Quotation?status=Draft&q=...
+        public async Task<IActionResult> Index(string? status, string? q)
         {
-            var quotations = await _context.Quotations
-                .Include(q => q.Customer)
-                .Include(q => q.Vehicle)
-                .Include(q => q.JobOrder)
-                .Where(q => status == null || q.Status == status)
-                .OrderByDescending(q => q.QuotationDate)
+            var query = _context.Quotations
+                .Include(quotation => quotation.Customer)
+                .Include(quotation => quotation.Vehicle)
+                .Include(quotation => quotation.JobOrder)
+                .Where(quotation => status == null || quotation.Status == status);
+
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var term = q.Trim();
+                query = query.Where(quotation =>
+                    quotation.QuotationNumber.Contains(term) ||
+                    quotation.Customer.FullName.Contains(term) ||
+                    (quotation.Vehicle.PlateNumber != null && quotation.Vehicle.PlateNumber.Contains(term)));
+            }
+
+            var quotations = await query
+                .OrderByDescending(quotation => quotation.QuotationDate)
                 .ToListAsync();
 
             ViewData["Status"] = status;
+            ViewData["Search"] = q;
             return View(quotations);
         }
 

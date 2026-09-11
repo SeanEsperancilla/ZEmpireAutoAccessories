@@ -6,7 +6,7 @@ namespace ZEmpireAutoAccessories.Services.Interfaces
     {
         Task<Sale?> GetSale(int saleId);
 
-        Task<List<Sale>> GetSales();
+        Task<List<Sale>> GetSales(string? q = null);
 
         Task<Sale> CreateSale(
             string userId,

@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -18,20 +18,34 @@ namespace ZEmpireAutoAccessories.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> Index(string? status)
+        // GET: JobOrder?status=Pending&q=...
+        public async Task<IActionResult> Index(string? status, string? q)
         {
-            var jobOrders = await _context.JobOrders
+            var query = _context.JobOrders
                 .Include(j => j.Customer)
                 .Include(j => j.Vehicle)
                 .Include(j => j.AssignedEmployee)
-                .Where(j => status == null || j.Status == status)
+                .Where(j => status == null || j.Status == status);
+
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var term = q.Trim();
+                query = query.Where(j =>
+                    j.JobOrderNumber.Contains(term) ||
+                    j.Customer.FullName.Contains(term) ||
+                    (j.Vehicle.PlateNumber != null && j.Vehicle.PlateNumber.Contains(term)));
+            }
+
+            var jobOrders = await query
                 .OrderByDescending(j => j.JobOrderDate)
                 .ToListAsync();
 
             ViewData["Status"] = status;
+            ViewData["Search"] = q;
             return View(jobOrders);
         }
 
+        // GET: JobOrder/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -56,12 +70,14 @@ namespace ZEmpireAutoAccessories.Controllers
             return View(jobOrder);
         }
 
+        // GET: JobOrder/Create
         public async Task<IActionResult> Create()
         {
             await LoadHeaderDropdowns();
             return View(new JobOrder { JobOrderDate = DateTime.Now });
         }
 
+        // POST: JobOrder/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
@@ -88,12 +104,14 @@ namespace ZEmpireAutoAccessories.Controllers
             _context.JobOrders.Add(jobOrder);
             await _context.SaveChangesAsync();
 
+            // Number depends on the generated ID, so it's set in a second save.
             jobOrder.JobOrderNumber = $"JO-{jobOrder.JobOrderID:D6}";
             await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Details), new { id = jobOrder.JobOrderID });
         }
 
+        // GET: JobOrder/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -107,6 +125,7 @@ namespace ZEmpireAutoAccessories.Controllers
             return View(jobOrder);
         }
 
+        // POST: JobOrder/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
@@ -149,6 +168,7 @@ namespace ZEmpireAutoAccessories.Controllers
             return RedirectToAction(nameof(Details), new { id });
         }
 
+        // GET: JobOrder/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -167,6 +187,7 @@ namespace ZEmpireAutoAccessories.Controllers
             return View(jobOrder);
         }
 
+        // POST: JobOrder/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
@@ -197,6 +218,7 @@ namespace ZEmpireAutoAccessories.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // POST: JobOrder/AddLine
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddLine(
@@ -231,6 +253,7 @@ namespace ZEmpireAutoAccessories.Controllers
             return RedirectToAction(nameof(Details), new { id = jobOrderId });
         }
 
+        // POST: JobOrder/RemoveLine
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RemoveLine(int detailId, int jobOrderId)
@@ -245,6 +268,7 @@ namespace ZEmpireAutoAccessories.Controllers
             return RedirectToAction(nameof(Details), new { id = jobOrderId });
         }
 
+        // POST: JobOrder/SetStatus
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SetStatus(int id, string status)
