@@ -261,16 +261,21 @@ namespace ZEmpireAutoAccessories.Controllers
                 .Any(v => v.VehicleID == id);
         }
 
-        // Regex on the model already confirmed the format is 3 letters + 4 digits
-        // (optionally separated by a space or dash) - collapse whatever the user
-        // typed into one canonical "ABC 1234" form before saving.
+        // Regex on the model already confirmed the format is 3 letters + 3 or 4
+        // digits (the current and older Philippine LTO formats), optionally
+        // separated by a space or dash - collapse whatever the user typed into
+        // one canonical "ABC 1234" / "ABC 123" form before saving.
         private static void NormalizePlateNumber(Vehicle vehicle)
         {
             if (string.IsNullOrWhiteSpace(vehicle.PlateNumber))
                 return;
 
-            var letters = vehicle.PlateNumber.Substring(0, 3).ToUpperInvariant();
-            var digits = vehicle.PlateNumber[^4..];
+            var compact = vehicle.PlateNumber.Replace(" ", "").Replace("-", "");
+            if (compact.Length < 6)
+                return;
+
+            var letters = compact.Substring(0, 3).ToUpperInvariant();
+            var digits = compact.Substring(3);
             vehicle.PlateNumber = $"{letters} {digits}";
         }
     }

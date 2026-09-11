@@ -80,8 +80,8 @@ namespace ZEmpireAutoAccessories.Controllers
             _context.Customers.Add(customer);
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = $"Customer \"{customer.FullName}\" was added.";
-            return RedirectToAction(nameof(Index));
+            TempData["Success"] = $"Customer \"{customer.FullName}\" was added. Now add their vehicle.";
+            return RedirectToAction("Create", "Vehicle", new { customerId = customer.CustomerID });
         }
 
         // GET: Customer/Edit/5

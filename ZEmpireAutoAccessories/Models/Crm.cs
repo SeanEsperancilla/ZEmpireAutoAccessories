@@ -53,7 +53,7 @@ namespace ZEmpireAutoAccessories.Models
         public int VehicleClassificationID { get; set; }
 
         [MaxLength(20, ErrorMessage = "Plate number can't be longer than 20 characters.")]
-        [RegularExpression(@"^[A-Za-z]{3}[- ]?\d{4}$", ErrorMessage = "Plate number must be 3 letters followed by 4 digits (e.g. ABC 1234).")]
+        [RegularExpression(@"^[A-Za-z]{3}[- ]?\d{3,4}$", ErrorMessage = "Enter a valid Philippine plate number (e.g. ABC 1234 or the older ABC 123 format).")]
         [Display(Name = "Plate number")]
         public string? PlateNumber { get; set; }
 
