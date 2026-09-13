@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -460,15 +461,31 @@ namespace ZEmpireAutoAccessories.Controllers
             ViewData["AssignedEmployeeID"] = new SelectList(employees, "EmployeeID", "Display", jobOrder?.AssignedEmployeeID);
         }
 
+        // Each <option> carries data-price so the Add Line Item form can
+        // fill in the Price field as soon as a product/service is picked.
         private async Task LoadLineDropdowns()
         {
-            ViewData["ProductID"] = new SelectList(
-                await _context.Products.Where(p => p.IsActive).OrderBy(p => p.ProductName).ToListAsync(),
-                "ProductID", "ProductName");
+            var products = await _context.Products.Where(p => p.IsActive).OrderBy(p => p.ProductName).ToListAsync();
+            ViewData["ProductID"] = products.Select(p => new SelectListItem
+            {
+                Value = p.ProductID.ToString(),
+                Text = p.ProductName,
+                Attributes = new Dictionary<string, string>
+                {
+                    ["data-price"] = (p.DefaultPrice ?? 0).ToString(CultureInfo.InvariantCulture)
+                }
+            }).ToList();
 
-            ViewData["ServiceID"] = new SelectList(
-                await _context.Services.Where(s => s.IsActive).OrderBy(s => s.ServiceName).ToListAsync(),
-                "ServiceID", "ServiceName");
+            var services = await _context.Services.Where(s => s.IsActive).OrderBy(s => s.ServiceName).ToListAsync();
+            ViewData["ServiceID"] = services.Select(s => new SelectListItem
+            {
+                Value = s.ServiceID.ToString(),
+                Text = s.ServiceName,
+                Attributes = new Dictionary<string, string>
+                {
+                    ["data-price"] = s.DefaultPrice.ToString(CultureInfo.InvariantCulture)
+                }
+            }).ToList();
         }
     }
 }
