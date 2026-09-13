@@ -1,6 +1,9 @@
 /* Searchable select: progressively enhances <select data-searchable="true">
- * elements into a type-to-filter dropdown, without changing how the form
- * submits or how ASP.NET's unobtrusive validation works.
+ * elements into a plain search bar, without changing how the form submits
+ * or how ASP.NET's unobtrusive validation works. Matches only appear once
+ * the user types something - focusing or clicking the field does not pop
+ * open a full list of every option, so it reads as a search box rather
+ * than a disguised <select>.
  *
  * The original <select> is kept in the DOM (visually hidden, not
  * display:none, so jQuery Validate's default `ignore: ":hidden"` doesn't
@@ -169,7 +172,7 @@
             if (select.disabled) { return; }
             menu.hidden = false;
             input.setAttribute("aria-expanded", "true");
-            filter(input.value === currentOptionText() ? "" : input.value);
+            filter(input.value);
         }
 
         function closeMenu(revert) {
@@ -190,30 +193,31 @@
             $(select).trigger("change");
         }
 
+        // Pure search-bar behavior: typing is what reveals matches, not
+        // focusing or clicking into an empty field - there is no "browse
+        // the full list" dropdown to open.
         input.addEventListener("focus", function () {
-            openMenu();
             input.select();
         });
 
-        input.addEventListener("click", function () {
-            if (menu.hidden) { openMenu(); }
-        });
-
         input.addEventListener("input", function () {
-            if (menu.hidden) { openMenu(); }
-            filter(input.value);
+            if (input.value.trim() === "") {
+                closeMenu(false);
+            } else {
+                openMenu();
+            }
         });
 
         input.addEventListener("keydown", function (e) {
             var rows;
             if (e.key === "ArrowDown") {
+                if (menu.hidden) { return; }
                 e.preventDefault();
-                if (menu.hidden) { openMenu(); return; }
                 rows = visibleOptionRows();
                 setActive(Math.min(activeIndex + 1, rows.length - 1));
             } else if (e.key === "ArrowUp") {
+                if (menu.hidden) { return; }
                 e.preventDefault();
-                if (menu.hidden) { openMenu(); return; }
                 setActive(Math.max(activeIndex - 1, 0));
             } else if (e.key === "Enter") {
                 if (!menu.hidden) {
