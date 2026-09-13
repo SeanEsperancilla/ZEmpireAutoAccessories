@@ -44,6 +44,8 @@
     // Any module not covered by the map above.
     var leftovers = modules.Where(m => !claimed.Contains(m)).OrderBy(m => m).ToList();
     if (leftovers.Count > 0) { categories.Add(("More", leftovers)); }
+
+    var stats = ViewData["Stats"] as List<DashboardStat> ?? new();
 }
 
 <style>
@@ -179,6 +181,81 @@
         align-items: center;
         gap: 5px;
     }
+
+    .stat-row {
+        margin-bottom: 22px;
+    }
+
+    .stat-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: #fff;
+        border: 1px solid #e8ebf0;
+        border-radius: 14px;
+        padding: 14px 16px;
+        height: 100%;
+        text-decoration: none;
+        color: inherit;
+        transition: transform .1s ease, box-shadow .15s ease, border-color .15s ease;
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 30px -20px rgba(2,6,23,.3);
+            border-color: #f3c9cb;
+            color: inherit;
+        }
+
+    .stat-ic {
+        flex: none;
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg,#fde8e9,#fbd3d5);
+        color: #c0202a;
+    }
+
+    .stat-value {
+        font-family: 'Oswald',system-ui,sans-serif;
+        font-weight: 700;
+        font-size: 19px;
+        color: #0b0b0c;
+        line-height: 1.15;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: #7b8290;
+        font-weight: 600;
+    }
+
+    .mod-search-wrap {
+        position: relative;
+        max-width: 380px;
+        margin-bottom: 22px;
+    }
+
+        .mod-search-wrap svg {
+            position: absolute;
+            left: 13px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #98a0ad;
+        }
+
+    .mod-search-input {
+        padding-left: 38px;
+        border-radius: 10px;
+    }
+
+    .mod-no-results {
+        color: #7b8290;
+        font-size: 13.5px;
+        padding: 6px 2px 18px;
+    }
 </style>
 
 <section class="dash-hero">
@@ -192,6 +269,32 @@
         across <strong>@categories.Count</strong> categor@(categories.Count == 1 ? "y" : "ies").
     </p>
 </section>
+
+@if (stats.Count > 0)
+{
+    <div class="row g-3 stat-row">
+        @foreach (var stat in stats)
+        {
+            <div class="col-6 col-lg-3">
+                <a href="@stat.Link" class="stat-card">
+                    <div class="stat-ic">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">@Html.Raw(StatIcon(stat.Icon))</svg>
+                    </div>
+                    <div>
+                        <div class="stat-value">@stat.Value</div>
+                        <div class="stat-label">@stat.Label</div>
+                    </div>
+                </a>
+            </div>
+        }
+    </div>
+}
+
+<div class="mod-search-wrap">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+    <input type="text" id="modSearch" class="form-control mod-search-input" placeholder="Search modules... (press / to focus)" autocomplete="off" />
+</div>
+<div id="modNoResults" class="mod-no-results" hidden>No modules match your search.</div>
 
 @foreach (var (name, mods) in categories)
 {
@@ -225,7 +328,7 @@
                     "Services" => Url.Action("Index", "Service"),
                     _ => null
                 };
-                <div class="col-6 col-md-4 col-lg-3">
+                <div class="col-6 col-md-4 col-lg-3" data-mod-name="@module">
                     @if (route != null)
                     {
                         <a href="@route" class="mod-card d-flex flex-column">
@@ -259,7 +362,61 @@
     </div>
 }
 
+@section Scripts {
+    <script>
+        (function () {
+            var input = document.getElementById('modSearch');
+            var noResults = document.getElementById('modNoResults');
+            if (!input) { return; }
+
+            function applyFilter() {
+                var term = input.value.trim().toLowerCase();
+                var anyVisible = false;
+
+                document.querySelectorAll('.cat-block').forEach(function (block) {
+                    var blockHasMatch = false;
+                    block.querySelectorAll('[data-mod-name]').forEach(function (card) {
+                        var name = card.getAttribute('data-mod-name').toLowerCase();
+                        var match = term === '' || name.indexOf(term) !== -1;
+                        card.hidden = !match;
+                        if (match) { blockHasMatch = true; anyVisible = true; }
+                    });
+                    block.hidden = !blockHasMatch;
+                });
+
+                noResults.hidden = anyVisible || term === '';
+            }
+
+            input.addEventListener('input', applyFilter);
+
+            // Press "/" anywhere on the page to jump into the module search.
+            document.addEventListener('keydown', function (e) {
+                if (e.key !== '/' || e.target === input) { return; }
+                var tag = (e.target.tagName || '').toUpperCase();
+                if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') { return; }
+                e.preventDefault();
+                input.focus();
+            });
+        })();
+    </script>
+}
+
 @functions {
+    // Icon for a Home dashboard quick-stat tile (Lucide-style, 24x24).
+    private static string StatIcon(string icon) => icon switch
+    {
+        "sales" =>
+            "<circle cx='8' cy='21' r='1'/><circle cx='19' cy='21' r='1'/><path d='M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12'/>",
+        "jobs" =>
+            "<rect width='8' height='4' x='8' y='2' rx='1' ry='1'/><path d='M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2'/><path d='M12 11h4'/><path d='M12 16h4'/><path d='M8 11h.01'/><path d='M8 16h.01'/>",
+        "stock" =>
+            "<rect width='20' height='5' x='2' y='3' rx='1'/><path d='M4 8v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V8'/><path d='M10 12h4'/>",
+        "warranty" =>
+            "<path d='M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z'/><path d='m9 12 2 2 4-4'/>",
+        _ =>
+            "<circle cx='12' cy='12' r='10'/>",
+    };
+
     // Per-module tile icon (Lucide-style, 24x24, stroke = currentColor). Uses
     // single-quoted SVG attributes so it composes cleanly as a C# string.
     // Unknown modules fall back to the original 4-square grid icon.
