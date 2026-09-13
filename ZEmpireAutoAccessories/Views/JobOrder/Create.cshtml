@@ -24,14 +24,14 @@
         <div class="row">
             <div class="col-md-6 mb-3">
                 <label asp-for="CustomerID" class="form-label"></label>
-                <select asp-for="CustomerID" class="form-select" asp-items="ViewBag.CustomerID">
+                <select asp-for="CustomerID" class="form-select" asp-items="ViewBag.CustomerID" data-searchable="true">
                     <option value="">-- Select Customer --</option>
                 </select>
                 <span asp-validation-for="CustomerID" class="text-danger"></span>
             </div>
             <div class="col-md-6 mb-3">
                 <label asp-for="VehicleID" class="form-label"></label>
-                <select asp-for="VehicleID" class="form-select" asp-items="ViewBag.VehicleID">
+                <select asp-for="VehicleID" class="form-select" asp-items="ViewBag.VehicleID" data-searchable="true">
                     <option value="">-- Select Vehicle --</option>
                 </select>
                 <span asp-validation-for="VehicleID" class="text-danger"></span>
@@ -47,7 +47,7 @@
             </div>
             <div class="col-md-6 mb-3">
                 <label asp-for="AssignedEmployeeID" class="form-label">Assigned Employee <span class="text-muted fw-normal">(optional)</span></label>
-                <select asp-for="AssignedEmployeeID" class="form-select" asp-items="ViewBag.AssignedEmployeeID">
+                <select asp-for="AssignedEmployeeID" class="form-select" asp-items="ViewBag.AssignedEmployeeID" data-searchable="true">
                     <option value="">-- Unassigned --</option>
                 </select>
             </div>

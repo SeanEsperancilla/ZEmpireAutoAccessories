@@ -25,14 +25,14 @@
         <div class="row">
             <div class="col-md-6 mb-3">
                 <label asp-for="CustomerID" class="form-label"></label>
-                <select asp-for="CustomerID" class="form-select" asp-items="ViewBag.CustomerID">
+                <select asp-for="CustomerID" class="form-select" asp-items="ViewBag.CustomerID" data-searchable="true">
                     <option value="">-- Select Customer --</option>
                 </select>
                 <span asp-validation-for="CustomerID" class="text-danger"></span>
             </div>
             <div class="col-md-6 mb-3">
                 <label asp-for="VehicleID" class="form-label">Vehicle <span class="text-muted fw-normal">(optional)</span></label>
-                <select asp-for="VehicleID" class="form-select" asp-items="ViewBag.VehicleID">
+                <select asp-for="VehicleID" class="form-select" asp-items="ViewBag.VehicleID" data-searchable="true">
                     <option value="">-- None --</option>
                 </select>
             </div>
@@ -41,7 +41,7 @@
         <div class="row">
             <div class="col-md-6 mb-3">
                 <label asp-for="JobOrderID" class="form-label">Job Order <span class="text-muted fw-normal">(optional)</span></label>
-                <select asp-for="JobOrderID" class="form-select" asp-items="ViewBag.JobOrderID">
+                <select asp-for="JobOrderID" class="form-select" asp-items="ViewBag.JobOrderID" data-searchable="true">
                     <option value="">-- None --</option>
                 </select>
             </div>

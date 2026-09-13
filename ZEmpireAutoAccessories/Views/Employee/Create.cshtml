@@ -24,7 +24,7 @@
 
         <div class="mb-3">
             <label asp-for="UserId" class="form-label">Login Account</label>
-            <select asp-for="UserId" class="form-select" asp-items="ViewBag.UserId">
+            <select asp-for="UserId" class="form-select" asp-items="ViewBag.UserId" data-searchable="true">
                 <option value="">-- Select Login Account --</option>
             </select>
             <span asp-validation-for="UserId" class="text-danger"></span>
