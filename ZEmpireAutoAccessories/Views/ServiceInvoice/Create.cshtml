@@ -79,6 +79,7 @@
         (function () {
             var $customer = $('#CustomerID');
             var $vehicle = $('#VehicleID');
+            var $jobOrder = $('#JobOrderID');
 
             function loadVehicles(customerId, selectedVehicleId) {
                 $vehicle.prop('disabled', true).empty();
@@ -113,15 +114,44 @@
                     });
             }
 
+            // Only Completed/Posted job orders for this customer that aren't
+            // already invoiced show up here - those are the only ones that
+            // can actually be turned into an invoice.
+            function loadJobOrders(customerId, selectedJobOrderId) {
+                $jobOrder.prop('disabled', true).empty();
+
+                if (!customerId) {
+                    $jobOrder.append($('<option></option>').val('').text('-- Select Customer First --'));
+                    return;
+                }
+
+                $.getJSON('@Url.Action("JobOrdersForCustomer")', { customerId: customerId })
+                    .done(function (data) {
+                        $jobOrder.empty();
+                        $jobOrder.append($('<option></option>').val('').text('-- None --'));
+                        $.each(data, function (i, j) {
+                            var $opt = $('<option></option>').val(j.value).text(j.text);
+                            if (selectedJobOrderId && String(j.value) === String(selectedJobOrderId)) {
+                                $opt.prop('selected', true);
+                            }
+                            $jobOrder.append($opt);
+                        });
+                        $jobOrder.prop('disabled', false);
+                    });
+            }
+
             $customer.on('change', function () {
                 loadVehicles($(this).val(), null);
+                loadJobOrders($(this).val(), null);
             });
 
             var startingCustomerId = $customer.val();
             if (startingCustomerId) {
                 loadVehicles(startingCustomerId, '@Model.VehicleID');
+                loadJobOrders(startingCustomerId, '@Model.JobOrderID');
             } else {
                 $vehicle.prop('disabled', true);
+                $jobOrder.prop('disabled', true);
             }
         })();
     </script>
