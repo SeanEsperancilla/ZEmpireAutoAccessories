@@ -255,10 +255,11 @@ namespace ZEmpireAutoAccessories.Controllers
                 {
                     await _context.SaveChangesAsync();
 
-                    var saved = await _context.ServiceInvoices
-                        .Include(i => i.Details)
-                        .FirstAsync(i => i.ServiceInvoiceID == invoice.ServiceInvoiceID);
-                    RecalculateTotals(saved);
+                    // Same load-then-recalc sequence AddLine uses below - reload
+                    // the just-saved details onto the tracked invoice instance
+                    // itself rather than re-querying a separate instance.
+                    await _context.Entry(invoice).Collection(i => i.Details).LoadAsync();
+                    RecalculateTotals(invoice);
                     await _context.SaveChangesAsync();
                 }
             }
