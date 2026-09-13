@@ -164,6 +164,13 @@
         color: #98a0ad;
     }
 
+    .mod-card .mod-blurb {
+        font-size: 11.5px;
+        color: #7b8290;
+        margin: 0;
+        line-height: 1.4;
+    }
+
     a.mod-card, a.mod-card:hover {
         color: inherit;
         text-decoration: none;
@@ -337,9 +344,13 @@
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">@Html.Raw(ModuleIcon(module))</svg>
                             </div>
                             <h6>@module</h6>
+                            @if (module == "Dashboard")
+                            {
+                                <p class="mod-blurb">You're here — @modules.Count module@(modules.Count == 1 ? "" : "s") across @categories.Count categor@(categories.Count == 1 ? "y" : "ies").</p>
+                            }
                             <div class="mt-auto pt-2">
                                 <span class="open">
-                                    Open
+                                    @(module == "Dashboard" ? "Refresh" : "Open")
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
                                 </span>
                             </div>
