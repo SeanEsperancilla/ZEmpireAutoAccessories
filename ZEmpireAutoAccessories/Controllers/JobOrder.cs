@@ -63,6 +63,10 @@ namespace ZEmpireAutoAccessories.Controllers
                     .ThenInclude(d => d.Product)
                 .Include(j => j.Details)
                     .ThenInclude(d => d.Service)
+                .Include(j => j.Details)
+                    .ThenInclude(d => d.TintVariant)
+                .Include(j => j.Details)
+                    .ThenInclude(d => d.Panel)
                 .FirstOrDefaultAsync(j => j.JobOrderID == id);
 
             if (jobOrder == null)

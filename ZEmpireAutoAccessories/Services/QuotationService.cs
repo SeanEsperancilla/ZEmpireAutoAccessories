@@ -33,6 +33,10 @@ namespace ZEmpireAutoAccessories.Services
                     .ThenInclude(d => d.Product)
                 .Include(q => q.Details)
                     .ThenInclude(d => d.Service)
+                .Include(q => q.Details)
+                    .ThenInclude(d => d.TintVariant)
+                .Include(q => q.Details)
+                    .ThenInclude(d => d.Panel)
                 .FirstOrDefaultAsync(q => q.QuotationID == quotationId);
         }
 

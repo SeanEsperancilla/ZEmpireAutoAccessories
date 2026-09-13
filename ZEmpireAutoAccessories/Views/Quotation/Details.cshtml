@@ -32,8 +32,8 @@
     .icon-btn { width:32px; height:32px; display:inline-grid; place-items:center; border-radius:8px; border:1px solid #e8ebf0;
                 background:#fff; color:#4b5563; transition:all .15s ease; }
     .icon-btn.danger:hover { background:#dc2626; color:#fff; border-color:#dc2626; }
-    #removeLineModal .modal-content { border-radius:14px; border:none; }
-    #removeLineModal .modal-title { font-family:'Oswald',system-ui,sans-serif; font-weight:700; font-size:19px; }
+    #removeLineModal .modal-content, #convertModal .modal-content { border-radius:14px; border:none; }
+    #removeLineModal .modal-title, #convertModal .modal-title { font-family:'Oswald',system-ui,sans-serif; font-weight:700; font-size:19px; }
 </style>
 
 <div class="zx-page-head">
@@ -127,11 +127,9 @@
         }
         @if (Model.Status == "Accepted" && Model.JobOrder == null)
         {
-            <form asp-action="Convert" method="post"
-                  onsubmit="return confirm('Convert this quotation to a job order?');">
-                <input type="hidden" name="id" value="@Model.QuotationID" />
-                <button type="submit" class="btn btn-sm btn-zx">Convert to Job Order</button>
-            </form>
+            <button type="button" class="btn btn-sm btn-zx" data-bs-toggle="modal" data-bs-target="#convertModal">
+                Convert to Job Order
+            </button>
         }
         @if (Model.Status == "Accepted")
         {
@@ -169,6 +167,12 @@
                 <tr>
                     <td>
                         @(line.Product?.ProductName ?? line.Service?.ServiceName ?? "—")
+                        @if (line.TintVariant != null || line.Panel != null)
+                        {
+                            <div class="text-muted small">
+                                @string.Join(" · ", new[] { line.TintVariant?.VariantName, line.Panel?.PanelName }.Where(s => !string.IsNullOrEmpty(s)))
+                            </div>
+                        }
                         @if (!string.IsNullOrEmpty(line.Description))
                         {
                             <div class="text-muted small">@line.Description</div>
@@ -297,6 +301,27 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-danger">Remove</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="convertModal" tabindex="-1" aria-labelledby="convertModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="Convert" method="post">
+                <input type="hidden" name="id" value="@Model.QuotationID" />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="convertModalLabel">Convert to Job Order</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">Convert quotation <strong>@Model.QuotationNumber</strong> to a job order? A new job order will be created from this quotation's line items. This can't be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-zx">Convert</button>
                 </div>
             </form>
         </div>

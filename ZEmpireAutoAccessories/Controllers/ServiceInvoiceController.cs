@@ -52,6 +52,10 @@ namespace ZEmpireAutoAccessories.Controllers
                     .ThenInclude(d => d.Product)
                 .Include(i => i.Details)
                     .ThenInclude(d => d.Service)
+                .Include(i => i.Details)
+                    .ThenInclude(d => d.TintVariant)
+                .Include(i => i.Details)
+                    .ThenInclude(d => d.Panel)
                 .FirstOrDefaultAsync(i => i.ServiceInvoiceID == id);
 
             if (invoice == null)

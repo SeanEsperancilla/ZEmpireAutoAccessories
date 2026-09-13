@@ -143,6 +143,12 @@
                 <tr>
                     <td>
                         @(line.Product?.ProductName ?? line.Service?.ServiceName ?? "—")
+                        @if (line.TintVariant != null || line.Panel != null)
+                        {
+                            <div class="text-muted small">
+                                @string.Join(" · ", new[] { line.TintVariant?.VariantName, line.Panel?.PanelName }.Where(s => !string.IsNullOrEmpty(s)))
+                            </div>
+                        }
                         @if (!string.IsNullOrEmpty(line.Description))
                         {
                             <div class="text-muted small">@line.Description</div>
