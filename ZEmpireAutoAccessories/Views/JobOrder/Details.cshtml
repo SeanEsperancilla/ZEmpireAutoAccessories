@@ -229,14 +229,22 @@
 
             <div class="col-md-3">
                 <label class="form-label">Product</label>
-                <select id="addLineProduct" name="productId" class="form-select" asp-items="ViewBag.ProductID" data-searchable="true">
+                <select id="addLineProduct" name="productId" class="form-select" data-searchable="true">
                     <option value="">-- None --</option>
+                    @foreach (var p in (List<Product>)ViewData["Products"]!)
+                    {
+                        <option value="@p.ProductID" data-price="@((p.DefaultPrice ?? 0).ToString(System.Globalization.CultureInfo.InvariantCulture))">@p.ProductName</option>
+                    }
                 </select>
             </div>
             <div class="col-md-3">
                 <label class="form-label">Service</label>
-                <select id="addLineService" name="serviceId" class="form-select" asp-items="ViewBag.ServiceID" data-searchable="true">
+                <select id="addLineService" name="serviceId" class="form-select" data-searchable="true">
                     <option value="">-- None --</option>
+                    @foreach (var s in (List<Service>)ViewData["Services"]!)
+                    {
+                        <option value="@s.ServiceID" data-price="@s.DefaultPrice.ToString(System.Globalization.CultureInfo.InvariantCulture)">@s.ServiceName</option>
+                    }
                 </select>
             </div>
             <div class="col-md-2">

@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -471,31 +470,13 @@ namespace ZEmpireAutoAccessories.Controllers
                 "JobTypeID", "JobTypeName", quotation?.JobTypeID);
         }
 
-        // Each <option> carries data-price so the Add Line Item form can
-        // fill in the Price field as soon as a product/service is picked.
+        // Rendered as plain <option> tags in the view (not asp-items) so each
+        // one can carry a data-price attribute - SelectListItem has no
+        // attribute bag to hang that off of.
         private async Task LoadLineDropdowns()
         {
-            var products = await _context.Products.Where(p => p.IsActive).OrderBy(p => p.ProductName).ToListAsync();
-            ViewData["ProductID"] = products.Select(p => new SelectListItem
-            {
-                Value = p.ProductID.ToString(),
-                Text = p.ProductName,
-                Attributes = new Dictionary<string, string>
-                {
-                    ["data-price"] = (p.DefaultPrice ?? 0).ToString(CultureInfo.InvariantCulture)
-                }
-            }).ToList();
-
-            var services = await _context.Services.Where(s => s.IsActive).OrderBy(s => s.ServiceName).ToListAsync();
-            ViewData["ServiceID"] = services.Select(s => new SelectListItem
-            {
-                Value = s.ServiceID.ToString(),
-                Text = s.ServiceName,
-                Attributes = new Dictionary<string, string>
-                {
-                    ["data-price"] = s.DefaultPrice.ToString(CultureInfo.InvariantCulture)
-                }
-            }).ToList();
+            ViewData["Products"] = await _context.Products.Where(p => p.IsActive).OrderBy(p => p.ProductName).ToListAsync();
+            ViewData["Services"] = await _context.Services.Where(s => s.IsActive).OrderBy(s => s.ServiceName).ToListAsync();
         }
     }
 }
