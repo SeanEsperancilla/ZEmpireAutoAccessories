@@ -26,6 +26,7 @@ namespace ZEmpireAutoAccessories.Controllers
                 .Include(j => j.Customer)
                 .Include(j => j.Vehicle)
                 .Include(j => j.AssignedEmployee)
+                .Include(j => j.Quotation)
                 .Where(j => status == null || j.Status == status);
 
             if (!string.IsNullOrWhiteSpace(q))
