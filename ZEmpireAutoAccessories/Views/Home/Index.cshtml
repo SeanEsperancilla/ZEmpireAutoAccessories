@@ -309,6 +309,7 @@
                 // Live modules link straight to their screen; the rest are still placeholders.
                 string? route = module switch
                 {
+                    "Dashboard" => Url.Action("Index", "Home"),
                     "Products" => Url.Action("Index", "Product"),
                     "Vehicles" => Url.Action("Index", "Vehicle"),
                     "Customers" => Url.Action("Index", "Customer"),
