@@ -58,6 +58,32 @@ namespace ZEmpireAutoAccessories.Controllers
                 return NotFound();
 
             await LoadLineDropdowns();
+
+            // Every Pricing row for this invoice's vehicle classification,
+            // for the Add Line Item form to look up the real matrix price
+            // (Product x Tint Variant x Panel) client-side instead of just
+            // the product's flat DefaultPrice. Empty when there's no vehicle
+            // on this invoice, since there's no classification to price by.
+            if (invoice.Vehicle == null)
+            {
+                ViewData["PricingMatrix"] = new List<object>();
+            }
+            else
+            {
+                ViewData["PricingMatrix"] = await _context.Pricings
+                    .Where(p => p.VehicleClassificationID == invoice.Vehicle.VehicleClassificationID)
+                    .Select(p => new
+                    {
+                        productId = p.ProductID,
+                        tintVariantId = p.TintVariantID,
+                        tintVariantName = p.TintVariant != null ? p.TintVariant.VariantName : null,
+                        panelId = p.PanelID,
+                        panelName = p.Panel.PanelName,
+                        price = p.Price
+                    })
+                    .ToListAsync();
+            }
+
             return View(invoice);
         }
 
@@ -259,6 +285,8 @@ namespace ZEmpireAutoAccessories.Controllers
             int serviceInvoiceId,
             int? productId,
             int? serviceId,
+            int? tintVariantId,
+            int? panelId,
             string description,
             decimal quantity,
             string unit,
@@ -279,6 +307,8 @@ namespace ZEmpireAutoAccessories.Controllers
                     ServiceInvoiceID = serviceInvoiceId,
                     ProductID = productId,
                     ServiceID = serviceId,
+                    TintVariantID = productId != null ? tintVariantId : null,
+                    PanelID = productId != null ? panelId : null,
                     Description = description,
                     Quantity = quantity,
                     Unit = string.IsNullOrWhiteSpace(unit) ? "Unit" : unit,

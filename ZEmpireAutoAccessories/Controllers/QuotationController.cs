@@ -60,6 +60,24 @@ namespace ZEmpireAutoAccessories.Controllers
                 return NotFound();
 
             await LoadLineDropdowns();
+
+            // Every Pricing row for this quotation's vehicle classification,
+            // for the Add Line Item form to look up the real matrix price
+            // (Product x Tint Variant x Panel) client-side instead of just
+            // the product's flat DefaultPrice.
+            ViewData["PricingMatrix"] = await _context.Pricings
+                .Where(p => p.VehicleClassificationID == quotation.Vehicle.VehicleClassificationID)
+                .Select(p => new
+                {
+                    productId = p.ProductID,
+                    tintVariantId = p.TintVariantID,
+                    tintVariantName = p.TintVariant != null ? p.TintVariant.VariantName : null,
+                    panelId = p.PanelID,
+                    panelName = p.Panel.PanelName,
+                    price = p.Price
+                })
+                .ToListAsync();
+
             return View(quotation);
         }
 
@@ -258,6 +276,8 @@ namespace ZEmpireAutoAccessories.Controllers
             int quotationId,
             int? productId,
             int? serviceId,
+            int? tintVariantId,
+            int? panelId,
             string? description,
             int quantity,
             string unit,
@@ -265,6 +285,7 @@ namespace ZEmpireAutoAccessories.Controllers
         {
             var quotation = await _context.Quotations
                 .Include(q => q.Details)
+                .Include(q => q.Vehicle)
                 .FirstOrDefaultAsync(q => q.QuotationID == quotationId);
 
             if (quotation == null)
@@ -278,11 +299,30 @@ namespace ZEmpireAutoAccessories.Controllers
 
             if (quantity > 0 && unitPrice >= 0 && (productId != null || serviceId != null))
             {
+                // Record which exact Pricing row (Product x Tint Variant x
+                // Vehicle Classification x Panel) this line's price came from,
+                // when the Add Line Item form resolved one client-side.
+                int? pricingId = null;
+                if (productId != null && panelId != null)
+                {
+                    pricingId = await _context.Pricings
+                        .Where(p =>
+                            p.ProductID == productId &&
+                            p.TintVariantID == tintVariantId &&
+                            p.VehicleClassificationID == quotation.Vehicle.VehicleClassificationID &&
+                            p.PanelID == panelId)
+                        .Select(p => (int?)p.PricingID)
+                        .FirstOrDefaultAsync();
+                }
+
                 _context.QuotationDetails.Add(new QuotationDetail
                 {
                     QuotationID = quotationId,
                     ProductID = productId,
                     ServiceID = serviceId,
+                    TintVariantID = pricingId != null ? tintVariantId : null,
+                    PanelID = pricingId != null ? panelId : null,
+                    PricingID = pricingId,
                     Description = description,
                     Quantity = quantity,
                     Unit = string.IsNullOrWhiteSpace(unit) ? "Unit" : unit,

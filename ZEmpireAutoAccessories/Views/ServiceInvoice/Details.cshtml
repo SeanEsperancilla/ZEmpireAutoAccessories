@@ -201,14 +201,26 @@
             </select>
         </div>
         <div class="col-md-2">
+            <label class="form-label" title="Only applies to products with more than one tint variant (e.g. Play/Freeze/Max)">Tint Variant</label>
+            <select id="addLineTintVariant" name="tintVariantId" class="form-select" disabled>
+                <option value="">-- N/A --</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label" title="Which part of the vehicle this line covers - determines the matrix price for this vehicle's classification">Panel</label>
+            <select id="addLinePanel" name="panelId" class="form-select" disabled>
+                <option value="">-- N/A --</option>
+            </select>
+        </div>
+        <div class="col-md-4">
             <label class="form-label">Description</label>
             <input type="text" name="description" class="form-control" placeholder="Required" />
         </div>
-        <div class="col-md-1">
+        <div class="col-md-2">
             <label class="form-label" title="How many units of this product or service">Qty</label>
             <input type="number" step="0.01" name="quantity" class="form-control" value="1" min="0.01" />
         </div>
-        <div class="col-md-1">
+        <div class="col-md-2">
             <label class="form-label" title="Unit of measure shown on the printed document and invoice, e.g. pc, roll, set">Unit</label>
             <input type="text" name="unit" class="form-control" value="Unit" />
         </div>
@@ -216,15 +228,18 @@
             <label class="form-label">Price</label>
             <input id="addLinePrice" type="number" step="0.01" name="unitPrice" class="form-control" value="0" min="0" />
         </div>
-        <div class="col-md-1">
+        <div class="col-md-2">
             <label class="form-label">Disc.</label>
             <input type="number" step="0.01" name="discountAmount" class="form-control" value="0" min="0" />
         </div>
-        <div class="col-md-1">
+        <div class="col-md-2">
             <button type="submit" class="btn btn-zx w-100">Add</button>
         </div>
     </form>
-    <div class="form-text mt-2">Pick either a Product or a Service for the line item. Description is required.</div>
+    <div class="form-text mt-2">
+        Pick either a Product or a Service for the line item. Description is required. For products priced by
+        panel, pick a Tint Variant (if applicable) and a Panel to pull the exact price for this vehicle's classification.
+    </div>
 </div>
 
 <div class="modal fade" id="removeLineModal" tabindex="-1" aria-labelledby="removeLineModalLabel" aria-hidden="true">
@@ -262,28 +277,113 @@
         });
 
         // Fill in the Price field as soon as a product or service is picked
-        // on the Add Line Item form (still editable afterward). Picking one
-        // clears the other, since a line is either a product or a service.
+        // on the Add Line Item form (still editable afterward). For products
+        // priced by the Pricing matrix (Product x Tint Variant x this
+        // vehicle's classification x Panel), the Tint Variant/Panel pickers
+        // drive the exact price instead of the product's flat DefaultPrice.
+        // Picking a Product or Service clears the other, since a line is
+        // either one or the other.
         (function () {
+            var pricingMatrix = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewData["PricingMatrix"]));
             var $product = $('#addLineProduct');
             var $service = $('#addLineService');
+            var $tintVariant = $('#addLineTintVariant');
+            var $panel = $('#addLinePanel');
             var $price = $('#addLinePrice');
-            if (!$product.length || !$service.length || !$price.length) { return; }
+            if (!$product.length || !$service.length || !$tintVariant.length || !$panel.length || !$price.length) { return; }
 
+            function rowsForProduct(productId) {
+                return pricingMatrix.filter(function (r) { return r.productId === productId; });
+            }
+
+            function resetSelect($select, placeholder) {
+                $select.empty().append($('<option></option>').val('').text(placeholder)).prop('disabled', true);
+            }
+
+            function refreshPanels() {
+                var productId = parseInt($product.val(), 10);
+                var tintVariantId = $tintVariant.prop('disabled') ? null : ($tintVariant.val() || null);
+                var rows = productId ? rowsForProduct(productId).filter(function (r) {
+                    return String(r.tintVariantId || '') === String(tintVariantId || '');
+                }) : [];
+
+                if (rows.length === 0) {
+                    resetSelect($panel, '-- N/A --');
+                    return;
+                }
+
+                $panel.empty().append($('<option></option>').val('').text('-- Select Panel --')).prop('disabled', false);
+                rows.forEach(function (r) {
+                    $panel.append($('<option></option>').val(r.panelId).text(r.panelName).attr('data-price', r.price));
+                });
+            }
+
+            function refreshTintVariants() {
+                var productId = parseInt($product.val(), 10);
+                var rows = productId ? rowsForProduct(productId) : [];
+                var variants = {};
+                rows.forEach(function (r) {
+                    if (r.tintVariantId != null) { variants[r.tintVariantId] = r.tintVariantName; }
+                });
+                var variantIds = Object.keys(variants);
+
+                if (variantIds.length === 0) {
+                    resetSelect($tintVariant, '-- N/A --');
+                } else {
+                    $tintVariant.empty().append($('<option></option>').val('').text('-- Select Variant --')).prop('disabled', false);
+                    variantIds.forEach(function (id) {
+                        $tintVariant.append($('<option></option>').val(id).text(variants[id]));
+                    });
+                }
+
+                refreshPanels();
+            }
+
+            // Guarded on $(this).val() being truthy: clearing the other field
+            // sets its value to '', so its own handler sees a falsy val()
+            // and skips straight past its "clear the other one" branch -
+            // that's what stops this pair from bouncing back and forth.
             $product.on('change', function () {
+                var productId = parseInt($(this).val(), 10) || 0;
+                if (!productId) {
+                    resetSelect($tintVariant, '-- N/A --');
+                    resetSelect($panel, '-- N/A --');
+                    return;
+                }
+
+                $service.val('').trigger('change');
+
+                var rows = rowsForProduct(productId);
+                if (rows.length === 0) {
+                    // No matrix pricing for this product - fall back to its
+                    // own flat default price, and there's nothing to pick.
+                    resetSelect($tintVariant, '-- N/A --');
+                    resetSelect($panel, '-- N/A --');
+                    var flatPrice = $(this).find(':selected').data('price');
+                    if (flatPrice !== undefined) { $price.val(parseFloat(flatPrice).toFixed(2)); }
+                } else {
+                    refreshTintVariants();
+                }
+            });
+
+            $tintVariant.on('change', refreshPanels);
+
+            $panel.on('change', function () {
                 var price = $(this).find(':selected').data('price');
-                if ($(this).val()) {
-                    if (price !== undefined) { $price.val(parseFloat(price).toFixed(2)); }
-                    $service.val('').trigger('change');
+                if ($(this).val() && price !== undefined) {
+                    $price.val(parseFloat(price).toFixed(2));
                 }
             });
 
             $service.on('change', function () {
+                if (!$(this).val()) { return; }
+
                 var price = $(this).find(':selected').data('price');
-                if ($(this).val()) {
-                    if (price !== undefined) { $price.val(parseFloat(price).toFixed(2)); }
-                    $product.val('').trigger('change');
-                }
+                if (price !== undefined) { $price.val(parseFloat(price).toFixed(2)); }
+
+                $product.val('').trigger('change');
+                resetSelect($tintVariant, '-- N/A --');
+                resetSelect($panel, '-- N/A --');
             });
         })();
     </script>
