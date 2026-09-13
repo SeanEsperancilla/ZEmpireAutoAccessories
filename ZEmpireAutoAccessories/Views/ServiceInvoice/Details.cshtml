@@ -77,8 +77,8 @@
         <dt class="col-sm-3">Amount Paid</dt>
         <dd class="col-sm-9">@("₱" + Model.AmountPaid.ToString("N2"))</dd>
 
-        <dt class="col-sm-3">Change</dt>
-        <dd class="col-sm-9">@("₱" + Model.ChangeAmount.ToString("N2"))</dd>
+        <dt class="col-sm-3">@(Model.ChangeAmount < 0 ? "Balance Due" : "Change")</dt>
+        <dd class="col-sm-9">@("₱" + Math.Abs(Model.ChangeAmount).ToString("N2"))</dd>
 
         @if (!string.IsNullOrEmpty(Model.Remarks))
         {

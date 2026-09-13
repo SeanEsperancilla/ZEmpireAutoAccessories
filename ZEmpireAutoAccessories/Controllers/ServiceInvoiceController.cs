@@ -471,7 +471,10 @@ namespace ZEmpireAutoAccessories.Controllers
         {
             invoice.SubTotal = invoice.Details.Sum(d => d.SubTotal);
             invoice.TotalAmount = invoice.SubTotal - invoice.DiscountAmount + invoice.TaxAmount;
-            invoice.ChangeAmount = Math.Max(0, invoice.AmountPaid - invoice.TotalAmount);
+
+            // CK_ServiceInvoice_Math requires this exact (unclamped) formula -
+            // negative means there's still a balance due, not "no change".
+            invoice.ChangeAmount = invoice.AmountPaid - invoice.TotalAmount;
         }
 
         // ServiceInvoice -> ServiceInvoiceDetail cascades, but a Warranty referencing
