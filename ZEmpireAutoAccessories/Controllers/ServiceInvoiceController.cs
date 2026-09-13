@@ -28,6 +28,7 @@ namespace ZEmpireAutoAccessories.Controllers
             var invoices = await _context.ServiceInvoices
                 .Include(i => i.Customer)
                 .Include(i => i.Vehicle)
+                .Include(i => i.JobOrder)
                 .Include(i => i.PaymentMode)
                 .Where(i => status == null || i.Status == status)
                 .OrderByDescending(i => i.InvoiceDate)
@@ -132,11 +133,37 @@ namespace ZEmpireAutoAccessories.Controllers
             return File(pdf, "application/pdf", $"{invoice.InvoiceNumber}.pdf");
         }
 
-        // GET: ServiceInvoice/Create
-        public async Task<IActionResult> Create()
+        // GET: ServiceInvoice/Create?jobOrderId=5
+        public async Task<IActionResult> Create(int? jobOrderId)
         {
-            await LoadHeaderDropdowns();
-            return View(new ServiceInvoice { InvoiceDate = DateTime.Now });
+            var invoice = new ServiceInvoice { InvoiceDate = DateTime.Now };
+
+            if (jobOrderId != null)
+            {
+                var jobOrder = await _context.JobOrders.FindAsync(jobOrderId.Value);
+                if (jobOrder == null)
+                    return NotFound();
+
+                if (jobOrder.Status != "Completed" && jobOrder.Status != "Posted")
+                {
+                    TempData["LockError"] = "Only a Completed or Posted job order can be invoiced.";
+                    return RedirectToAction("Details", "JobOrder", new { id = jobOrderId });
+                }
+
+                if (await _context.ServiceInvoices.AnyAsync(i => i.JobOrderID == jobOrderId))
+                {
+                    TempData["LockError"] = "This job order has already been invoiced.";
+                    return RedirectToAction("Details", "JobOrder", new { id = jobOrderId });
+                }
+
+                invoice.CustomerID = jobOrder.CustomerID;
+                invoice.VehicleID = jobOrder.VehicleID;
+                invoice.JobOrderID = jobOrder.JobOrderID;
+                ViewData["FromJobOrderNumber"] = jobOrder.JobOrderNumber;
+            }
+
+            await LoadHeaderDropdowns(invoice);
+            return View(invoice);
         }
 
         // POST: ServiceInvoice/Create
@@ -158,6 +185,12 @@ namespace ZEmpireAutoAccessories.Controllers
                 return View(invoice);
             }
 
+            if (invoice.JobOrderID != null && await _context.ServiceInvoices.AnyAsync(i => i.JobOrderID == invoice.JobOrderID))
+            {
+                TempData["LockError"] = "This job order has already been invoiced.";
+                return RedirectToAction("Details", "JobOrder", new { id = invoice.JobOrderID });
+            }
+
             var (invoiceNumber, seriesId) = await _quotationService.GetNextInvoiceNumber(CurrentUserId);
 
             invoice.InvoiceNumber = invoiceNumber;
@@ -169,6 +202,45 @@ namespace ZEmpireAutoAccessories.Controllers
 
             _context.ServiceInvoices.Add(invoice);
             await _context.SaveChangesAsync();
+
+            // Carry the job order's own line items over so staff don't have
+            // to re-enter everything that was already worked out there.
+            if (invoice.JobOrderID != null)
+            {
+                var jobOrderDetails = await _context.JobOrderDetails
+                    .Include(d => d.Product)
+                    .Include(d => d.Service)
+                    .Where(d => d.JobOrderID == invoice.JobOrderID)
+                    .ToListAsync();
+
+                foreach (var d in jobOrderDetails)
+                {
+                    _context.ServiceInvoiceDetails.Add(new ServiceInvoiceDetail
+                    {
+                        ServiceInvoiceID = invoice.ServiceInvoiceID,
+                        ProductID = d.ProductID,
+                        ServiceID = d.ServiceID,
+                        TintVariantID = d.TintVariantID,
+                        ShadeID = d.ShadeID,
+                        PanelID = d.PanelID,
+                        Description = d.Description ?? d.Product?.ProductName ?? d.Service?.ServiceName ?? "Item",
+                        Quantity = d.Quantity,
+                        Unit = d.Unit,
+                        UnitPrice = d.UnitPrice
+                    });
+                }
+
+                if (jobOrderDetails.Count > 0)
+                {
+                    await _context.SaveChangesAsync();
+
+                    var saved = await _context.ServiceInvoices
+                        .Include(i => i.Details)
+                        .FirstAsync(i => i.ServiceInvoiceID == invoice.ServiceInvoiceID);
+                    RecalculateTotals(saved);
+                    await _context.SaveChangesAsync();
+                }
+            }
 
             return RedirectToAction(nameof(Details), new { id = invoice.ServiceInvoiceID });
         }

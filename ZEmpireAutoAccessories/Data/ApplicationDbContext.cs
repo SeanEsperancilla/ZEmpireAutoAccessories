@@ -222,7 +222,7 @@ namespace ZEmpireAutoAccessories.Data
             b.Entity<ServiceInvoice>(e =>
             {
                 e.HasOne(x => x.InvoiceNoSeries).WithMany().HasForeignKey(x => x.InvoiceNoSeriesID).OnDelete(DeleteBehavior.Restrict);
-                e.HasOne(x => x.JobOrder).WithMany().HasForeignKey(x => x.JobOrderID).OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(x => x.JobOrder).WithMany(j => j.ServiceInvoices).HasForeignKey(x => x.JobOrderID).OnDelete(DeleteBehavior.Restrict);
                 e.HasOne(x => x.Customer).WithMany().HasForeignKey(x => x.CustomerID).OnDelete(DeleteBehavior.Restrict);
                 e.HasOne(x => x.Vehicle).WithMany().HasForeignKey(x => x.VehicleID).OnDelete(DeleteBehavior.Restrict);
                 e.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);

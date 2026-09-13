@@ -2,6 +2,7 @@
 
 @{
     ViewData["Title"] = "New Service Invoice";
+    var fromJobOrderNumber = ViewData["FromJobOrderNumber"] as string;
 }
 
 <style>
@@ -16,6 +17,13 @@
     <h1>New Service Invoice</h1>
 </div>
 <p class="zx-page-sub">Create the invoice header, then add line items on the next screen.</p>
+
+@if (!string.IsNullOrEmpty(fromJobOrderNumber))
+{
+    <div class="alert alert-info">
+        Pre-filled from job order <strong>@fromJobOrderNumber</strong> — its line items will be copied over automatically once you save.
+    </div>
+}
 
 <div class="zx-card">
     <form asp-action="Create" method="post">

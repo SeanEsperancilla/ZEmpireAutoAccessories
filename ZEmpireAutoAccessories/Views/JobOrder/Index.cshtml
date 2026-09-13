@@ -99,6 +99,15 @@
                                 From @item.Quotation.QuotationNumber
                             </a>
                         }
+                        @{
+                            var itemInvoice = item.ServiceInvoices.FirstOrDefault();
+                        }
+                        @if (itemInvoice != null)
+                        {
+                            <a asp-controller="ServiceInvoice" asp-action="Details" asp-route-id="@itemInvoice.ServiceInvoiceID" class="quote-source">
+                                Invoiced as @itemInvoice.InvoiceNumber
+                            </a>
+                        }
                     </td>
                     <td>@item.Customer.FullName</td>
                     <td>@(item.Vehicle.PlateNumber ?? "—")</td>

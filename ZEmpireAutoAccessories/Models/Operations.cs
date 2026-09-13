@@ -54,6 +54,9 @@ namespace ZEmpireAutoAccessories.Models
         public Employee? AssignedEmployee { get; set; }
         public Quotation? Quotation { get; set; }
         public ICollection<JobOrderDetail> Details { get; set; } = new List<JobOrderDetail>();
+
+        // A job order can be invoiced once it's Completed/Posted (ServiceInvoice.JobOrderID points back here).
+        public ICollection<ServiceInvoice> ServiceInvoices { get; set; } = new List<ServiceInvoice>();
     }
 
     [Table("JobOrderDetail", Schema = "ops")]
