@@ -24,8 +24,12 @@ namespace ZEmpireAutoAccessories.Models
         [Required, MaxLength(30)]
         public string InvoiceNumber { get; set; } = string.Empty;
 
+        [Display(Name = "Customer")]
         public int CustomerID { get; set; }
+
+        [Display(Name = "Vehicle")]
         public int? VehicleID { get; set; }
+
         public string UserId { get; set; } = null!;
         public int PaymentModeID { get; set; }
 
@@ -68,8 +72,13 @@ namespace ZEmpireAutoAccessories.Models
 
         public int InvoiceNoSeriesID { get; set; }
         public int? JobOrderID { get; set; }
+
+        [Display(Name = "Customer")]
         public int CustomerID { get; set; }
+
+        [Display(Name = "Vehicle")]
         public int? VehicleID { get; set; }
+
         public string UserId { get; set; } = null!;
         public int PaymentModeID { get; set; }
 
@@ -142,8 +151,12 @@ namespace ZEmpireAutoAccessories.Models
         [Required, MaxLength(30)]
         public string QuotationNumber { get; set; } = string.Empty;
 
+        [Display(Name = "Customer")]
         public int CustomerID { get; set; }
+
+        [Display(Name = "Vehicle")]
         public int VehicleID { get; set; }
+
         public string UserId { get; set; } = null!;
         public int? JobTypeID { get; set; }
 

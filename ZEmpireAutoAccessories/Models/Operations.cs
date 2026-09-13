@@ -14,8 +14,12 @@ namespace ZEmpireAutoAccessories.Models
         [Required, MaxLength(30)]
         public string JobOrderNumber { get; set; } = string.Empty;
 
+        [Display(Name = "Customer")]
         public int CustomerID { get; set; }
+
+        [Display(Name = "Vehicle")]
         public int VehicleID { get; set; }
+
         public string UserId { get; set; } = null!;
         public int? JobTypeID { get; set; }
         public int? AssignedEmployeeID { get; set; }

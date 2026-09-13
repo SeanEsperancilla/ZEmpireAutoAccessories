@@ -264,6 +264,13 @@
         });
         observer.observe(select, { childList: true, attributes: true, attributeFilter: ["disabled", "class", "required"] });
 
+        // Picking an option here already updates the display directly (see
+        // commit above), but other code sets select.value programmatically
+        // and fires its own "change" (e.g. auto-selecting a customer's only
+        // vehicle) - a plain value change isn't a DOM mutation the observer
+        // above would catch, so re-sync on "change" too.
+        select.addEventListener("change", syncFromSelect);
+
         syncFromSelect();
     }
 

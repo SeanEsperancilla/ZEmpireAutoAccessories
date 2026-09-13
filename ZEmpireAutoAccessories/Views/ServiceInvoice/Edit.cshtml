@@ -112,6 +112,12 @@
                             $vehicle.append($opt);
                         });
                         $vehicle.prop('disabled', false);
+
+                        // Only one vehicle on file for this customer - skip
+                        // making the user pick it themselves.
+                        if (!selectedVehicleId && data.length === 1) {
+                            $vehicle.val(data[0].value).trigger('change');
+                        }
                     });
             }
 

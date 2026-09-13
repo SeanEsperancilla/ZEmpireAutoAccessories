@@ -126,6 +126,12 @@
                             $vehicle.append($('<option></option>').val(v.value).text(v.text));
                         });
                         $vehicle.prop('disabled', false);
+
+                        // Only one vehicle on file for this customer - skip
+                        // making the user pick it themselves.
+                        if (data.length === 1) {
+                            $vehicle.val(data[0].value).trigger('change');
+                        }
                     });
             }
 
