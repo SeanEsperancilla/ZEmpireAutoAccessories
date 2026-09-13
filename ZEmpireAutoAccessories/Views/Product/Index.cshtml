@@ -107,7 +107,6 @@
             <tr>
                 <th>@Html.DisplayNameFor(m => m.ProductName)</th>
                 <th>Category</th>
-                <th>Default Price</th>
                 <th>Status</th>
                 <th class="text-end pe-3">Actions</th>
             </tr>
@@ -118,7 +117,6 @@
                 <tr>
                     <td>@Html.DisplayFor(modelItem => item.ProductName)</td>
                     <td>@item.Category.CategoryName</td>
-                    <td>@(item.DefaultPrice.HasValue ? item.DefaultPrice.Value.ToString("C") : "—")</td>
                     <td>
                         @if (item.IsActive)
                         {
@@ -145,7 +143,7 @@
             @if (!Model.Any())
             {
                 <tr>
-                    <td colspan="5" class="text-center text-muted py-4">No products yet.</td>
+                    <td colspan="4" class="text-center text-muted py-4">No products yet.</td>
                 </tr>
             }
         </tbody>
