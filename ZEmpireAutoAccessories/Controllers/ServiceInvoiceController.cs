@@ -472,8 +472,18 @@ namespace ZEmpireAutoAccessories.Controllers
             invoice.SubTotal = invoice.Details.Sum(d => d.SubTotal);
             invoice.TotalAmount = invoice.SubTotal - invoice.DiscountAmount + invoice.TaxAmount;
 
-            // CK_ServiceInvoice_Math requires this exact (unclamped) formula -
-            // negative means there's still a balance due, not "no change".
+            // CK_ServiceInvoice_Change requires ChangeAmount >= 0, and
+            // CK_ServiceInvoice_Math requires ChangeAmount = AmountPaid -
+            // TotalAmount exactly - together, AmountPaid can never trail
+            // TotalAmount on a saved row. Line items can be added before an
+            // exact amount tendered is known, so keep AmountPaid caught up
+            // to the total as it grows; Edit can still set the real amount
+            // (and any real change) once that's known.
+            if (invoice.AmountPaid < invoice.TotalAmount)
+            {
+                invoice.AmountPaid = invoice.TotalAmount;
+            }
+
             invoice.ChangeAmount = invoice.AmountPaid - invoice.TotalAmount;
         }
 
