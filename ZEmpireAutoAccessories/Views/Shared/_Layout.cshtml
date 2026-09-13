@@ -171,6 +171,10 @@
                                 <li><span class="dropdown-item-text small text-muted">Signed in as<br><strong>@User.Identity?.Name</strong></span></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
+                                    <a class="dropdown-item" asp-controller="Account" asp-action="ChangePassword">Change Password</a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
                                     <form asp-controller="Account" asp-action="Logout" method="post">
                                         <button type="submit" class="dropdown-item text-danger">Sign out</button>
                                     </form>

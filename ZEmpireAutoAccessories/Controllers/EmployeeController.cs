@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -11,10 +12,12 @@ namespace ZEmpireAutoAccessories.Controllers
     public class EmployeeController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public EmployeeController(ApplicationDbContext context)
+        public EmployeeController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         // GET: Employee
@@ -182,6 +185,37 @@ namespace ZEmpireAutoAccessories.Controllers
             }
 
             return RedirectToAction(nameof(Index));
+        }
+
+        // POST: Employee/ResetPassword/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPassword(int id, string newPassword, string confirmPassword)
+        {
+            var employee = await _context.Employees
+                .Include(e => e.User)
+                .FirstOrDefaultAsync(e => e.EmployeeID == id);
+
+            if (employee == null)
+                return NotFound();
+
+            if (newPassword != confirmPassword)
+            {
+                TempData["ResetPasswordError"] = "The new password and confirmation don't match.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(employee.User);
+            var result = await _userManager.ResetPasswordAsync(employee.User, token, newPassword);
+
+            if (!result.Succeeded)
+            {
+                TempData["ResetPasswordError"] = string.Join(" ", result.Errors.Select(e => e.Description));
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            TempData["Success"] = $"Password reset for {employee.User.UserName}.";
+            return RedirectToAction(nameof(Details), new { id });
         }
 
         private async Task LoadUserDropdown(string? selectedUserId = null)
