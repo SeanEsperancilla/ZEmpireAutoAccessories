@@ -44,19 +44,22 @@
         .zx-userbtn { border:1px solid #2a2a33; background:rgba(255,255,255,.04); border-radius:12px; padding:5px 8px; display:inline-flex; align-items:center; gap:10px; color:#eef1f6; }
         .zx-userbtn:hover { background:rgba(255,255,255,.09); }
         .zx-userbtn .fw-semibold { color:#fff !important; }
+        .zx-nav .navbar-toggler { border-color:rgba(255,255,255,.2); border-radius:8px; padding:.35rem .55rem; }
+        .zx-nav .navbar-toggler:hover { border-color:var(--zx-red); }
+        .zx-nav .navbar-toggler:focus { box-shadow:0 0 0 .2rem rgba(229,70,77,.35); }
     </style>
 </head>
 <body>
     @if (User.Identity?.IsAuthenticated == true)
     {
         <header>
-            <nav class="zx-nav navbar navbar-expand-lg mb-4">
+            <nav class="zx-nav navbar navbar-expand-lg navbar-dark mb-4">
                 <div class="container-fluid px-lg-4">
                     <a class="zx-brand navbar-brand" asp-controller="Home" asp-action="Index">
                         <img src="~/images/ZEmpireLogo.png" alt="Z-Empire" />
                         <span class="wm">Z<b>-</b>EMPIRE</span>
                     </a>
-                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#zxNav" style="filter:invert(1);">
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#zxNav" aria-controls="zxNav" aria-expanded="false" aria-label="Toggle navigation">
                         <span class="navbar-toggler-icon"></span>
                     </button>
                     <div class="collapse navbar-collapse" id="zxNav">
