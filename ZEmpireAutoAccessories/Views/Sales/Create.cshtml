@@ -169,10 +169,16 @@
             });
 
             $(document).on('click', '.remove-row', function () {
-                if ($('.line-row').length > 1) {
-                    $(this).closest('tr').remove();
-                    recalcTotal();
+                $(this).closest('tr').remove();
+
+                // Always leave at least one row so there's somewhere to add
+                // a product - but the click itself should never be a no-op.
+                if ($('.line-row').length === 0) {
+                    var frag = document.getElementById('lineRowTemplate').content.cloneNode(true);
+                    $('#linesTable tbody').append(frag);
                 }
+
+                recalcTotal();
             });
         });
     </script>
