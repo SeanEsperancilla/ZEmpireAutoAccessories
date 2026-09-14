@@ -209,6 +209,17 @@ namespace ZEmpireAutoAccessories.Controllers
                 return View(warranty);
             }
 
+            // Expired is itself an auto-managed state (see IsOverdue /
+            // AutoExpireOverdueWarranties) - if the end date is pushed back
+            // out and it's still sitting at Expired, it's stale. Voided and
+            // Claimed are deliberate, so those are left alone.
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            if (warranty.WarrantyStatus == "Expired" &&
+                (warranty.WarrantyEndDate == null || warranty.WarrantyEndDate >= today))
+            {
+                warranty.WarrantyStatus = "Active";
+            }
+
             try
             {
                 _context.Update(warranty);
