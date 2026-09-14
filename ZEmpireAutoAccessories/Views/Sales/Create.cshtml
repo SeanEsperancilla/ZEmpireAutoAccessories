@@ -48,6 +48,9 @@
 
         <h6 class="mt-4 mb-2">Line Items</h6>
         <p class="zx-page-sub mb-2">Products priced by panel need a Vehicle picked above to look up the matching price.</p>
+        <div id="pricingLoadError" class="alert alert-warning py-2 px-3" style="display:none; font-size:13px;">
+            Couldn't load panel pricing for this vehicle - panel-priced products will need a manual Unit Price for now.
+        </div>
         <table class="table zx-table" id="linesTable">
             <thead>
                 <tr>
@@ -177,6 +180,13 @@
                 $.getJSON('@Url.Action("PricingForVehicle")', { vehicleId: vehicleId })
                     .done(function (data) {
                         pricingMatrix = data;
+                        $('#pricingLoadError').hide();
+                        reevaluateAllRows();
+                    })
+                    .fail(function (xhr) {
+                        pricingMatrix = [];
+                        console.error('PricingForVehicle failed:', xhr.status, xhr.responseText);
+                        $('#pricingLoadError').show();
                         reevaluateAllRows();
                     });
             }
