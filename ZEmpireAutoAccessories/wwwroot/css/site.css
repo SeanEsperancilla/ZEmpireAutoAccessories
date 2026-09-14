@@ -20,3 +20,40 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+/* Every page's .zx-page-head (title + action buttons) is declared per-view
+   with `display:flex; justify-content:space-between` and no wrap, so a
+   title plus 2-3 buttons overflows off-screen on a phone instead of
+   dropping to a second line. These rules only add flex-wrap/gap - they
+   don't touch color, spacing, or anything each page already sets, so they
+   apply globally without fighting any page's own <style> block. */
+.zx-page-head {
+  flex-wrap: wrap;
+  row-gap: 10px;
+}
+
+.zx-page-head > div:last-child {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Tables are wrapped in .table-responsive, but on very narrow screens a
+   table can still be wider than the viewport itself (long invoice numbers,
+   many columns) - constrain the scroll area to the viewport width so the
+   scrollbar stays inside the card instead of the whole page gaining
+   horizontal scroll. */
+.table-responsive {
+  max-width: 100%;
+}
+
+/* Bootstrap modals are responsive by default, but a modal-dialog with a
+   fixed max-width (used by some of this app's line-item forms) can still
+   overflow a very narrow phone unless it's allowed to shrink with a side
+   gutter. */
+@media (max-width: 575.98px) {
+  .modal-dialog {
+    margin-left: 12px;
+    margin-right: 12px;
+  }
+}
