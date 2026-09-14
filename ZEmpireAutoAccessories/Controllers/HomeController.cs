@@ -33,7 +33,9 @@ namespace ZEmpireAutoAccessories.Controllers
             // the module it links to.
             var stats = new List<DashboardStat>();
 
-            if (modules.Contains("Sales"))
+            // Peso figures are Admin-only - Staff still gets the operational
+            // counts below (job orders, stock, warranties), just not revenue.
+            if (modules.Contains("Sales") && User.IsInRole("Admin"))
             {
                 var todaySales = await _reportService.GetDailySales();
                 stats.Add(new DashboardStat("Today's Sales", "₱" + todaySales.ToString("N2"), Url.Action("Index", "Sales")!, "sales"));
