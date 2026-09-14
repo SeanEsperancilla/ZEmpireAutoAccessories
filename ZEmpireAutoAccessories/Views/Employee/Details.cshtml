@@ -20,6 +20,14 @@
     #resetPasswordModal .modal-content { border-radius:14px; border:none; }
     #resetPasswordModal .modal-title { font-family:'Oswald',system-ui,sans-serif; font-weight:700; font-size:19px; }
     .field-hint { color:#7b8290; font-size:12.5px; margin-top:4px; }
+    .password-wrap { position:relative; }
+    .password-wrap input { padding-right:40px; }
+    .toggle-pass-btn {
+        position:absolute; right:6px; top:50%; transform:translateY(-50%);
+        border:none; background:none; padding:6px; color:#98a0ad; cursor:pointer;
+        display:grid; place-items:center; border-radius:6px;
+    }
+    .toggle-pass-btn:hover { color:#4b5563; background:#f1f3f7; }
 </style>
 
 <div class="zx-page-head">
@@ -100,12 +108,22 @@
 
                     <div class="mb-3">
                         <label class="form-label">New Password</label>
-                        <input type="password" name="newPassword" class="form-control" autocomplete="new-password" required />
+                        <div class="password-wrap">
+                            <input type="password" name="newPassword" class="form-control" autocomplete="new-password" required />
+                            <button type="button" class="toggle-pass-btn" aria-label="Show password" tabindex="-1">
+                                <svg class="eye-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+                            </button>
+                        </div>
                         <div class="field-hint">At least 8 characters, with an uppercase letter, a lowercase letter, a digit, and a symbol.</div>
                     </div>
                     <div class="mb-1">
                         <label class="form-label">Confirm New Password</label>
-                        <input type="password" name="confirmPassword" class="form-control" autocomplete="new-password" required />
+                        <div class="password-wrap">
+                            <input type="password" name="confirmPassword" class="form-control" autocomplete="new-password" required />
+                            <button type="button" class="toggle-pass-btn" aria-label="Show password" tabindex="-1">
+                                <svg class="eye-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -116,3 +134,16 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.toggle-pass-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var input = btn.parentElement.querySelector('input');
+                var show = input.type === 'password';
+                input.type = show ? 'text' : 'password';
+                btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+            });
+        });
+    </script>
+}
