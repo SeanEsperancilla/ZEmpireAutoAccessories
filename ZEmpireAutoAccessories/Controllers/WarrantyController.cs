@@ -144,7 +144,7 @@ namespace ZEmpireAutoAccessories.Controllers
         public async Task<IActionResult> Create()
         {
             await LoadDropdowns();
-            return View();
+            return View(new Warranty { WarrantyStatus = "Active" });
         }
 
         // POST: Warranty/Create
