@@ -100,15 +100,39 @@ namespace ZEmpireAutoAccessories.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             int id,
-            Employee employee)
+            Employee employee,
+            string userName)
         {
             if (id != employee.EmployeeID)
                 return NotFound();
 
             ModelState.Remove(nameof(Employee.User));
 
+            if (string.IsNullOrWhiteSpace(userName))
+                ModelState.AddModelError(nameof(userName), "Login username is required.");
+
             if (!ModelState.IsValid)
+            {
+                employee.User = await _context.Users.FirstOrDefaultAsync(u => u.Id == employee.UserId) ?? employee.User;
                 return View(employee);
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == employee.UserId);
+            if (user == null)
+                return NotFound();
+
+            if (!string.Equals(user.UserName, userName.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                var result = await _userManager.SetUserNameAsync(user, userName.Trim());
+                if (!result.Succeeded)
+                {
+                    foreach (var error in result.Errors)
+                        ModelState.AddModelError(string.Empty, error.Description);
+
+                    employee.User = user;
+                    return View(employee);
+                }
+            }
 
             employee.UpdatedAt = DateTime.UtcNow;
 
