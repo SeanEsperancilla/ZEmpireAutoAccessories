@@ -78,6 +78,32 @@ namespace ZEmpireAutoAccessories.Controllers
             return Json(vehicles);
         }
 
+        // GET: Sale/PricingForVehicle?vehicleId=5
+        // Every Pricing row for this vehicle's classification, so the line-item
+        // rows can look up the real matrix price (Product x Tint Variant x
+        // Panel) client-side instead of just the product's flat DefaultPrice.
+        public async Task<IActionResult> PricingForVehicle(int vehicleId)
+        {
+            var vehicle = await _context.Vehicles.FindAsync(vehicleId);
+            if (vehicle == null)
+                return Json(new List<object>());
+
+            var matrix = await _context.Pricings
+                .Where(p => p.VehicleClassificationID == vehicle.VehicleClassificationID)
+                .Select(p => new
+                {
+                    productId = p.ProductID,
+                    tintVariantId = p.TintVariantID,
+                    tintVariantName = p.TintVariant != null ? p.TintVariant.VariantName : null,
+                    panelId = p.PanelID,
+                    panelName = p.Panel.PanelName,
+                    price = p.Price
+                })
+                .ToListAsync();
+
+            return Json(matrix);
+        }
+
         // GET: Sale/Create
         public async Task<IActionResult> Create()
         {

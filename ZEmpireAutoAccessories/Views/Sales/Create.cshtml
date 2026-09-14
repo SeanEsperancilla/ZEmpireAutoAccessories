@@ -47,12 +47,15 @@
         </div>
 
         <h6 class="mt-4 mb-2">Line Items</h6>
+        <p class="zx-page-sub mb-2">Products priced by panel need a Vehicle picked above to look up the matching price.</p>
         <table class="table zx-table" id="linesTable">
             <thead>
                 <tr>
                     <th>Product</th>
-                    <th style="width:110px;">Qty</th>
-                    <th style="width:150px;">Unit Price</th>
+                    <th style="width:150px;">Tint Variant</th>
+                    <th style="width:150px;">Panel</th>
+                    <th style="width:100px;">Qty</th>
+                    <th style="width:140px;">Unit Price</th>
                     <th style="width:60px;"></th>
                 </tr>
             </thead>
@@ -65,6 +68,16 @@
                             {
                                 <option value="@p.ProductID" data-price="@p.DefaultPrice">@p.ProductName</option>
                             }
+                        </select>
+                    </td>
+                    <td>
+                        <select class="form-select tint-variant-select" disabled>
+                            <option value="">-- N/A --</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select class="form-select panel-select" disabled>
+                            <option value="">-- N/A --</option>
                         </select>
                     </td>
                     <td><input type="number" name="quantity" class="form-control" value="1" min="1" required /></td>
@@ -84,6 +97,16 @@
                         {
                             <option value="@p.ProductID" data-price="@p.DefaultPrice">@p.ProductName</option>
                         }
+                    </select>
+                </td>
+                <td>
+                    <select class="form-select tint-variant-select" disabled>
+                        <option value="">-- N/A --</option>
+                    </select>
+                </td>
+                <td>
+                    <select class="form-select panel-select" disabled>
+                        <option value="">-- N/A --</option>
                     </select>
                 </td>
                 <td><input type="number" name="quantity" class="form-control" value="1" min="1" required /></td>
@@ -109,6 +132,11 @@
         $(function () {
             var $customer = $('#customerId');
             var $vehicle = $('#vehicleId');
+
+            // Every Pricing row for the selected vehicle's classification -
+            // empty until a vehicle is picked, since panel pricing depends
+            // on it. Re-fetched whenever the vehicle changes.
+            var pricingMatrix = [];
 
             function loadVehicles(customerId) {
                 $vehicle.prop('disabled', true).empty();
@@ -139,6 +167,107 @@
                 loadVehicles($(this).val());
             });
 
+            function loadPricingMatrix(vehicleId) {
+                if (!vehicleId) {
+                    pricingMatrix = [];
+                    reevaluateAllRows();
+                    return;
+                }
+
+                $.getJSON('@Url.Action("PricingForVehicle")', { vehicleId: vehicleId })
+                    .done(function (data) {
+                        pricingMatrix = data;
+                        reevaluateAllRows();
+                    });
+            }
+
+            $vehicle.on('change', function () {
+                loadPricingMatrix($(this).val());
+            });
+
+            function rowsForProduct(productId) {
+                return pricingMatrix.filter(function (r) { return String(r.productId) === String(productId); });
+            }
+
+            function resetSelect($select, placeholder) {
+                $select.empty().append($('<option></option>').val('').text(placeholder)).prop('disabled', true);
+            }
+
+            function refreshPanels($row, tintVariantId) {
+                var productId = $row.find('.product-select').val();
+                var $panel = $row.find('.panel-select');
+                var rows = rowsForProduct(productId).filter(function (r) {
+                    return tintVariantId ? String(r.tintVariantId) === String(tintVariantId) : !r.tintVariantId;
+                });
+
+                resetSelect($panel, '-- Select Panel --');
+                if (rows.length === 0) return;
+
+                $.each(rows, function (i, r) {
+                    $panel.append($('<option></option>').val(r.panelId).text(r.panelName).attr('data-price', r.price));
+                });
+                $panel.prop('disabled', false);
+            }
+
+            function refreshTintVariants($row) {
+                var productId = $row.find('.product-select').val();
+                var $tint = $row.find('.tint-variant-select');
+                var rows = rowsForProduct(productId);
+
+                var variants = [];
+                var seen = {};
+                $.each(rows, function (i, r) {
+                    if (r.tintVariantId && !seen[r.tintVariantId]) {
+                        seen[r.tintVariantId] = true;
+                        variants.push({ id: r.tintVariantId, name: r.tintVariantName });
+                    }
+                });
+
+                if (variants.length === 0) {
+                    // No tint-variant split for this product - go straight to panels.
+                    resetSelect($tint, '-- N/A --');
+                    refreshPanels($row, null);
+                    return;
+                }
+
+                resetSelect($tint, '-- Select Tint Variant --');
+                $.each(variants, function (i, v) {
+                    $tint.append($('<option></option>').val(v.id).text(v.name));
+                });
+                $tint.prop('disabled', false);
+                resetSelect($row.find('.panel-select'), '-- Select Tint Variant First --');
+
+                if (variants.length === 1) {
+                    $tint.val(variants[0].id).trigger('change');
+                }
+            }
+
+            function evaluateProductRow($row) {
+                var $product = $row.find('.product-select');
+                var productId = $product.val();
+                var rows = rowsForProduct(productId);
+
+                if (rows.length > 0) {
+                    // Matrix-priced product - needs Tint Variant/Panel picked
+                    // to resolve an exact price, so clear any stale value.
+                    $row.find('.unit-price').val('');
+                    refreshTintVariants($row);
+                } else {
+                    resetSelect($row.find('.tint-variant-select'), '-- N/A --');
+                    resetSelect($row.find('.panel-select'), '-- N/A --');
+
+                    var price = $product.find(':selected').data('price');
+                    if (price !== undefined && price !== '') {
+                        $row.find('.unit-price').val(parseFloat(price).toFixed(2));
+                    }
+                }
+                recalcTotal();
+            }
+
+            function reevaluateAllRows() {
+                $('.line-row').each(function () { evaluateProductRow($(this)); });
+            }
+
             function recalcTotal() {
                 var total = 0;
                 $('.line-row').each(function () {
@@ -150,9 +279,19 @@
             }
 
             $(document).on('change', '.product-select', function () {
+                evaluateProductRow($(this).closest('tr'));
+            });
+
+            $(document).on('change', '.tint-variant-select', function () {
+                refreshPanels($(this).closest('tr'), $(this).val());
+                recalcTotal();
+            });
+
+            $(document).on('change', '.panel-select', function () {
+                var $row = $(this).closest('tr');
                 var price = $(this).find(':selected').data('price');
                 if (price !== undefined && price !== '') {
-                    $(this).closest('tr').find('.unit-price').val(parseFloat(price).toFixed(2));
+                    $row.find('.unit-price').val(parseFloat(price).toFixed(2));
                 }
                 recalcTotal();
             });
