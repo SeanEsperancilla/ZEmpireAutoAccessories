@@ -19,21 +19,35 @@ namespace ZEmpireAutoAccessories.Controllers
             _context = context;
         }
 
-        // GET: Warranty?status=Active
-        public async Task<IActionResult> Index(string? status)
+        // GET: Warranty?status=Active&q=...
+        public async Task<IActionResult> Index(string? status, string? q)
         {
             await AutoExpireOverdueWarranties();
 
-            var warranties = await _context.Warranties
+            var query = _context.Warranties
                 .Include(w => w.SalesDetail).ThenInclude(d => d!.Sale)
                 .Include(w => w.SalesDetail).ThenInclude(d => d!.Product)
                 .Include(w => w.ServiceInvoiceDetail).ThenInclude(d => d!.ServiceInvoice)
-                .Include(w => w.JobOrder)
-                .Where(w => status == null || w.WarrantyStatus == status)
+                .Include(w => w.JobOrder).ThenInclude(j => j!.Customer)
+                .Where(w => status == null || w.WarrantyStatus == status);
+
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var term = q.Trim();
+                query = query.Where(w =>
+                    (w.SalesDetail != null &&
+                        (w.SalesDetail.Sale.InvoiceNumber.Contains(term) || w.SalesDetail.Product.ProductName.Contains(term))) ||
+                    (w.ServiceInvoiceDetail != null && w.ServiceInvoiceDetail.ServiceInvoice.InvoiceNumber.Contains(term)) ||
+                    (w.JobOrder != null &&
+                        (w.JobOrder.JobOrderNumber.Contains(term) || w.JobOrder.Customer.FullName.Contains(term))));
+            }
+
+            var warranties = await query
                 .OrderByDescending(w => w.WarrantyID)
                 .ToListAsync();
 
             ViewData["Status"] = status;
+            ViewData["Search"] = q;
             ViewData["Success"] = TempData["Success"];
             ViewData["ClaimError"] = TempData["ClaimError"];
             return View(warranties);
