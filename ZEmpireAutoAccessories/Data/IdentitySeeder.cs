@@ -10,7 +10,7 @@ namespace ZEmpireAutoAccessories.Data
     /// </summary>
     public static class IdentitySeeder
     {
-        private static readonly string[] Roles = { "Admin", "Manager", "Staff" };
+        private static readonly string[] Roles = { "Admin", "Staff" };
 
         public static async Task SeedAsync(IServiceProvider services, IConfiguration config, ILogger logger)
         {
@@ -23,6 +23,26 @@ namespace ZEmpireAutoAccessories.Data
             {
                 if (!await roleManager.RoleExistsAsync(role))
                     await roleManager.CreateAsync(new ApplicationRole(role));
+            }
+
+            // One-time cleanup: this app only has Admin and Staff now. Remove
+            // the old Manager role, but only if nobody's still assigned to
+            // it - reassign those users to Admin or Staff first if this warns.
+            var managerRole = await roleManager.FindByNameAsync("Manager");
+            if (managerRole != null)
+            {
+                var managerUsers = await userManager.GetUsersInRoleAsync("Manager");
+                if (managerUsers.Count == 0)
+                {
+                    await roleManager.DeleteAsync(managerRole);
+                }
+                else
+                {
+                    logger.LogWarning(
+                        "The Manager role still has {Count} user(s) assigned ({Users}) and was not removed. " +
+                        "Reassign them to Admin or Staff, then restart the app to finish removing it.",
+                        managerUsers.Count, string.Join(", ", managerUsers.Select(u => u.UserName)));
+                }
             }
 
             var defaultPassword = config["Seed:DefaultPassword"] ?? "ChangeMe123!";
