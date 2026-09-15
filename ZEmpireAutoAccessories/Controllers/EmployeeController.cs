@@ -81,6 +81,12 @@ namespace ZEmpireAutoAccessories.Controllers
             if (string.IsNullOrWhiteSpace(role))
                 ModelState.AddModelError(nameof(role), "Role is required.");
 
+            if (!string.IsNullOrWhiteSpace(employee.EmployeeNumber) &&
+                await _context.Employees.AnyAsync(e => e.EmployeeNumber == employee.EmployeeNumber))
+            {
+                ModelState.AddModelError(string.Empty, $"Employee number '{employee.EmployeeNumber}' is already taken.");
+            }
+
             if (!ModelState.IsValid)
             {
                 await LoadRoleDropdown(role);
@@ -164,6 +170,12 @@ namespace ZEmpireAutoAccessories.Controllers
 
             if (string.IsNullOrWhiteSpace(role))
                 ModelState.AddModelError(nameof(role), "Role is required.");
+
+            if (!string.IsNullOrWhiteSpace(employee.EmployeeNumber) &&
+                await _context.Employees.AnyAsync(e => e.EmployeeNumber == employee.EmployeeNumber && e.EmployeeID != id))
+            {
+                ModelState.AddModelError(string.Empty, $"Employee number '{employee.EmployeeNumber}' is already taken.");
+            }
 
             if (!ModelState.IsValid)
             {
