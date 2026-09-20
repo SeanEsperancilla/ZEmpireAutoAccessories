@@ -212,7 +212,18 @@ namespace ZEmpireAutoAccessories.Controllers
                 return RedirectToAction("Details", "JobOrder", new { id = invoice.JobOrderID });
             }
 
-            var (invoiceNumber, seriesId) = await _quotationService.GetNextInvoiceNumber(CurrentUserId);
+            string invoiceNumber;
+            int seriesId;
+            try
+            {
+                (invoiceNumber, seriesId) = await _quotationService.GetNextInvoiceNumber(CurrentUserId);
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError(string.Empty, $"Couldn't generate an invoice number: {ex.Message}");
+                await LoadHeaderDropdowns(invoice);
+                return View(invoice);
+            }
 
             invoice.InvoiceNumber = invoiceNumber;
             invoice.InvoiceNoSeriesID = seriesId;

@@ -465,7 +465,11 @@ namespace ZEmpireAutoAccessories.Controllers
                 return RedirectToAction(nameof(Details), new { id });
             }
 
-            var jobOrderNumber = $"JO-{DateTime.Now:yyyyMMddHHmmss}";
+            // Millisecond precision, not just seconds - two conversions
+            // landing in the same second (two staff, or a double-click)
+            // would otherwise generate the same number and collide against
+            // the database's unique constraint on it.
+            var jobOrderNumber = $"JO-{DateTime.Now:yyyyMMddHHmmssfff}";
 
             try
             {
