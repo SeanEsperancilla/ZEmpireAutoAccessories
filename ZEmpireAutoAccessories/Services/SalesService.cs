@@ -73,7 +73,10 @@ namespace ZEmpireAutoAccessories.Services
             if (dateTo.HasValue)
                 query = query.Where(d => d.Sale.SalesDate < dateTo.Value.AddDays(1).ToDateTime(TimeOnly.MinValue));
 
-            return await query.SumAsync(d => d.Quantity);
+            // SUM() over zero matching rows (nothing sold in range) comes
+            // back as SQL NULL, not 0 - project through a nullable int so
+            // EF can represent that, then default it.
+            return await query.SumAsync(d => (int?)d.Quantity) ?? 0;
         }
 
         public async Task<Sale> CreateSale(
@@ -118,9 +121,13 @@ namespace ZEmpireAutoAccessories.Services
                         .FirstOrDefaultAsync(p => p.ProductID == item.ProductID)
                         ?? throw new KeyNotFoundException($"Product ID {item.ProductID} was not found.");
 
+                    // SUM() over zero matching rows (a product never
+                    // stocked in/out yet) comes back as SQL NULL, not 0 -
+                    // project through a nullable decimal so EF can
+                    // represent that, then default it.
                     var stockOnHand = await _context.InventoryTransactions
                         .Where(t => t.ProductID == item.ProductID)
-                        .SumAsync(t => t.TransactionType == "IN" ? t.Quantity : -t.Quantity);
+                        .SumAsync(t => (decimal?)(t.TransactionType == "IN" ? t.Quantity : -t.Quantity)) ?? 0;
 
                     if (stockOnHand < item.Quantity)
                         throw new InvalidOperationException($"Insufficient stock for {product.ProductName}.");
