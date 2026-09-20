@@ -42,8 +42,8 @@
     }
 
     // Any module not covered by the map above.
-    var leftovers = modules.Where(m => !claimed.Contains(m)).OrderBy(m => m).ToList();
-    if (leftovers.Count > 0) { categories.Add(("More", leftovers)); }
+    // var leftovers = modules.Where(m => !claimed.Contains(m)).OrderBy(m => m).ToList();
+    // if (leftovers.Count > 0) { categories.Add(("More", leftovers)); }
 
     var stats = ViewData["Stats"] as List<DashboardStat> ?? new();
 }
