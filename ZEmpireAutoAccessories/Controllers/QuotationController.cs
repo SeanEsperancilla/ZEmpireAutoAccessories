@@ -163,12 +163,6 @@ namespace ZEmpireAutoAccessories.Controllers
             if (quotation == null)
                 return NotFound();
 
-            if (quotation.Status == "Posted")
-            {
-                TempData["LockError"] = "This quotation is posted and can no longer be edited.";
-                return RedirectToAction(nameof(Details), new { id });
-            }
-
             await LoadHeaderDropdowns(quotation);
             return View(quotation);
         }
@@ -200,12 +194,6 @@ namespace ZEmpireAutoAccessories.Controllers
                 .FirstOrDefaultAsync(q => q.QuotationID == id);
             if (existing == null)
                 return NotFound();
-
-            if (existing.Status == "Posted")
-            {
-                TempData["LockError"] = "This quotation is posted and can no longer be edited.";
-                return RedirectToAction(nameof(Details), new { id });
-            }
 
             existing.CustomerID = quotation.CustomerID;
             existing.VehicleID = quotation.VehicleID;
@@ -258,12 +246,6 @@ namespace ZEmpireAutoAccessories.Controllers
                 return RedirectToAction(nameof(Delete), new { id });
             }
 
-            if (quotation.Status == "Posted")
-            {
-                TempData["DeleteError"] = "Can't delete this quotation. It has been posted and is locked.";
-                return RedirectToAction(nameof(Delete), new { id });
-            }
-
             _context.Quotations.Remove(quotation);
             await _context.SaveChangesAsync();
 
@@ -291,12 +273,6 @@ namespace ZEmpireAutoAccessories.Controllers
 
             if (quotation == null)
                 return NotFound();
-
-            if (quotation.Status == "Posted")
-            {
-                TempData["LockError"] = "This quotation is posted and can no longer be edited.";
-                return RedirectToAction(nameof(Details), new { id = quotationId });
-            }
 
             if (quantity > 0 && unitPrice >= 0 && (productId != null || serviceId != null))
             {
@@ -345,13 +321,6 @@ namespace ZEmpireAutoAccessories.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RemoveLine(int detailId, int quotationId)
         {
-            var owner = await _context.Quotations.FindAsync(quotationId);
-            if (owner?.Status == "Posted")
-            {
-                TempData["LockError"] = "This quotation is posted and can no longer be edited.";
-                return RedirectToAction(nameof(Details), new { id = quotationId });
-            }
-
             var detail = await _context.QuotationDetails.FindAsync(detailId);
             if (detail != null)
             {
@@ -383,61 +352,10 @@ namespace ZEmpireAutoAccessories.Controllers
             var quotation = await _context.Quotations.FindAsync(id);
             if (quotation != null)
             {
-                if (quotation.Status == "Posted")
-                {
-                    TempData["LockError"] = "This quotation is posted and can no longer be edited.";
-                    return RedirectToAction(nameof(Details), new { id });
-                }
-
                 quotation.Status = status;
                 await _context.SaveChangesAsync();
             }
 
-            return RedirectToAction(nameof(Details), new { id });
-        }
-
-        // GET: Quotation/Post/5
-        public async Task<IActionResult> Post(int? id)
-        {
-            if (id == null)
-                return NotFound();
-
-            var quotation = await _context.Quotations
-                .Include(q => q.Customer)
-                .Include(q => q.Vehicle)
-                .FirstOrDefaultAsync(q => q.QuotationID == id);
-
-            if (quotation == null)
-                return NotFound();
-
-            if (quotation.Status != "Accepted")
-            {
-                TempData["LockError"] = "Only an Accepted quotation can be posted.";
-                return RedirectToAction(nameof(Details), new { id });
-            }
-
-            return View(quotation);
-        }
-
-        // POST: Quotation/Post/5
-        [HttpPost, ActionName("Post")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> PostConfirmed(int id)
-        {
-            var quotation = await _context.Quotations.FindAsync(id);
-            if (quotation == null)
-                return NotFound();
-
-            if (quotation.Status != "Accepted")
-            {
-                TempData["LockError"] = "Only an Accepted quotation can be posted.";
-                return RedirectToAction(nameof(Details), new { id });
-            }
-
-            quotation.Status = "Posted";
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] = "Quotation posted. It's now locked from further edits.";
             return RedirectToAction(nameof(Details), new { id });
         }
 
@@ -456,12 +374,6 @@ namespace ZEmpireAutoAccessories.Controllers
             if (quotation.JobOrder != null)
             {
                 TempData["ConvertError"] = "This quotation has already been converted.";
-                return RedirectToAction(nameof(Details), new { id });
-            }
-
-            if (quotation.Status == "Posted")
-            {
-                TempData["ConvertError"] = "This quotation is posted and can no longer be converted.";
                 return RedirectToAction(nameof(Details), new { id });
             }
 

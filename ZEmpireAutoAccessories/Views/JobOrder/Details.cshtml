@@ -22,8 +22,6 @@
     .badge-completed { background:rgba(34,197,94,.15); color:#15803d; font-weight:600; }
     .badge-cancelled { background:rgba(239,68,68,.15); color:#b91c1c; font-weight:600; }
     .badge-posted { background:rgba(124,58,237,.15); color:#6d28d9; font-weight:600; }
-    .btn-post { background:#7c3aed; border-color:#7c3aed; color:#fff; }
-    .btn-post:hover { background:#6d28d9; border-color:#6d28d9; color:#fff; }
     .totals-row td { font-weight:600; }
     .status-actions form { display:inline; margin-right:8px; }
     .btn-zx, .btn-outline-secondary { display:inline-flex; align-items:center; gap:7px; }
@@ -39,13 +37,10 @@
 <div class="zx-page-head">
     <h1>Job Order @Model.JobOrderNumber</h1>
     <div>
-        @if (Model.Status != "Posted")
-        {
-            <a class="btn btn-outline-secondary" asp-action="Edit" asp-route-id="@Model.JobOrderID">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-                Edit
-            </a>
-        }
+        <a class="btn btn-outline-secondary" asp-action="Edit" asp-route-id="@Model.JobOrderID">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+            Edit
+        </a>
         <a class="btn btn-pdf" asp-action="Pdf" asp-route-id="@Model.JobOrderID" target="_blank">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
             Generate PDF
@@ -161,21 +156,7 @@
                 <button type="submit" class="btn btn-sm btn-outline-secondary">Cancel Job</button>
             </form>
         }
-        @if (Model.Status == "Completed")
-        {
-            <a asp-action="Post" asp-route-id="@Model.JobOrderID" class="btn btn-sm btn-post">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:-2px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                Post &amp; Lock
-            </a>
-        }
-        @if (Model.Status == "Posted")
-        {
-            <span class="text-muted small">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                This job order is posted and locked from further edits.
-            </span>
-        }
-        @if (invoice == null && (Model.Status == "Completed" || Model.Status == "Posted"))
+        @if (invoice == null && Model.Status == "Completed")
         {
             <a asp-controller="ServiceInvoice" asp-action="Create" asp-route-jobOrderId="@Model.JobOrderID" class="btn btn-sm btn-zx">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:-2px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
@@ -221,15 +202,12 @@
                     <td>@("₱" + line.UnitPrice.ToString("N2"))</td>
                     <td>@("₱" + line.SubTotal.ToString("N2"))</td>
                     <td class="text-end pe-3">
-                        @if (Model.Status != "Posted")
-                        {
-                            <button type="button" class="icon-btn danger remove-line-btn" title="Remove line item"
-                                    data-bs-toggle="modal" data-bs-target="#removeLineModal"
-                                    data-detail-id="@line.JobOrderDetailID"
-                                    data-detail-name="@(line.Product?.ProductName ?? line.Service?.ServiceName ?? "this line item")">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                            </button>
-                        }
+                        <button type="button" class="icon-btn danger remove-line-btn" title="Remove line item"
+                                data-bs-toggle="modal" data-bs-target="#removeLineModal"
+                                data-detail-id="@line.JobOrderDetailID"
+                                data-detail-name="@(line.Product?.ProductName ?? line.Service?.ServiceName ?? "this line item")">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        </button>
                     </td>
                 </tr>
             }
@@ -247,9 +225,7 @@
     </table>
     </div>
 
-    @if (Model.Status != "Posted")
-    {
-        <h6 class="mb-3">Add Line Item</h6>
+    <h6 class="mb-3">Add Line Item</h6>
         <form asp-action="AddLine" method="post" class="row g-2 align-items-end">
             <input type="hidden" name="jobOrderId" value="@Model.JobOrderID" />
 
@@ -309,7 +285,6 @@
             Pick either a Product or a Service for the line item. For products priced by panel, pick a Tint Variant
             (if applicable) and a Panel to pull the exact price for this vehicle's classification.
         </div>
-    }
 </div>
 
 <div class="modal fade" id="removeLineModal" tabindex="-1" aria-labelledby="removeLineModalLabel" aria-hidden="true">

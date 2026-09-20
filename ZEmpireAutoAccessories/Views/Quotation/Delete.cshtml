@@ -3,8 +3,7 @@
 @{
     ViewData["Title"] = "Delete Quotation";
     var blockedByJobOrder = Model.JobOrder != null;
-    var blockedByPosted = Model.Status == "Posted";
-    var blocked = blockedByJobOrder || blockedByPosted;
+    var blocked = blockedByJobOrder;
     var deleteError = TempData["DeleteError"] as string;
 }
 
@@ -34,14 +33,7 @@ else if (blocked)
     <div class="alert alert-danger">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
         <div>
-            @if (blockedByJobOrder)
-            {
-                @:Can't delete this quotation. It has already been converted to a job order.
-            }
-            else
-            {
-                @:Can't delete this quotation. It has been posted and is locked.
-            }
+            Can't delete this quotation. It has already been converted to a job order.
         </div>
     </div>
 }
