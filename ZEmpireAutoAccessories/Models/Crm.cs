@@ -16,7 +16,13 @@ namespace ZEmpireAutoAccessories.Models
         [Display(Name = "Full name")]
         public string FullName { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Contact number is required.")]
+        // Deliberately no [Required] here even though new/edited customers
+        // must supply one (enforced in CustomerController instead): the
+        // database column is nullable and existing rows have NULL in it,
+        // and [Required] makes EF Core's materializer assume the column is
+        // never null and skip its DBNull check - which throws
+        // SqlNullValueException the moment it reads one of those rows,
+        // including through every list that Includes Customer.
         [MaxLength(30, ErrorMessage = "Contact number can't be longer than 30 characters.")]
         [Display(Name = "Contact number")]
         [Phone(ErrorMessage = "Enter a valid contact number.")]

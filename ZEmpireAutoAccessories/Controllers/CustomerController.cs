@@ -69,6 +69,9 @@ namespace ZEmpireAutoAccessories.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("FullName,ContactNumber")] Customer customer)
         {
+            if (string.IsNullOrWhiteSpace(customer.ContactNumber))
+                ModelState.AddModelError(nameof(Customer.ContactNumber), "Contact number is required.");
+
             if (!ModelState.IsValid)
                 return View(customer);
 
@@ -104,6 +107,9 @@ namespace ZEmpireAutoAccessories.Controllers
         {
             if (id != customer.CustomerID)
                 return NotFound();
+
+            if (string.IsNullOrWhiteSpace(customer.ContactNumber))
+                ModelState.AddModelError(nameof(Customer.ContactNumber), "Contact number is required.");
 
             if (!ModelState.IsValid)
                 return View(customer);
