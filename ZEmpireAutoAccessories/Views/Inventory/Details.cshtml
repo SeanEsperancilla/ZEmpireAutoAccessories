@@ -103,7 +103,7 @@
 
 <div class="zx-card">
     <div class="text-muted small text-uppercase mb-1">Stock On Hand</div>
-    <div class="stock-figure">@stockOnHand</div>
+    <div class="stock-figure">@stockOnHand.ToString("N0")</div>
 </div>
 
 <div class="row g-3 mb-3">
@@ -162,7 +162,7 @@
                             <span class="badge badge-out">Stock Out</span>
                         }
                     </td>
-                    <td>@t.Quantity</td>
+                    <td>@t.Quantity.ToString("N0")</td>
                     <td>@t.User.UserName</td>
                 </tr>
             }

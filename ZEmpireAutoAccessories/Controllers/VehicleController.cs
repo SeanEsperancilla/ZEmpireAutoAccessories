@@ -99,6 +99,14 @@ namespace ZEmpireAutoAccessories.Controllers
 
             NormalizePlateNumber(vehicle);
 
+            if (!string.IsNullOrWhiteSpace(vehicle.PlateNumber) &&
+                await _context.Vehicles.AnyAsync(v => v.PlateNumber == vehicle.PlateNumber))
+            {
+                ModelState.AddModelError(string.Empty, $"Plate number '{vehicle.PlateNumber}' is already registered to another vehicle.");
+                await LoadDropdowns(vehicle);
+                return View(vehicle);
+            }
+
             _context.Vehicles.Add(vehicle);
             await _context.SaveChangesAsync();
 
@@ -142,6 +150,14 @@ namespace ZEmpireAutoAccessories.Controllers
             }
 
             NormalizePlateNumber(vehicle);
+
+            if (!string.IsNullOrWhiteSpace(vehicle.PlateNumber) &&
+                await _context.Vehicles.AnyAsync(v => v.PlateNumber == vehicle.PlateNumber && v.VehicleID != id))
+            {
+                ModelState.AddModelError(string.Empty, $"Plate number '{vehicle.PlateNumber}' is already registered to another vehicle.");
+                await LoadDropdowns(vehicle);
+                return View(vehicle);
+            }
 
             try
             {

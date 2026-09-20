@@ -219,6 +219,12 @@
                     $panel.append($('<option></option>').val(r.panelId).text(r.panelName).attr('data-price', r.price));
                 });
                 $panel.prop('disabled', false);
+
+                // Only one panel option for this product/variant - skip
+                // making the user pick it themselves.
+                if (rows.length === 1) {
+                    $panel.val(rows[0].panelId).trigger('change');
+                }
             }
 
             function refreshTintVariants($row) {
@@ -287,7 +293,7 @@
                     var price = parseFloat($(this).find('input[name=unitPrice]').val()) || 0;
                     total += qty * price;
                 });
-                $('#grandTotal').text('₱' + total.toFixed(2));
+                $('#grandTotal').text('₱' + total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
             }
 
             $(document).on('change', '.product-select', function () {

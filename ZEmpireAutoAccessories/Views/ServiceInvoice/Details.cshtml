@@ -324,6 +324,13 @@
                 rows.forEach(function (r) {
                     $panel.append($('<option></option>').val(r.panelId).text(r.panelName).attr('data-price', r.price));
                 });
+
+                // Only one panel option for this product/variant - skip
+                // making the user pick it themselves.
+                if (rows.length === 1) {
+                    $panel.val(rows[0].panelId);
+                    $price.val(parseFloat(rows[0].price).toFixed(2));
+                }
             }
 
             function refreshTintVariants() {
@@ -342,6 +349,12 @@
                     variantIds.forEach(function (id) {
                         $tintVariant.append($('<option></option>').val(id).text(variants[id]));
                     });
+
+                    // Only one tint variant on file for this product - skip
+                    // making the user pick it themselves.
+                    if (variantIds.length === 1) {
+                        $tintVariant.val(variantIds[0]);
+                    }
                 }
 
                 refreshPanels();

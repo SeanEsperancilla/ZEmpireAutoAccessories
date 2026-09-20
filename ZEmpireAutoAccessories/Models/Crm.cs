@@ -16,6 +16,7 @@ namespace ZEmpireAutoAccessories.Models
         [Display(Name = "Full name")]
         public string FullName { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "Contact number is required.")]
         [MaxLength(30, ErrorMessage = "Contact number can't be longer than 30 characters.")]
         [Display(Name = "Contact number")]
         [Phone(ErrorMessage = "Enter a valid contact number.")]

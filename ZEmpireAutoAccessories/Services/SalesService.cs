@@ -31,7 +31,7 @@ namespace ZEmpireAutoAccessories.Services
                 .FirstOrDefaultAsync(s => s.SalesID == saleId);
         }
 
-        public async Task<List<Sale>> GetSales(string? q = null)
+        public async Task<List<Sale>> GetSales(string? q = null, int? productId = null, DateOnly? dateFrom = null, DateOnly? dateTo = null)
         {
             var query = _context.Sales
                 .Include(s => s.Customer)
@@ -47,9 +47,33 @@ namespace ZEmpireAutoAccessories.Services
                     s.Customer.FullName.Contains(term));
             }
 
+            if (productId.HasValue)
+                query = query.Where(s => s.SaleDetails.Any(d => d.ProductID == productId.Value));
+
+            if (dateFrom.HasValue)
+                query = query.Where(s => s.SalesDate >= dateFrom.Value.ToDateTime(TimeOnly.MinValue));
+
+            if (dateTo.HasValue)
+                query = query.Where(s => s.SalesDate < dateTo.Value.AddDays(1).ToDateTime(TimeOnly.MinValue));
+
             return await query
                 .OrderByDescending(s => s.SalesDate)
                 .ToListAsync();
+        }
+
+        public async Task<int> GetUnitsSold(int productId, DateOnly? dateFrom = null, DateOnly? dateTo = null)
+        {
+            var query = _context.SalesDetails
+                .Where(d => d.ProductID == productId)
+                .AsQueryable();
+
+            if (dateFrom.HasValue)
+                query = query.Where(d => d.Sale.SalesDate >= dateFrom.Value.ToDateTime(TimeOnly.MinValue));
+
+            if (dateTo.HasValue)
+                query = query.Where(d => d.Sale.SalesDate < dateTo.Value.AddDays(1).ToDateTime(TimeOnly.MinValue));
+
+            return await query.SumAsync(d => d.Quantity);
         }
 
         public async Task<Sale> CreateSale(

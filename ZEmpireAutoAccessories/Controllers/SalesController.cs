@@ -27,11 +27,21 @@ namespace ZEmpireAutoAccessories.Controllers
             _quotationService = quotationService;
         }
 
-        // GET: Sale?q=...
-        public async Task<IActionResult> Index(string? q)
+        // GET: Sale?q=...&productId=...&dateFrom=...&dateTo=...
+        public async Task<IActionResult> Index(string? q, int? productId, DateOnly? dateFrom, DateOnly? dateTo)
         {
-            var sales = await _salesService.GetSales(q);
+            var sales = await _salesService.GetSales(q, productId, dateFrom, dateTo);
+
             ViewData["Search"] = q;
+            ViewData["ProductID"] = new SelectList(
+                await _context.Products.OrderBy(p => p.ProductName).ToListAsync(),
+                "ProductID", "ProductName", productId);
+            ViewData["DateFrom"] = dateFrom;
+            ViewData["DateTo"] = dateTo;
+
+            if (productId.HasValue)
+                ViewData["UnitsSold"] = await _salesService.GetUnitsSold(productId.Value, dateFrom, dateTo);
+
             return View(sales);
         }
 

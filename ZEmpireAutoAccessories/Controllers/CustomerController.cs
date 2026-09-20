@@ -73,8 +73,7 @@ namespace ZEmpireAutoAccessories.Controllers
                 return View(customer);
 
             customer.FullName = customer.FullName.Trim();
-            customer.ContactNumber = string.IsNullOrWhiteSpace(customer.ContactNumber)
-                ? null : customer.ContactNumber.Trim();
+            customer.ContactNumber = customer.ContactNumber!.Trim();
             customer.CreatedAt = DateTime.UtcNow;
 
             _context.Customers.Add(customer);
@@ -116,8 +115,7 @@ namespace ZEmpireAutoAccessories.Controllers
                 return NotFound();
 
             existing.FullName = customer.FullName.Trim();
-            existing.ContactNumber = string.IsNullOrWhiteSpace(customer.ContactNumber)
-                ? null : customer.ContactNumber.Trim();
+            existing.ContactNumber = customer.ContactNumber!.Trim();
 
             await _context.SaveChangesAsync();
 

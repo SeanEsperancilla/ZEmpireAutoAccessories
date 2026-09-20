@@ -122,7 +122,7 @@ namespace ZEmpireAutoAccessories.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-            [Bind("CustomerID,VehicleID,JobTypeID,ValidUntil,Remarks")] Quotation quotation)
+            [Bind("CustomerID,VehicleID,JobTypeID,Remarks")] Quotation quotation)
         {
             ModelState.Remove(nameof(Quotation.QuotationNumber));
             ModelState.Remove(nameof(Quotation.UserId));
@@ -138,6 +138,7 @@ namespace ZEmpireAutoAccessories.Controllers
 
             quotation.UserId = CurrentUserId;
             quotation.QuotationDate = DateTime.Now;
+            quotation.ValidUntil = DateOnly.FromDateTime(quotation.QuotationDate.AddDays(7));
             quotation.Status = "Draft";
             quotation.QuotationNumber = "PENDING";
             quotation.CreatedAt = DateTime.Now;

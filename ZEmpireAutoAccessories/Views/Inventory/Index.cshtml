@@ -129,7 +129,7 @@
                 var stock = item.StockOnHand ?? 0;
                 <tr>
                     <td>@item.ProductName</td>
-                    <td>@stock</td>
+                    <td>@stock.ToString("N0")</td>
                     <td>
                         @if (stock <= 0)
                         {

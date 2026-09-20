@@ -46,8 +46,9 @@
                 </select>
             </div>
             <div class="col-md-6 mb-3">
-                <label asp-for="ValidUntil" class="form-label">Valid Until <span class="text-muted fw-normal">(optional)</span></label>
-                <input asp-for="ValidUntil" type="date" class="form-control" />
+                <label class="form-label">Valid Until</label>
+                <input type="text" class="form-control" value="@DateOnly.FromDateTime(DateTime.Now.AddDays(7)).ToString("MMM d, yyyy")" disabled />
+                <div class="form-text">Automatically set to 7 days from today.</div>
             </div>
         </div>
 
