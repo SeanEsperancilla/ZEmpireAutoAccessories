@@ -21,7 +21,7 @@
     // sees the sections it actually has tiles for.
     var categoryMap = new (string Name, string[] Modules)[]
     {
-        ("Overview",              new[] { "Dashboard", "Reports" }),
+        ("Overview",              new[] { "Reports" }),
         ("Customers & Vehicles",  new[] { "Customers", "Vehicles", "Warranty" }),
         ("Operations",            new[] { "Job Orders", "Vehicle Checklist", "Services", "Job Types" }),
         ("Catalog & Inventory",   new[] { "Products", "Inventory", "Pricing", "Price History" }),
@@ -316,7 +316,6 @@
                 // Live modules link straight to their screen; the rest are still placeholders.
                 string? route = module switch
                 {
-                    "Dashboard" => Url.Action("Index", "Home"),
                     "Products" => Url.Action("Index", "Product"),
                     "Vehicles" => Url.Action("Index", "Vehicle"),
                     "Customers" => Url.Action("Index", "Customer"),
@@ -344,13 +343,9 @@
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">@Html.Raw(ModuleIcon(module))</svg>
                             </div>
                             <h6>@module</h6>
-                            @if (module == "Dashboard")
-                            {
-                                <p class="mod-blurb">You're here — @modules.Count module@(modules.Count == 1 ? "" : "s") across @categories.Count categor@(categories.Count == 1 ? "y" : "ies").</p>
-                            }
                             <div class="mt-auto pt-2">
                                 <span class="open">
-                                    @(module == "Dashboard" ? "Refresh" : "Open")
+                                    Open
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
                                 </span>
                             </div>
@@ -434,8 +429,6 @@
     // Unknown modules fall back to the original 4-square grid icon.
     private static string ModuleIcon(string module) => module switch
     {
-        "Dashboard" =>
-            "<rect width='7' height='9' x='3' y='3' rx='1'/><rect width='7' height='5' x='14' y='3' rx='1'/><rect width='7' height='9' x='14' y='12' rx='1'/><rect width='7' height='5' x='3' y='16' rx='1'/>",
         "Reports" =>
             "<line x1='18' y1='20' x2='18' y2='10'/><line x1='12' y1='20' x2='12' y2='4'/><line x1='6' y1='20' x2='6' y2='14'/>",
         "Customers" =>
