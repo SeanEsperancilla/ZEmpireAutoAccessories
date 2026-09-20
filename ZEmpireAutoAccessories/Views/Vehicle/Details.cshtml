@@ -2,7 +2,7 @@
 
 @{
     ViewData["Title"] = "Vehicle Details";
-    var ownerInitials = string.Join("", Model.Customer.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+    var ownerInitials = string.Join("", (Model.Customer.FullName ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries)
                             .Take(2).Select(p => char.ToUpper(p[0])));
 }
 

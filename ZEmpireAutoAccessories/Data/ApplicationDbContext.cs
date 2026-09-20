@@ -89,6 +89,19 @@ namespace ZEmpireAutoAccessories.Data
             b.Entity<IdentityUserToken<string>>().ToTable("AspNetUserTokens", "asp");
 
             // ---------- crm ----------
+            // FullName's C# type is non-nullable, which by default makes EF
+            // Core's materializer assume the column can never be null and
+            // skip its DBNull check - if any existing row actually has NULL
+            // there (bad data predating the app's own validation, e.g. a
+            // direct DB import), reading it throws SqlNullValueException.
+            // IsRequired(false) keeps that check in place regardless of the
+            // CLR type; the app's own Create/Edit forms already enforce
+            // FullName via [Required] at the ModelState level.
+            b.Entity<Customer>(e =>
+            {
+                e.Property(x => x.FullName).IsRequired(false);
+            });
+
             b.Entity<Vehicle>(e =>
             {
                 e.HasOne(x => x.Customer).WithMany(c => c.Vehicles)

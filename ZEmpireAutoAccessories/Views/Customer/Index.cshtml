@@ -83,7 +83,7 @@
         <tbody>
             @foreach (var item in Model)
             {
-                var initials = string.Join("", item.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                var initials = string.Join("", (item.FullName ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries)
                                     .Take(2).Select(p => char.ToUpper(p[0])));
                 <tr>
                     <td>
