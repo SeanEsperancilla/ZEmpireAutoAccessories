@@ -1,4 +1,4 @@
-﻿@model IEnumerable<ZEmpireAutoAccessories.Models.VwServiceInvoiceSummary>
+@model IEnumerable<ZEmpireAutoAccessories.Models.VwServiceInvoiceSummary>
 
 @{
     ViewData["Title"] = "Service Invoices Report";
@@ -165,10 +165,10 @@
                 <tr>
                     <td>@item.InvoiceNumber</td>
                     <td>@item.InvoiceDate.ToString("MMM d, yyyy")</td>
-                    <td>@item.CustomerName</td>
+                    <td>@(item.CustomerName ?? "—")</td>
                     <td>@(item.JobOrderNumber ?? "—")</td>
                     <td><span class="badge badge-@item.Status.ToLower()">@item.Status</span></td>
-                    <td>@item.ProcessedBy</td>
+                    <td>@(item.ProcessedBy ?? "—")</td>
                     <td>@("₱" + item.TotalAmount.ToString("N2"))</td>
                     <td>@("₱" + item.AmountPaid.ToString("N2"))</td>
                 </tr>

@@ -94,10 +94,10 @@
                 <tr>
                     <td>@item.QuotationNumber</td>
                     <td>@item.QuotationDate.ToString("MMM d, yyyy")</td>
-                    <td>@item.CustomerName</td>
+                    <td>@(item.CustomerName ?? "—")</td>
                     <td><span class="badge badge-@item.Status.ToLower()">@item.Status</span></td>
                     <td>@(item.ConvertedJobOrderNumber ?? "—")</td>
-                    <td>@item.PreparedBy</td>
+                    <td>@(item.PreparedBy ?? "—")</td>
                     <td>@("₱" + item.TotalAmount.ToString("N2"))</td>
                 </tr>
             }

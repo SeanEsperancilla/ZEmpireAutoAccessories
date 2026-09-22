@@ -53,9 +53,9 @@ namespace ZEmpireAutoAccessories.Services
                             {
                                 table.Cell().Element(BodyCell).Text(item.InvoiceNumber);
                                 table.Cell().Element(BodyCell).Text(item.SalesDate.ToString("MMM d, yyyy"));
-                                table.Cell().Element(BodyCell).Text(item.CustomerName);
+                                table.Cell().Element(BodyCell).Text(item.CustomerName ?? "—");
                                 table.Cell().Element(BodyCell).Text(item.PaymentModeName);
-                                table.Cell().Element(BodyCell).Text(item.SoldBy);
+                                table.Cell().Element(BodyCell).Text(item.SoldBy ?? "—");
                                 table.Cell().Element(BodyCell).AlignRight().Text("₱" + item.RecordedTotal.ToString("N2"));
                             }
                         });
@@ -109,10 +109,10 @@ namespace ZEmpireAutoAccessories.Services
                             {
                                 table.Cell().Element(BodyCell).Text(item.QuotationNumber);
                                 table.Cell().Element(BodyCell).Text(item.QuotationDate.ToString("MMM d, yyyy"));
-                                table.Cell().Element(BodyCell).Text(item.CustomerName);
+                                table.Cell().Element(BodyCell).Text(item.CustomerName ?? "—");
                                 table.Cell().Element(BodyCell).Text(item.Status);
                                 table.Cell().Element(BodyCell).Text(item.ConvertedJobOrderNumber ?? "—");
-                                table.Cell().Element(BodyCell).Text(item.PreparedBy);
+                                table.Cell().Element(BodyCell).Text(item.PreparedBy ?? "—");
                                 table.Cell().Element(BodyCell).AlignRight().Text("₱" + item.TotalAmount.ToString("N2"));
                             }
                         });
@@ -168,10 +168,10 @@ namespace ZEmpireAutoAccessories.Services
                             {
                                 table.Cell().Element(BodyCell).Text(item.JobOrderNumber);
                                 table.Cell().Element(BodyCell).Text(item.JobOrderDate.ToString("MMM d, yyyy"));
-                                table.Cell().Element(BodyCell).Text(item.CustomerName);
+                                table.Cell().Element(BodyCell).Text(item.CustomerName ?? "—");
                                 table.Cell().Element(BodyCell).Text(item.JobTypeName ?? "—");
                                 table.Cell().Element(BodyCell).Text(item.Status);
-                                table.Cell().Element(BodyCell).Text(item.HandledBy);
+                                table.Cell().Element(BodyCell).Text(item.HandledBy ?? "—");
                                 table.Cell().Element(BodyCell).AlignRight().Text(item.LineCount.ToString());
                                 table.Cell().Element(BodyCell).AlignRight().Text("₱" + item.TotalAmount.ToString("N2"));
                             }

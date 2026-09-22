@@ -78,7 +78,15 @@ namespace ZEmpireAutoAccessories.Data
             b.Entity<ApplicationUser>(e =>
             {
                 e.ToTable("AspNetUsers", "asp");
-                e.Property(x => x.FullName).HasMaxLength(150).IsRequired();
+                // Not IsRequired(): that makes EF's materializer assume the
+                // column is never null and skip its DBNull check, so a user
+                // row with no FullName (accounts inserted straight into SQL
+                // rather than through this app) throws SqlNullValueException
+                // on every query that touches it - and 12 different screens
+                // Include(x => x.User). AppUserClaimsPrincipalFactory already
+                // falls back to UserName when FullName is blank, which only
+                // works if the row can be loaded in the first place.
+                e.Property(x => x.FullName).HasMaxLength(150);
                 e.Property(x => x.CreatedAt).HasColumnType("datetime2(0)");
             });
             b.Entity<ApplicationRole>().ToTable("AspNetRoles", "asp");

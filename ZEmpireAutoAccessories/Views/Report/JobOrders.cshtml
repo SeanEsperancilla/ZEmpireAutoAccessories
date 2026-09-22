@@ -91,10 +91,10 @@
                 <tr>
                     <td>@item.JobOrderNumber</td>
                     <td>@item.JobOrderDate.ToString("MMM d, yyyy")</td>
-                    <td>@item.CustomerName</td>
+                    <td>@(item.CustomerName ?? "—")</td>
                     <td>@(item.JobTypeName ?? "—")</td>
                     <td><span class="badge badge-@item.Status.ToLower().Replace(" ", "")">@item.Status</span></td>
-                    <td>@item.HandledBy</td>
+                    <td>@(item.HandledBy ?? "—")</td>
                     <td>@item.LineCount</td>
                     <td>@("₱" + item.TotalAmount.ToString("N2"))</td>
                 </tr>

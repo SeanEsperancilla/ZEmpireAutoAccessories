@@ -74,9 +74,9 @@
                 <tr>
                     <td>@item.InvoiceNumber</td>
                     <td>@item.SalesDate.ToString("MMM d, yyyy")</td>
-                    <td>@item.CustomerName</td>
+                    <td>@(item.CustomerName ?? "—")</td>
                     <td>@item.PaymentModeName</td>
-                    <td>@item.SoldBy</td>
+                    <td>@(item.SoldBy ?? "—")</td>
                     <td>@("₱" + item.RecordedTotal.ToString("N2"))</td>
                 </tr>
             }
