@@ -55,7 +55,7 @@
 
         <div class="mb-3">
             <label asp-for="ProductID" class="form-label"></label>
-            <select asp-for="ProductID" class="form-select" asp-items="ViewBag.ProductID">
+            <select asp-for="ProductID" class="form-select" asp-items="ViewBag.ProductID" data-searchable="true">
                 <option value="">-- Select Product --</option>
             </select>
             <span asp-validation-for="ProductID" class="text-danger"></span>
