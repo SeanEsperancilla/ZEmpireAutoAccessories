@@ -1,77 +1,35 @@
-﻿@model ZEmpireAutoAccessories.Models.Sale
+@model ZEmpireAutoAccessories.Models.Sale
 
 @{
     ViewData["Title"] = "Sale Details";
 }
 
 <style>
-    .zx-page-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 18px;
-    }
-
-        .zx-page-head h1 {
-            font-family: 'Oswald',system-ui,sans-serif;
-            font-weight: 700;
-            font-size: 22px;
-            margin: 0;
-            color: #0b0b0c;
-        }
-
-        .zx-page-head .btn-outline-secondary {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-        }
-
-    .zx-card {
-        background: #fff;
-        border: 1px solid #e8ebf0;
-        border-radius: 14px;
-        padding: 22px;
-        margin-bottom: 18px;
-    }
-
-    dt {
-        color: #7b8290;
-        font-weight: 600;
-        font-size: 12.5px;
-        text-transform: uppercase;
-        letter-spacing: .3px;
-    }
-
-    dd {
-        margin-bottom: 14px;
-        font-size: 15px;
-        color: #0b0b0c;
-    }
-
-    .zx-table thead {
-        background: #0b0b0c;
-        color: #fff;
-    }
-
-        .zx-table thead th {
-            border-bottom: none;
-            font-weight: 600;
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: .3px;
-        }
-
-    .totals-row td {
-        font-weight: 700;
-    }
+    .zx-page-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+    .zx-page-head h1 { font-family:'Oswald',system-ui,sans-serif; font-weight:700; font-size:22px; margin:0; color:#0b0b0c; }
+    .zx-card { background:#fff; border:1px solid #e8ebf0; border-radius:14px; padding:22px; margin-bottom:18px; }
+    dt { color:#7b8290; font-weight:600; font-size:12.5px; text-transform:uppercase; letter-spacing:.3px; }
+    dd { margin-bottom:14px; font-size:15px; color:#0b0b0c; }
+    .zx-table thead { background:#0b0b0c; color:#fff; }
+    .zx-table thead th { border-bottom:none; font-weight:600; font-size:13px; text-transform:uppercase; letter-spacing:.3px; }
+    .totals-row td { font-weight:700; }
+    .zx-page-head .btn-outline-secondary { display:inline-flex; align-items:center; gap:7px; }
+    .btn-pdf { display:inline-flex; align-items:center; gap:7px; background:#0b0b0c; border-color:#0b0b0c; color:#fff; font-weight:600; }
+    .btn-pdf:hover { background:#262626; border-color:#262626; color:#fff; }
 </style>
 
 <div class="zx-page-head">
     <h1>Sale @Model.InvoiceNumber</h1>
-    <a class="btn btn-outline-secondary" asp-action="Index">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></svg>
-        Back to list
-    </a>
+    <div>
+        <a class="btn btn-pdf" asp-action="Pdf" asp-route-id="@Model.SalesID" target="_blank">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
+            Generate PDF
+        </a>
+        <a class="btn btn-outline-secondary" asp-action="Index">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+            Back to list
+        </a>
+    </div>
 </div>
 
 <div class="zx-card">
@@ -95,6 +53,7 @@
 
 <div class="zx-card">
     <h6 class="mb-3">Line Items</h6>
+    <div class="table-responsive">
     <table class="table zx-table mb-0">
         <thead>
             <tr>
@@ -120,4 +79,5 @@
             </tr>
         </tbody>
     </table>
+    </div>
 </div>

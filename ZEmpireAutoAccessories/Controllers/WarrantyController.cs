@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ZEmpireAutoAccessories.Authorization;
@@ -19,19 +19,37 @@ namespace ZEmpireAutoAccessories.Controllers
             _context = context;
         }
 
-        // GET: Warranty?status=Active
-        public async Task<IActionResult> Index(string? status)
+        // GET: Warranty?status=Active&q=...
+        public async Task<IActionResult> Index(string? status, string? q)
         {
-            var warranties = await _context.Warranties
+            await AutoExpireOverdueWarranties();
+
+            var query = _context.Warranties
                 .Include(w => w.SalesDetail).ThenInclude(d => d!.Sale)
                 .Include(w => w.SalesDetail).ThenInclude(d => d!.Product)
                 .Include(w => w.ServiceInvoiceDetail).ThenInclude(d => d!.ServiceInvoice)
-                .Include(w => w.JobOrder)
-                .Where(w => status == null || w.WarrantyStatus == status)
+                .Include(w => w.JobOrder).ThenInclude(j => j!.Customer)
+                .Where(w => status == null || w.WarrantyStatus == status);
+
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var term = q.Trim();
+                query = query.Where(w =>
+                    (w.SalesDetail != null &&
+                        (w.SalesDetail.Sale.InvoiceNumber.Contains(term) || w.SalesDetail.Product.ProductName.Contains(term))) ||
+                    (w.ServiceInvoiceDetail != null && w.ServiceInvoiceDetail.ServiceInvoice.InvoiceNumber.Contains(term)) ||
+                    (w.JobOrder != null &&
+                        (w.JobOrder.JobOrderNumber.Contains(term) || w.JobOrder.Customer.FullName.Contains(term))));
+            }
+
+            var warranties = await query
                 .OrderByDescending(w => w.WarrantyID)
                 .ToListAsync();
 
             ViewData["Status"] = status;
+            ViewData["Search"] = q;
+            ViewData["Success"] = TempData["Success"];
+            ViewData["ClaimError"] = TempData["ClaimError"];
             return View(warranties);
         }
 
@@ -53,14 +71,94 @@ namespace ZEmpireAutoAccessories.Controllers
             if (warranty == null)
                 return NotFound();
 
+            if (IsOverdue(warranty))
+            {
+                warranty.WarrantyStatus = "Expired";
+                await _context.SaveChangesAsync();
+            }
+
+            ViewData["Success"] = TempData["Success"];
+            ViewData["ClaimError"] = TempData["ClaimError"];
             return View(warranty);
+        }
+
+        // GET: Warranty/Claim/5
+        public async Task<IActionResult> Claim(int? id)
+        {
+            if (id == null)
+                return NotFound();
+
+            var warranty = await _context.Warranties
+                .Include(w => w.SalesDetail).ThenInclude(d => d!.Sale)
+                .Include(w => w.SalesDetail).ThenInclude(d => d!.Product)
+                .Include(w => w.ServiceInvoiceDetail).ThenInclude(d => d!.ServiceInvoice)
+                .Include(w => w.JobOrder).ThenInclude(j => j!.Customer)
+                .FirstOrDefaultAsync(w => w.WarrantyID == id);
+
+            if (warranty == null)
+                return NotFound();
+
+            if (IsOverdue(warranty))
+            {
+                warranty.WarrantyStatus = "Expired";
+                await _context.SaveChangesAsync();
+            }
+
+            if (warranty.WarrantyStatus != "Active")
+            {
+                TempData["ClaimError"] = warranty.WarrantyStatus == "Claimed"
+                    ? "This warranty has already been claimed."
+                    : $"This warranty can't be claimed - its status is {warranty.WarrantyStatus}.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            return View(warranty);
+        }
+
+        // POST: Warranty/Claim/5
+        [HttpPost, ActionName("Claim")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ClaimConfirmed(int id, string? claimNotes)
+        {
+            var warranty = await _context.Warranties.FindAsync(id);
+            if (warranty == null)
+                return NotFound();
+
+            if (IsOverdue(warranty))
+                warranty.WarrantyStatus = "Expired";
+
+            if (warranty.WarrantyStatus != "Active")
+            {
+                await _context.SaveChangesAsync();
+                TempData["ClaimError"] = warranty.WarrantyStatus == "Claimed"
+                    ? "This warranty has already been claimed."
+                    : $"This warranty can't be claimed - its status is {warranty.WarrantyStatus}.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            var claimedBy = User.FindFirst(AppClaims.FullName)?.Value ?? User.Identity?.Name ?? "Unknown";
+            var stamp = $"Claimed {DateTime.Now:MMM d, yyyy} by {claimedBy}" +
+                        (string.IsNullOrWhiteSpace(claimNotes) ? "" : $": {claimNotes.Trim()}");
+
+            // Remarks is limited to 150 chars in the DB - keep the newest note
+            // and trim rather than risk a save failure on a long claim note.
+            var combined = string.IsNullOrWhiteSpace(warranty.Remarks)
+                ? stamp
+                : warranty.Remarks + " | " + stamp;
+            warranty.Remarks = combined.Length > 150 ? combined[..150] : combined;
+
+            warranty.WarrantyStatus = "Claimed";
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Warranty claimed successfully.";
+            return RedirectToAction(nameof(Details), new { id });
         }
 
         // GET: Warranty/Create
         public async Task<IActionResult> Create()
         {
             await LoadDropdowns();
-            return View();
+            return View(new Warranty { WarrantyStatus = "Active" });
         }
 
         // POST: Warranty/Create
@@ -125,6 +223,17 @@ namespace ZEmpireAutoAccessories.Controllers
                 return View(warranty);
             }
 
+            // Expired is itself an auto-managed state (see IsOverdue /
+            // AutoExpireOverdueWarranties) - if the end date is pushed back
+            // out and it's still sitting at Expired, it's stale. Voided and
+            // Claimed are deliberate, so those are left alone.
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            if (warranty.WarrantyStatus == "Expired" &&
+                (warranty.WarrantyEndDate == null || warranty.WarrantyEndDate >= today))
+            {
+                warranty.WarrantyStatus = "Active";
+            }
+
             try
             {
                 _context.Update(warranty);
@@ -181,6 +290,31 @@ namespace ZEmpireAutoAccessories.Controllers
             }
 
             return RedirectToAction(nameof(Index));
+        }
+
+        private static bool IsOverdue(Warranty warranty) =>
+            warranty.WarrantyStatus == "Active" &&
+            warranty.WarrantyEndDate.HasValue &&
+            warranty.WarrantyEndDate.Value < DateOnly.FromDateTime(DateTime.Today);
+
+        // Flip any Active warranty whose end date has already passed to Expired.
+        // Runs on every Index load so the list always reflects today's date
+        // without needing a background job.
+        private async Task AutoExpireOverdueWarranties()
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+
+            var overdue = await _context.Warranties
+                .Where(w => w.WarrantyStatus == "Active" && w.WarrantyEndDate != null && w.WarrantyEndDate < today)
+                .ToListAsync();
+
+            if (overdue.Count == 0)
+                return;
+
+            foreach (var warranty in overdue)
+                warranty.WarrantyStatus = "Expired";
+
+            await _context.SaveChangesAsync();
         }
 
         private async Task LoadDropdowns(Warranty? warranty = null)

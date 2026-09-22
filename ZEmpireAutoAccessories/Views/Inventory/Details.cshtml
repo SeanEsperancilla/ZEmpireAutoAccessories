@@ -103,7 +103,7 @@
 
 <div class="zx-card">
     <div class="text-muted small text-uppercase mb-1">Stock On Hand</div>
-    <div class="stock-figure">@stockOnHand</div>
+    <div class="stock-figure">@stockOnHand.ToString("N0")</div>
 </div>
 
 <div class="row g-3 mb-3">
@@ -137,6 +137,7 @@
 
 <div class="zx-card">
     <h6 class="mb-3">Transaction History</h6>
+    <div class="table-responsive">
     <table class="table zx-table mb-0">
         <thead>
             <tr>
@@ -161,7 +162,7 @@
                             <span class="badge badge-out">Stock Out</span>
                         }
                     </td>
-                    <td>@t.Quantity</td>
+                    <td>@t.Quantity.ToString("N0")</td>
                     <td>@t.User.UserName</td>
                 </tr>
             }
@@ -173,4 +174,5 @@
             }
         </tbody>
     </table>
+    </div>
 </div>

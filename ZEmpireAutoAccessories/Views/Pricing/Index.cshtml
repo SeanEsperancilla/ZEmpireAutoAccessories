@@ -1,67 +1,27 @@
-﻿@model IEnumerable<ZEmpireAutoAccessories.Models.Pricing>
+@model IEnumerable<ZEmpireAutoAccessories.Models.Pricing>
 
 @{
     ViewData["Title"] = "Pricing";
+    var search = ViewData["Search"] as string;
 }
 
 <style>
-    .zx-page-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 18px;
-    }
-
-        .zx-page-head h1 {
-            font-family: 'Oswald',system-ui,sans-serif;
-            font-weight: 700;
-            font-size: 22px;
-            margin: 0;
-            color: #0b0b0c;
-        }
-
-    .btn-zx {
-        background: var(--zx-red);
-        border-color: var(--zx-red);
-        color: #fff;
-        font-weight: 600;
-    }
-
-        .btn-zx:hover {
-            background: var(--zx-red2);
-            border-color: var(--zx-red2);
-            color: #fff;
-        }
-
-    .zx-card {
-        background: #fff;
-        border: 1px solid #e8ebf0;
-        border-radius: 14px;
-        overflow: hidden;
-    }
-
-    .zx-table thead {
-        background: #0b0b0c;
-        color: #fff;
-    }
-
-        .zx-table thead th {
-            border-bottom: none;
-            font-weight: 600;
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: .3px;
-        }
-
-    .zx-table td, .zx-table th {
-        vertical-align: middle;
-    }
-
-    .zx-actions a {
-        margin-right: 10px;
-        font-weight: 600;
-        font-size: 13.5px;
-    }
+    .zx-page-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+    .zx-page-head h1 { font-family:'Oswald',system-ui,sans-serif; font-weight:700; font-size:22px; margin:0; color:#0b0b0c; }
+    .btn-zx { background:var(--zx-red); border-color:var(--zx-red); color:#fff; font-weight:600; }
+    .btn-zx:hover { background:var(--zx-red2); border-color:var(--zx-red2); color:#fff; }
+    .zx-card { background:#fff; border:1px solid #e8ebf0; border-radius:14px; overflow:hidden; }
+    .zx-table thead { background:#0b0b0c; color:#fff; }
+    .zx-table thead th { border-bottom:none; font-weight:600; font-size:13px; text-transform:uppercase; letter-spacing:.3px; }
+    .zx-table td, .zx-table th { vertical-align:middle; }
+    .icon-btn { width:32px; height:32px; display:inline-grid; place-items:center; border-radius:8px; border:1px solid #e8ebf0;
+                background:#fff; color:#4b5563; margin-left:6px; transition:all .15s ease; text-decoration:none; }
+    .icon-btn:hover { background:#0b0b0c; color:#fff; border-color:#0b0b0c; }
+    .icon-btn.danger:hover { background:#dc2626; color:#fff; border-color:#dc2626; }
+    .search-wrap { position:relative; max-width:420px; margin-bottom:10px; }
+    .search-wrap svg { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:#98a0ad; }
+    .search-input { padding-left:38px; border-radius:10px; }
+    .search-actions { display:flex; gap:8px; margin-top:8px; margin-bottom:18px; }
 </style>
 
 <div class="zx-page-head">
@@ -69,7 +29,22 @@
     <a class="btn btn-zx" asp-action="Create">+ New Pricing</a>
 </div>
 
+<form asp-action="Index" method="get">
+    <div class="search-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+        <input type="text" name="q" value="@search" class="form-control search-input" placeholder="Search product, tint variant, vehicle classification, or panel" />
+    </div>
+    <div class="search-actions">
+        <button type="submit" class="btn btn-outline-secondary btn-sm">Search</button>
+        @if (!string.IsNullOrEmpty(search))
+        {
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Clear</a>
+        }
+    </div>
+</form>
+
 <div class="zx-card">
+    <div class="table-responsive">
     <table class="table zx-table mb-0">
         <thead>
             <tr>
@@ -90,19 +65,28 @@
                     <td>@item.VehicleClassification.ClassificationName</td>
                     <td>@item.Panel.PanelName</td>
                     <td>@("₱" + item.Price.ToString("N2"))</td>
-                    <td class="text-end pe-3 zx-actions">
-                        <a asp-action="Edit" asp-route-id="@item.PricingID">Edit</a>
-                        <a asp-action="Details" asp-route-id="@item.PricingID">History</a>
-                        <a asp-action="Delete" asp-route-id="@item.PricingID" class="text-danger">Delete</a>
+                    <td class="text-end pe-3">
+                        <a asp-action="Edit" asp-route-id="@item.PricingID" class="icon-btn" title="Edit">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                        </a>
+                        <a asp-action="Details" asp-route-id="@item.PricingID" class="icon-btn" title="Price history">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+                        </a>
+                        <a asp-action="Delete" asp-route-id="@item.PricingID" class="icon-btn danger" title="Delete">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        </a>
                     </td>
                 </tr>
             }
             @if (!Model.Any())
             {
                 <tr>
-                    <td colspan="6" class="text-center text-muted py-4">No pricing records yet.</td>
+                    <td colspan="6" class="text-center text-muted py-4">
+                        @(string.IsNullOrEmpty(search) ? "No pricing records yet." : $"No pricing records match \"{search}\".")
+                    </td>
                 </tr>
             }
         </tbody>
     </table>
+    </div>
 </div>

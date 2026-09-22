@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ZEmpireAutoAccessories.Authorization;
@@ -17,13 +17,16 @@ namespace ZEmpireAutoAccessories.Controllers
             _context = context;
         }
 
-        // GET: Vehicle?q=...
-        public async Task<IActionResult> Index(string? q)
+        // GET: Vehicle?q=...&customerId=...
+        public async Task<IActionResult> Index(string? q, int? customerId)
         {
             var query = _context.Vehicles
                 .Include(v => v.Customer)
                 .Include(v => v.VehicleClassification)
                 .AsQueryable();
+
+            if (customerId.HasValue)
+                query = query.Where(v => v.CustomerID == customerId.Value);
 
             if (!string.IsNullOrWhiteSpace(q))
             {
@@ -41,6 +44,16 @@ namespace ZEmpireAutoAccessories.Controllers
                 .ToListAsync();
 
             ViewData["Search"] = q;
+
+            if (customerId.HasValue)
+            {
+                ViewData["CustomerId"] = customerId;
+                ViewData["CustomerName"] = await _context.Customers
+                    .Where(c => c.CustomerID == customerId.Value)
+                    .Select(c => c.FullName)
+                    .FirstOrDefaultAsync();
+            }
+
             return View(vehicles);
         }
 
@@ -62,10 +75,10 @@ namespace ZEmpireAutoAccessories.Controllers
             return View(vehicle);
         }
 
-        // GET: Vehicle/Create
-        public async Task<IActionResult> Create()
+        // GET: Vehicle/Create?customerId=...
+        public async Task<IActionResult> Create(int? customerId)
         {
-            await LoadDropdowns();
+            await LoadDropdowns(customerId.HasValue ? new Vehicle { CustomerID = customerId.Value } : null);
 
             return View();
         }
@@ -80,6 +93,16 @@ namespace ZEmpireAutoAccessories.Controllers
 
             if (!ModelState.IsValid)
             {
+                await LoadDropdowns(vehicle);
+                return View(vehicle);
+            }
+
+            NormalizePlateNumber(vehicle);
+
+            if (!string.IsNullOrWhiteSpace(vehicle.PlateNumber) &&
+                await _context.Vehicles.AnyAsync(v => v.PlateNumber == vehicle.PlateNumber))
+            {
+                ModelState.AddModelError(string.Empty, $"Plate number '{vehicle.PlateNumber}' is already registered to another vehicle.");
                 await LoadDropdowns(vehicle);
                 return View(vehicle);
             }
@@ -122,6 +145,16 @@ namespace ZEmpireAutoAccessories.Controllers
 
             if (!ModelState.IsValid)
             {
+                await LoadDropdowns(vehicle);
+                return View(vehicle);
+            }
+
+            NormalizePlateNumber(vehicle);
+
+            if (!string.IsNullOrWhiteSpace(vehicle.PlateNumber) &&
+                await _context.Vehicles.AnyAsync(v => v.PlateNumber == vehicle.PlateNumber && v.VehicleID != id))
+            {
+                ModelState.AddModelError(string.Empty, $"Plate number '{vehicle.PlateNumber}' is already registered to another vehicle.");
                 await LoadDropdowns(vehicle);
                 return View(vehicle);
             }
@@ -242,6 +275,24 @@ namespace ZEmpireAutoAccessories.Controllers
         {
             return _context.Vehicles
                 .Any(v => v.VehicleID == id);
+        }
+
+        // Regex on the model already confirmed the format is 3 letters + 3 or 4
+        // digits (the current and older Philippine LTO formats), optionally
+        // separated by a space or dash - collapse whatever the user typed into
+        // one canonical "ABC 1234" / "ABC 123" form before saving.
+        private static void NormalizePlateNumber(Vehicle vehicle)
+        {
+            if (string.IsNullOrWhiteSpace(vehicle.PlateNumber))
+                return;
+
+            var compact = vehicle.PlateNumber.Replace(" ", "").Replace("-", "");
+            if (compact.Length < 6)
+                return;
+
+            var letters = compact.Substring(0, 3).ToUpperInvariant();
+            var digits = compact.Substring(3);
+            vehicle.PlateNumber = $"{letters} {digits}";
         }
     }
 }

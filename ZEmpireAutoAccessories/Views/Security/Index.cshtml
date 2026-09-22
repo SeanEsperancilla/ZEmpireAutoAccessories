@@ -58,10 +58,18 @@
                                 @for (int r = 0; r < Model.Roles.Count; r++)
                                 {
                                     var idx = (r * Model.Modules.Count) + m;
+                                    var isAdmin = Model.Roles[r].Name == "Admin";
                                     <td>
                                         <input type="hidden" asp-for="Cells[idx].RoleId" />
                                         <input type="hidden" asp-for="Cells[idx].ModuleID" />
-                                        <input type="checkbox" asp-for="Cells[idx].CanAccess" />
+                                        @if (isAdmin)
+                                        {
+                                            <input type="checkbox" checked disabled title="Admin always has full access" />
+                                        }
+                                        else
+                                        {
+                                            <input type="checkbox" asp-for="Cells[idx].CanAccess" />
+                                        }
                                     </td>
                                 }
                             </tr>

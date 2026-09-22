@@ -1,10 +1,11 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ZEmpireAutoAccessories.Authorization;
 using ZEmpireAutoAccessories.Data;
 using ZEmpireAutoAccessories.Models;
+using ZEmpireAutoAccessories.Services;
 using ZEmpireAutoAccessories.Services.Interfaces;
 
 namespace ZEmpireAutoAccessories.Controllers
@@ -21,18 +22,30 @@ namespace ZEmpireAutoAccessories.Controllers
             _quotationService = quotationService;
         }
 
-        // GET: Quotation?status=Draft
-        public async Task<IActionResult> Index(string? status)
+        // GET: Quotation?status=Draft&q=...
+        public async Task<IActionResult> Index(string? status, string? q)
         {
-            var quotations = await _context.Quotations
-                .Include(q => q.Customer)
-                .Include(q => q.Vehicle)
-                .Include(q => q.JobOrder)
-                .Where(q => status == null || q.Status == status)
-                .OrderByDescending(q => q.QuotationDate)
+            var query = _context.Quotations
+                .Include(quotation => quotation.Customer)
+                .Include(quotation => quotation.Vehicle)
+                .Include(quotation => quotation.JobOrder)
+                .Where(quotation => status == null || quotation.Status == status);
+
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var term = q.Trim();
+                query = query.Where(quotation =>
+                    quotation.QuotationNumber.Contains(term) ||
+                    quotation.Customer.FullName.Contains(term) ||
+                    (quotation.Vehicle.PlateNumber != null && quotation.Vehicle.PlateNumber.Contains(term)));
+            }
+
+            var quotations = await query
+                .OrderByDescending(quotation => quotation.QuotationDate)
                 .ToListAsync();
 
             ViewData["Status"] = status;
+            ViewData["Search"] = q;
             return View(quotations);
         }
 
@@ -47,7 +60,55 @@ namespace ZEmpireAutoAccessories.Controllers
                 return NotFound();
 
             await LoadLineDropdowns();
+
+            // Every Pricing row for this quotation's vehicle classification,
+            // for the Add Line Item form to look up the real matrix price
+            // (Product x Tint Variant x Panel) client-side instead of just
+            // the product's flat DefaultPrice.
+            ViewData["PricingMatrix"] = await _context.Pricings
+                .Where(p => p.VehicleClassificationID == quotation.Vehicle.VehicleClassificationID)
+                .Select(p => new
+                {
+                    productId = p.ProductID,
+                    tintVariantId = p.TintVariantID,
+                    tintVariantName = p.TintVariant != null ? p.TintVariant.VariantName : null,
+                    panelId = p.PanelID,
+                    panelName = p.Panel.PanelName,
+                    price = p.Price
+                })
+                .ToListAsync();
+
             return View(quotation);
+        }
+
+        // GET: Quotation/VehiclesForCustomer?customerId=5
+        public async Task<IActionResult> VehiclesForCustomer(int customerId)
+        {
+            var vehicles = await _context.Vehicles
+                .Where(v => v.CustomerID == customerId)
+                .OrderBy(v => v.PlateNumber)
+                .Select(v => new
+                {
+                    value = v.VehicleID,
+                    text = (v.PlateNumber ?? "No Plate") + " - " + v.Brand + " " + v.Model
+                })
+                .ToListAsync();
+
+            return Json(vehicles);
+        }
+
+        // GET: Quotation/Pdf/5
+        public async Task<IActionResult> Pdf(int? id)
+        {
+            if (id == null)
+                return NotFound();
+
+            var quotation = await _quotationService.GetQuotation(id.Value);
+            if (quotation == null)
+                return NotFound();
+
+            var pdf = DocumentPdfBuilder.BuildQuotationPdf(quotation);
+            return File(pdf, "application/pdf", $"{quotation.QuotationNumber}.pdf");
         }
 
         // GET: Quotation/Create
@@ -61,7 +122,7 @@ namespace ZEmpireAutoAccessories.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-            [Bind("CustomerID,VehicleID,JobTypeID,ValidUntil,Remarks")] Quotation quotation)
+            [Bind("CustomerID,VehicleID,JobTypeID,Remarks")] Quotation quotation)
         {
             ModelState.Remove(nameof(Quotation.QuotationNumber));
             ModelState.Remove(nameof(Quotation.UserId));
@@ -77,6 +138,7 @@ namespace ZEmpireAutoAccessories.Controllers
 
             quotation.UserId = CurrentUserId;
             quotation.QuotationDate = DateTime.Now;
+            quotation.ValidUntil = DateOnly.FromDateTime(quotation.QuotationDate.AddDays(7));
             quotation.Status = "Draft";
             quotation.QuotationNumber = "PENDING";
             quotation.CreatedAt = DateTime.Now;
@@ -197,6 +259,8 @@ namespace ZEmpireAutoAccessories.Controllers
             int quotationId,
             int? productId,
             int? serviceId,
+            int? tintVariantId,
+            int? panelId,
             string? description,
             int quantity,
             string unit,
@@ -204,6 +268,7 @@ namespace ZEmpireAutoAccessories.Controllers
         {
             var quotation = await _context.Quotations
                 .Include(q => q.Details)
+                .Include(q => q.Vehicle)
                 .FirstOrDefaultAsync(q => q.QuotationID == quotationId);
 
             if (quotation == null)
@@ -211,11 +276,30 @@ namespace ZEmpireAutoAccessories.Controllers
 
             if (quantity > 0 && unitPrice >= 0 && (productId != null || serviceId != null))
             {
+                // Record which exact Pricing row (Product x Tint Variant x
+                // Vehicle Classification x Panel) this line's price came from,
+                // when the Add Line Item form resolved one client-side.
+                int? pricingId = null;
+                if (productId != null && panelId != null)
+                {
+                    pricingId = await _context.Pricings
+                        .Where(p =>
+                            p.ProductID == productId &&
+                            p.TintVariantID == tintVariantId &&
+                            p.VehicleClassificationID == quotation.Vehicle.VehicleClassificationID &&
+                            p.PanelID == panelId)
+                        .Select(p => (int?)p.PricingID)
+                        .FirstOrDefaultAsync();
+                }
+
                 _context.QuotationDetails.Add(new QuotationDetail
                 {
                     QuotationID = quotationId,
                     ProductID = productId,
                     ServiceID = serviceId,
+                    TintVariantID = pricingId != null ? tintVariantId : null,
+                    PanelID = pricingId != null ? panelId : null,
+                    PricingID = pricingId,
                     Description = description,
                     Quantity = quantity,
                     Unit = string.IsNullOrWhiteSpace(unit) ? "Unit" : unit,
@@ -293,7 +377,11 @@ namespace ZEmpireAutoAccessories.Controllers
                 return RedirectToAction(nameof(Details), new { id });
             }
 
-            var jobOrderNumber = $"JO-{DateTime.Now:yyyyMMddHHmmss}";
+            // Millisecond precision, not just seconds - two conversions
+            // landing in the same second (two staff, or a double-click)
+            // would otherwise generate the same number and collide against
+            // the database's unique constraint on it.
+            var jobOrderNumber = $"JO-{DateTime.Now:yyyyMMddHHmmssfff}";
 
             try
             {
@@ -339,15 +427,13 @@ namespace ZEmpireAutoAccessories.Controllers
                 "JobTypeID", "JobTypeName", quotation?.JobTypeID);
         }
 
+        // Rendered as plain <option> tags in the view (not asp-items) so each
+        // one can carry a data-price attribute - SelectListItem has no
+        // attribute bag to hang that off of.
         private async Task LoadLineDropdowns()
         {
-            ViewData["ProductID"] = new SelectList(
-                await _context.Products.Where(p => p.IsActive).OrderBy(p => p.ProductName).ToListAsync(),
-                "ProductID", "ProductName");
-
-            ViewData["ServiceID"] = new SelectList(
-                await _context.Services.Where(s => s.IsActive).OrderBy(s => s.ServiceName).ToListAsync(),
-                "ServiceID", "ServiceName");
+            ViewData["Products"] = await _context.Products.Where(p => p.IsActive).OrderBy(p => p.ProductName).ToListAsync();
+            ViewData["Services"] = await _context.Services.Where(s => s.IsActive).OrderBy(s => s.ServiceName).ToListAsync();
         }
     }
 }

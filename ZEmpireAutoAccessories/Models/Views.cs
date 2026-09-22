@@ -15,9 +15,9 @@ namespace ZEmpireAutoAccessories.Models
         public int SalesID { get; set; }
         public string InvoiceNumber { get; set; } = string.Empty;
         public DateTime SalesDate { get; set; }
-        public string CustomerName { get; set; } = string.Empty;
+        public string? CustomerName { get; set; }
         public string PaymentModeName { get; set; } = string.Empty;
-        public string SoldBy { get; set; } = string.Empty;
+        public string? SoldBy { get; set; }
         public string? UserName { get; set; }
         public decimal RecordedTotal { get; set; }
         public decimal ComputedTotal { get; set; }
@@ -30,9 +30,9 @@ namespace ZEmpireAutoAccessories.Models
         public DateTime JobOrderDate { get; set; }
         public string Status { get; set; } = string.Empty;
         public string? JobTypeName { get; set; }
-        public string CustomerName { get; set; } = string.Empty;
+        public string? CustomerName { get; set; }
         public string? PlateNumber { get; set; }
-        public string HandledBy { get; set; } = string.Empty;
+        public string? HandledBy { get; set; }
         public string? UserName { get; set; }
         public string? Technician { get; set; }
         public int LineCount { get; set; }
@@ -47,9 +47,9 @@ namespace ZEmpireAutoAccessories.Models
         public string Status { get; set; } = string.Empty;
         public int? JobOrderID { get; set; }
         public string? JobOrderNumber { get; set; }
-        public string CustomerName { get; set; } = string.Empty;
+        public string? CustomerName { get; set; }
         public string PaymentModeName { get; set; } = string.Empty;
-        public string ProcessedBy { get; set; } = string.Empty;
+        public string? ProcessedBy { get; set; }
         public string? UserName { get; set; }
         public decimal SubTotal { get; set; }
         public decimal DiscountAmount { get; set; }
@@ -69,9 +69,9 @@ namespace ZEmpireAutoAccessories.Models
         public DateOnly? ValidUntil { get; set; }
         public string Status { get; set; } = string.Empty;
         public string? JobTypeName { get; set; }
-        public string CustomerName { get; set; } = string.Empty;
+        public string? CustomerName { get; set; }
         public string? PlateNumber { get; set; }
-        public string PreparedBy { get; set; } = string.Empty;
+        public string? PreparedBy { get; set; }
         public string? UserName { get; set; }
         public int? ConvertedJobOrderID { get; set; }
         public string? ConvertedJobOrderNumber { get; set; }

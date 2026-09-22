@@ -14,8 +14,12 @@ namespace ZEmpireAutoAccessories.Models
         [Required, MaxLength(30)]
         public string JobOrderNumber { get; set; } = string.Empty;
 
+        [Display(Name = "Customer")]
         public int CustomerID { get; set; }
+
+        [Display(Name = "Vehicle")]
         public int VehicleID { get; set; }
+
         public string UserId { get; set; } = null!;
         public int? JobTypeID { get; set; }
         public int? AssignedEmployeeID { get; set; }
@@ -50,6 +54,9 @@ namespace ZEmpireAutoAccessories.Models
         public Employee? AssignedEmployee { get; set; }
         public Quotation? Quotation { get; set; }
         public ICollection<JobOrderDetail> Details { get; set; } = new List<JobOrderDetail>();
+
+        // A job order can be invoiced once it's Completed/Posted (ServiceInvoice.JobOrderID points back here).
+        public ICollection<ServiceInvoice> ServiceInvoices { get; set; } = new List<ServiceInvoice>();
     }
 
     [Table("JobOrderDetail", Schema = "ops")]

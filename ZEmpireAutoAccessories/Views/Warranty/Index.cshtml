@@ -1,161 +1,47 @@
-﻿@model IEnumerable<ZEmpireAutoAccessories.Models.Warranty>
+@model IEnumerable<ZEmpireAutoAccessories.Models.Warranty>
 
 @{
     ViewData["Title"] = "Warranty";
     var status = ViewData["Status"] as string;
+    var search = ViewData["Search"] as string;
+    var successMessage = ViewData["Success"] as string;
+    var claimError = ViewData["ClaimError"] as string;
 }
 
 <style>
-    .zx-page-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 18px;
-    }
+    .zx-page-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+    .zx-page-head h1 { font-family:'Oswald',system-ui,sans-serif; font-weight:700; font-size:22px; margin:0; color:#0b0b0c; }
+    .btn-zx { background:var(--zx-red); border-color:var(--zx-red); color:#fff; font-weight:600; }
+    .btn-zx:hover { background:var(--zx-red2); border-color:var(--zx-red2); color:#fff; }
+    .zx-card { background:#fff; border:1px solid #e8ebf0; border-radius:14px; overflow:hidden; }
+    .zx-table thead { background:#0b0b0c; color:#fff; }
+    .zx-table thead th { border-bottom:none; font-weight:600; font-size:13px; text-transform:uppercase; letter-spacing:.3px; }
+    .zx-table td, .zx-table th { vertical-align:middle; }
+    .icon-btn { width:32px; height:32px; display:inline-grid; place-items:center; border-radius:8px; border:1px solid #e8ebf0;
+                background:#fff; color:#4b5563; margin-left:6px; transition:all .15s ease; text-decoration:none; }
+    .icon-btn:hover { background:#0b0b0c; color:#fff; border-color:#0b0b0c; }
+    .icon-btn.danger:hover { background:#dc2626; color:#fff; border-color:#dc2626; }
+    .icon-btn.claim:hover { background:#16a34a; color:#fff; border-color:#16a34a; }
+    .badge-active { background:rgba(34,197,94,.15); color:#15803d; font-weight:600; }
+    .badge-expired { background:rgba(148,163,184,.2); color:#64748b; font-weight:600; }
+    .badge-voided { background:rgba(239,68,68,.15); color:#b91c1c; font-weight:600; }
+    .badge-claimed { background:rgba(245,158,11,.15); color:#b45309; font-weight:600; }
 
-        .zx-page-head h1 {
-            font-family: 'Oswald',system-ui,sans-serif;
-            font-weight: 700;
-            font-size: 22px;
-            margin: 0;
-            color: #0b0b0c;
-        }
+    .status-filters { display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap; }
+    .status-pill { padding:7px 16px; border-radius:999px; font-size:13.5px; font-weight:600; text-decoration:none;
+                   border:1px solid #e8ebf0; background:#fff; color:#4b5563; transition:all .15s ease; }
+    .status-pill:hover { border-color:#c7ccd6; color:#0b0b0c; }
+    .status-pill.active { color:#fff; border-color:transparent; }
+    .status-pill.all.active { background:#0b0b0c; }
+    .status-pill.status-active.active { background:#16a34a; }
+    .status-pill.status-expired.active { background:#64748b; }
+    .status-pill.status-claimed.active { background:#d97706; }
+    .status-pill.status-voided.active { background:#dc2626; }
 
-    .btn-zx {
-        background: var(--zx-red);
-        border-color: var(--zx-red);
-        color: #fff;
-        font-weight: 600;
-    }
-
-        .btn-zx:hover {
-            background: var(--zx-red2);
-            border-color: var(--zx-red2);
-            color: #fff;
-        }
-
-    .zx-card {
-        background: #fff;
-        border: 1px solid #e8ebf0;
-        border-radius: 14px;
-        overflow: hidden;
-    }
-
-    .zx-table thead {
-        background: #0b0b0c;
-        color: #fff;
-    }
-
-        .zx-table thead th {
-            border-bottom: none;
-            font-weight: 600;
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: .3px;
-        }
-
-    .zx-table td, .zx-table th {
-        vertical-align: middle;
-    }
-
-    .icon-btn {
-        width: 32px;
-        height: 32px;
-        display: inline-grid;
-        place-items: center;
-        border-radius: 8px;
-        border: 1px solid #e8ebf0;
-        background: #fff;
-        color: #4b5563;
-        margin-left: 6px;
-        transition: all .15s ease;
-        text-decoration: none;
-    }
-
-        .icon-btn:hover {
-            background: #0b0b0c;
-            color: #fff;
-            border-color: #0b0b0c;
-        }
-
-        .icon-btn.danger:hover {
-            background: #dc2626;
-            color: #fff;
-            border-color: #dc2626;
-        }
-
-    .badge-active {
-        background: rgba(34,197,94,.15);
-        color: #15803d;
-        font-weight: 600;
-    }
-
-    .badge-expired {
-        background: rgba(148,163,184,.2);
-        color: #64748b;
-        font-weight: 600;
-    }
-
-    .badge-voided {
-        background: rgba(239,68,68,.15);
-        color: #b91c1c;
-        font-weight: 600;
-    }
-
-    .badge-claimed {
-        background: rgba(245,158,11,.15);
-        color: #b45309;
-        font-weight: 600;
-    }
-
-    .status-filters {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 20px;
-        flex-wrap: wrap;
-    }
-
-    .status-pill {
-        padding: 7px 16px;
-        border-radius: 999px;
-        font-size: 13.5px;
-        font-weight: 600;
-        text-decoration: none;
-        border: 1px solid #e8ebf0;
-        background: #fff;
-        color: #4b5563;
-        transition: all .15s ease;
-    }
-
-        .status-pill:hover {
-            border-color: #c7ccd6;
-            color: #0b0b0c;
-        }
-
-        .status-pill.active {
-            color: #fff;
-            border-color: transparent;
-        }
-
-        .status-pill.all.active {
-            background: #0b0b0c;
-        }
-
-        .status-pill.status-active.active {
-            background: #16a34a;
-        }
-
-        .status-pill.status-expired.active {
-            background: #64748b;
-        }
-
-        .status-pill.status-claimed.active {
-            background: #d97706;
-        }
-
-        .status-pill.status-voided.active {
-            background: #dc2626;
-        }
+    .search-wrap { position:relative; max-width:420px; margin-bottom:10px; }
+    .search-wrap svg { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:#98a0ad; }
+    .search-input { padding-left:38px; border-radius:10px; }
+    .search-actions { display:flex; gap:8px; margin-top:8px; margin-bottom:18px; }
 </style>
 
 <div class="zx-page-head">
@@ -163,15 +49,40 @@
     <a class="btn btn-zx" asp-action="Create">+ New Warranty</a>
 </div>
 
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success">@successMessage</div>
+}
+@if (!string.IsNullOrEmpty(claimError))
+{
+    <div class="alert alert-danger">@claimError</div>
+}
+
+<form asp-action="Index" method="get">
+    <input type="hidden" name="status" value="@status" />
+    <div class="search-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" name="q" value="@search" class="form-control search-input" placeholder="Search invoice, product, job order, or customer" />
+    </div>
+    <div class="search-actions">
+        <button type="submit" class="btn btn-outline-secondary btn-sm">Search</button>
+        @if (!string.IsNullOrEmpty(search))
+        {
+            <a asp-action="Index" asp-route-status="@status" class="btn btn-outline-secondary btn-sm">Clear</a>
+        }
+    </div>
+</form>
+
 <div class="status-filters">
-    <a asp-action="Index" class="status-pill all @(status == null ? "active" : "")">All</a>
-    <a asp-action="Index" asp-route-status="Active" class="status-pill status-active @(status == "Active" ? "active" : "")">Active</a>
-    <a asp-action="Index" asp-route-status="Expired" class="status-pill status-expired @(status == "Expired" ? "active" : "")">Expired</a>
-    <a asp-action="Index" asp-route-status="Claimed" class="status-pill status-claimed @(status == "Claimed" ? "active" : "")">Claimed</a>
-    <a asp-action="Index" asp-route-status="Voided" class="status-pill status-voided @(status == "Voided" ? "active" : "")">Voided</a>
+    <a asp-action="Index" asp-route-q="@search" class="status-pill all @(status == null ? "active" : "")">All</a>
+    <a asp-action="Index" asp-route-status="Active" asp-route-q="@search" class="status-pill status-active @(status == "Active" ? "active" : "")">Active</a>
+    <a asp-action="Index" asp-route-status="Expired" asp-route-q="@search" class="status-pill status-expired @(status == "Expired" ? "active" : "")">Expired</a>
+    <a asp-action="Index" asp-route-status="Claimed" asp-route-q="@search" class="status-pill status-claimed @(status == "Claimed" ? "active" : "")">Claimed</a>
+    <a asp-action="Index" asp-route-status="Voided" asp-route-q="@search" class="status-pill status-voided @(status == "Voided" ? "active" : "")">Voided</a>
 </div>
 
 <div class="zx-card">
+    <div class="table-responsive">
     <table class="table zx-table mb-0">
         <thead>
             <tr>
@@ -217,14 +128,20 @@
                         }
                     </td>
                     <td class="text-end pe-3">
+                        @if (item.WarrantyStatus == "Active")
+                        {
+                            <a asp-action="Claim" asp-route-id="@item.WarrantyID" class="icon-btn claim" title="Claim warranty">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+                            </a>
+                        }
                         <a asp-action="Details" asp-route-id="@item.WarrantyID" class="icon-btn" title="View details">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /><circle cx="12" cy="12" r="3" /></svg>
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
                         </a>
                         <a asp-action="Edit" asp-route-id="@item.WarrantyID" class="icon-btn" title="Edit">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                         </a>
                         <a asp-action="Delete" asp-route-id="@item.WarrantyID" class="icon-btn danger" title="Delete">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                         </a>
                     </td>
                 </tr>
@@ -237,4 +154,5 @@
             }
         </tbody>
     </table>
+    </div>
 </div>

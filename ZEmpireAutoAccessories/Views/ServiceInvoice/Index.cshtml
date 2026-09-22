@@ -156,6 +156,19 @@
         .status-pill.status-refunded.active {
             background: #d97706;
         }
+
+    .job-order-source {
+        display: block;
+        font-size: 11.5px;
+        color: #7b8290;
+        text-decoration: none;
+        margin-top: 2px;
+    }
+
+        .job-order-source:hover {
+            color: var(--zx-red);
+            text-decoration: underline;
+        }
 </style>
 
 <div class="zx-page-head">
@@ -172,6 +185,7 @@
 </div>
 
 <div class="zx-card">
+    <div class="table-responsive">
     <table class="table zx-table mb-0">
         <thead>
             <tr>
@@ -188,7 +202,15 @@
             @foreach (var item in Model)
             {
                 <tr>
-                    <td>@item.InvoiceNumber</td>
+                    <td>
+                        @item.InvoiceNumber
+                        @if (item.JobOrder != null)
+                        {
+                            <a asp-controller="JobOrder" asp-action="Details" asp-route-id="@item.JobOrder.JobOrderID" class="job-order-source">
+                                From @item.JobOrder.JobOrderNumber
+                            </a>
+                        }
+                    </td>
                     <td>@item.Customer.FullName</td>
                     <td>@(item.Vehicle?.PlateNumber ?? "—")</td>
                     <td>@item.InvoiceDate.ToString("MMM d, yyyy")</td>
@@ -215,4 +237,5 @@
             }
         </tbody>
     </table>
+    </div>
 </div>

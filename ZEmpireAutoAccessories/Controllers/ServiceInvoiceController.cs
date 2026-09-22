@@ -1,10 +1,11 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ZEmpireAutoAccessories.Authorization;
 using ZEmpireAutoAccessories.Data;
 using ZEmpireAutoAccessories.Models;
+using ZEmpireAutoAccessories.Services;
 using ZEmpireAutoAccessories.Services.Interfaces;
 
 namespace ZEmpireAutoAccessories.Controllers
@@ -27,6 +28,7 @@ namespace ZEmpireAutoAccessories.Controllers
             var invoices = await _context.ServiceInvoices
                 .Include(i => i.Customer)
                 .Include(i => i.Vehicle)
+                .Include(i => i.JobOrder)
                 .Include(i => i.PaymentMode)
                 .Where(i => status == null || i.Status == status)
                 .OrderByDescending(i => i.InvoiceDate)
@@ -51,20 +53,138 @@ namespace ZEmpireAutoAccessories.Controllers
                     .ThenInclude(d => d.Product)
                 .Include(i => i.Details)
                     .ThenInclude(d => d.Service)
+                .Include(i => i.Details)
+                    .ThenInclude(d => d.TintVariant)
+                .Include(i => i.Details)
+                    .ThenInclude(d => d.Panel)
                 .FirstOrDefaultAsync(i => i.ServiceInvoiceID == id);
 
             if (invoice == null)
                 return NotFound();
 
             await LoadLineDropdowns();
+
+            // Every Pricing row for this invoice's vehicle classification,
+            // for the Add Line Item form to look up the real matrix price
+            // (Product x Tint Variant x Panel) client-side instead of just
+            // the product's flat DefaultPrice. Empty when there's no vehicle
+            // on this invoice, since there's no classification to price by.
+            if (invoice.Vehicle == null)
+            {
+                ViewData["PricingMatrix"] = new List<object>();
+            }
+            else
+            {
+                ViewData["PricingMatrix"] = await _context.Pricings
+                    .Where(p => p.VehicleClassificationID == invoice.Vehicle.VehicleClassificationID)
+                    .Select(p => new
+                    {
+                        productId = p.ProductID,
+                        tintVariantId = p.TintVariantID,
+                        tintVariantName = p.TintVariant != null ? p.TintVariant.VariantName : null,
+                        panelId = p.PanelID,
+                        panelName = p.Panel.PanelName,
+                        price = p.Price
+                    })
+                    .ToListAsync();
+            }
+
             return View(invoice);
         }
 
-        // GET: ServiceInvoice/Create
-        public async Task<IActionResult> Create()
+        // GET: ServiceInvoice/VehiclesForCustomer?customerId=5
+        public async Task<IActionResult> VehiclesForCustomer(int customerId)
         {
-            await LoadHeaderDropdowns();
-            return View(new ServiceInvoice { InvoiceDate = DateTime.Now });
+            var vehicles = await _context.Vehicles
+                .Where(v => v.CustomerID == customerId)
+                .OrderBy(v => v.PlateNumber)
+                .Select(v => new
+                {
+                    value = v.VehicleID,
+                    text = (v.PlateNumber ?? "No Plate") + " - " + v.Brand + " " + v.Model
+                })
+                .ToListAsync();
+
+            return Json(vehicles);
+        }
+
+        // GET: ServiceInvoice/JobOrdersForCustomer?customerId=5
+        public async Task<IActionResult> JobOrdersForCustomer(int customerId, int? excludeInvoiceId)
+        {
+            var jobOrders = await _context.JobOrders
+                .Include(j => j.Vehicle)
+                .Where(j => j.CustomerID == customerId &&
+                            (j.Status == "Completed" || j.Status == "Posted") &&
+                            !_context.ServiceInvoices.Any(i =>
+                                i.JobOrderID == j.JobOrderID &&
+                                (excludeInvoiceId == null || i.ServiceInvoiceID != excludeInvoiceId)))
+                .OrderByDescending(j => j.JobOrderDate)
+                .Select(j => new
+                {
+                    value = j.JobOrderID,
+                    text = j.JobOrderNumber + " - " + (j.Vehicle.PlateNumber ?? "No Plate")
+                })
+                .ToListAsync();
+
+            return Json(jobOrders);
+        }
+
+        // GET: ServiceInvoice/Pdf/5
+        public async Task<IActionResult> Pdf(int? id)
+        {
+            if (id == null)
+                return NotFound();
+
+            var invoice = await _context.ServiceInvoices
+                .Include(i => i.Customer)
+                .Include(i => i.Vehicle)
+                .Include(i => i.JobOrder)
+                .Include(i => i.PaymentMode)
+                .Include(i => i.User)
+                .Include(i => i.Details)
+                    .ThenInclude(d => d.Product)
+                .Include(i => i.Details)
+                    .ThenInclude(d => d.Service)
+                .FirstOrDefaultAsync(i => i.ServiceInvoiceID == id);
+
+            if (invoice == null)
+                return NotFound();
+
+            var pdf = DocumentPdfBuilder.BuildServiceInvoicePdf(invoice);
+            return File(pdf, "application/pdf", $"{invoice.InvoiceNumber}.pdf");
+        }
+
+        // GET: ServiceInvoice/Create?jobOrderId=5
+        public async Task<IActionResult> Create(int? jobOrderId)
+        {
+            var invoice = new ServiceInvoice { InvoiceDate = DateTime.Now };
+
+            if (jobOrderId != null)
+            {
+                var jobOrder = await _context.JobOrders.FindAsync(jobOrderId.Value);
+                if (jobOrder == null)
+                    return NotFound();
+
+                if (jobOrder.Status != "Completed" && jobOrder.Status != "Posted")
+                {
+                    TempData["LockError"] = "Only a Completed or Posted job order can be invoiced.";
+                    return RedirectToAction("Details", "JobOrder", new { id = jobOrderId });
+                }
+
+                if (await _context.ServiceInvoices.AnyAsync(i => i.JobOrderID == jobOrderId))
+                {
+                    TempData["LockError"] = "This job order has already been invoiced.";
+                    return RedirectToAction("Details", "JobOrder", new { id = jobOrderId });
+                }
+
+                invoice.CustomerID = jobOrder.CustomerID;
+                invoice.VehicleID = jobOrder.VehicleID;
+                invoice.JobOrderID = jobOrder.JobOrderID;
+                ViewData["FromJobOrderNumber"] = jobOrder.JobOrderNumber;
+            }
+
+            await LoadHeaderDropdowns(invoice);
+            return View(invoice);
         }
 
         // POST: ServiceInvoice/Create
@@ -86,7 +206,24 @@ namespace ZEmpireAutoAccessories.Controllers
                 return View(invoice);
             }
 
-            var (invoiceNumber, seriesId) = await _quotationService.GetNextInvoiceNumber(CurrentUserId);
+            if (invoice.JobOrderID != null && await _context.ServiceInvoices.AnyAsync(i => i.JobOrderID == invoice.JobOrderID))
+            {
+                TempData["LockError"] = "This job order has already been invoiced.";
+                return RedirectToAction("Details", "JobOrder", new { id = invoice.JobOrderID });
+            }
+
+            string invoiceNumber;
+            int seriesId;
+            try
+            {
+                (invoiceNumber, seriesId) = await _quotationService.GetNextInvoiceNumber(CurrentUserId);
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError(string.Empty, $"Couldn't generate an invoice number: {ex.Message}");
+                await LoadHeaderDropdowns(invoice);
+                return View(invoice);
+            }
 
             invoice.InvoiceNumber = invoiceNumber;
             invoice.InvoiceNoSeriesID = seriesId;
@@ -97,6 +234,46 @@ namespace ZEmpireAutoAccessories.Controllers
 
             _context.ServiceInvoices.Add(invoice);
             await _context.SaveChangesAsync();
+
+            // Carry the job order's own line items over so staff don't have
+            // to re-enter everything that was already worked out there.
+            if (invoice.JobOrderID != null)
+            {
+                var jobOrderDetails = await _context.JobOrderDetails
+                    .Include(d => d.Product)
+                    .Include(d => d.Service)
+                    .Where(d => d.JobOrderID == invoice.JobOrderID)
+                    .ToListAsync();
+
+                foreach (var d in jobOrderDetails)
+                {
+                    _context.ServiceInvoiceDetails.Add(new ServiceInvoiceDetail
+                    {
+                        ServiceInvoiceID = invoice.ServiceInvoiceID,
+                        ProductID = d.ProductID,
+                        ServiceID = d.ServiceID,
+                        TintVariantID = d.TintVariantID,
+                        ShadeID = d.ShadeID,
+                        PanelID = d.PanelID,
+                        Description = d.Description ?? d.Product?.ProductName ?? d.Service?.ServiceName ?? "Item",
+                        Quantity = d.Quantity,
+                        Unit = d.Unit,
+                        UnitPrice = d.UnitPrice
+                    });
+                }
+
+                if (jobOrderDetails.Count > 0)
+                {
+                    await _context.SaveChangesAsync();
+
+                    // Same load-then-recalc sequence AddLine uses below - reload
+                    // the just-saved details onto the tracked invoice instance
+                    // itself rather than re-querying a separate instance.
+                    await _context.Entry(invoice).Collection(i => i.Details).LoadAsync();
+                    RecalculateTotals(invoice);
+                    await _context.SaveChangesAsync();
+                }
+            }
 
             return RedirectToAction(nameof(Details), new { id = invoice.ServiceInvoiceID });
         }
@@ -217,6 +394,8 @@ namespace ZEmpireAutoAccessories.Controllers
             int serviceInvoiceId,
             int? productId,
             int? serviceId,
+            int? tintVariantId,
+            int? panelId,
             string description,
             decimal quantity,
             string unit,
@@ -237,6 +416,8 @@ namespace ZEmpireAutoAccessories.Controllers
                     ServiceInvoiceID = serviceInvoiceId,
                     ProductID = productId,
                     ServiceID = serviceId,
+                    TintVariantID = productId != null ? tintVariantId : null,
+                    PanelID = productId != null ? panelId : null,
                     Description = description,
                     Quantity = quantity,
                     Unit = string.IsNullOrWhiteSpace(unit) ? "Unit" : unit,
@@ -301,7 +482,20 @@ namespace ZEmpireAutoAccessories.Controllers
         {
             invoice.SubTotal = invoice.Details.Sum(d => d.SubTotal);
             invoice.TotalAmount = invoice.SubTotal - invoice.DiscountAmount + invoice.TaxAmount;
-            invoice.ChangeAmount = Math.Max(0, invoice.AmountPaid - invoice.TotalAmount);
+
+            // CK_ServiceInvoice_Change requires ChangeAmount >= 0, and
+            // CK_ServiceInvoice_Math requires ChangeAmount = AmountPaid -
+            // TotalAmount exactly - together, AmountPaid can never trail
+            // TotalAmount on a saved row. Line items can be added before an
+            // exact amount tendered is known, so keep AmountPaid caught up
+            // to the total as it grows; Edit can still set the real amount
+            // (and any real change) once that's known.
+            if (invoice.AmountPaid < invoice.TotalAmount)
+            {
+                invoice.AmountPaid = invoice.TotalAmount;
+            }
+
+            invoice.ChangeAmount = invoice.AmountPaid - invoice.TotalAmount;
         }
 
         // ServiceInvoice -> ServiceInvoiceDetail cascades, but a Warranty referencing
@@ -349,15 +543,13 @@ namespace ZEmpireAutoAccessories.Controllers
                 "PaymentModeID", "PaymentModeName", invoice?.PaymentModeID);
         }
 
+        // Rendered as plain <option> tags in the view (not asp-items) so each
+        // one can carry a data-price attribute - SelectListItem has no
+        // attribute bag to hang that off of.
         private async Task LoadLineDropdowns()
         {
-            ViewData["ProductID"] = new SelectList(
-                await _context.Products.Where(p => p.IsActive).OrderBy(p => p.ProductName).ToListAsync(),
-                "ProductID", "ProductName");
-
-            ViewData["ServiceID"] = new SelectList(
-                await _context.Services.Where(s => s.IsActive).OrderBy(s => s.ServiceName).ToListAsync(),
-                "ServiceID", "ServiceName");
+            ViewData["Products"] = await _context.Products.Where(p => p.IsActive).OrderBy(p => p.ProductName).ToListAsync();
+            ViewData["Services"] = await _context.Services.Where(s => s.IsActive).OrderBy(s => s.ServiceName).ToListAsync();
         }
     }
 }

@@ -15,7 +15,11 @@ namespace ZEmpireAutoAccessories.Services.Interfaces
             int vehicleClassificationId,
             int panelId);
 
-        Task<List<Pricing>> GetAllPricing();
+        /// <summary>
+        /// Pass a search term to filter by product name, tint variant,
+        /// vehicle classification, or panel name.
+        /// </summary>
+        Task<List<Pricing>> GetAllPricing(string? q = null);
 
         Task<Pricing> CreatePricing(
             int productId,

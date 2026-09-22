@@ -5,8 +5,10 @@
 }
 
 <style>
-    .zx-page-head h1 { font-family:'Oswald',system-ui,sans-serif; font-weight:700; font-size:22px; margin:0 0 18px; color:#0b0b0c; }
+    .zx-page-head h1 { font-family:'Oswald',system-ui,sans-serif; font-weight:700; font-size:22px; margin:0 0 4px; color:#0b0b0c; }
+    .zx-page-sub { color:#7b8290; font-size:13.5px; margin:0 0 18px; }
     .zx-card { background:#fff; border:1px solid #e8ebf0; border-radius:14px; padding:24px; max-width:680px; }
+    .btn-zx, .btn-outline-secondary { display:inline-flex; align-items:center; gap:7px; }
     .btn-zx { background:var(--zx-red); border-color:var(--zx-red); color:#fff; font-weight:600; }
     .btn-zx:hover { background:var(--zx-red2); border-color:var(--zx-red2); color:#fff; }
 </style>
@@ -14,6 +16,7 @@
 <div class="zx-page-head">
     <h1>Edit Employee</h1>
 </div>
+<p class="zx-page-sub">Update @Model.FirstName @Model.LastName's details.</p>
 
 <div class="zx-card">
     <form asp-action="Edit" method="post">
@@ -22,9 +25,17 @@
         <input type="hidden" asp-for="CreatedAt" />
         <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
-        <div class="mb-3">
-            <label class="form-label">Login Account</label>
-            <input class="form-control" value="@Model.User.UserName" disabled />
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Login Account</label>
+                <input type="text" name="userName" class="form-control" value="@Model.User.UserName" required />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Role</label>
+                <select name="role" class="form-select" asp-items="ViewBag.Role" required>
+                    <option value="">-- Select Role --</option>
+                </select>
+            </div>
         </div>
 
         <div class="mb-3">
@@ -74,7 +85,10 @@
             <label asp-for="IsActive" class="form-check-label"></label>
         </div>
 
-        <button type="submit" class="btn btn-zx">Save Changes</button>
+        <button type="submit" class="btn btn-zx">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
+            Save Changes
+        </button>
         <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
     </form>
 </div>

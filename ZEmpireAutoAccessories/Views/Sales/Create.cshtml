@@ -1,65 +1,18 @@
-﻿@using ZEmpireAutoAccessories.Models
+@using ZEmpireAutoAccessories.Models
 @{
     ViewData["Title"] = "New Sale";
     var products = ViewData["Products"] as List<Product> ?? new();
 }
 
 <style>
-    .zx-page-head h1 {
-        font-family: 'Oswald',system-ui,sans-serif;
-        font-weight: 700;
-        font-size: 22px;
-        margin: 0 0 4px;
-        color: #0b0b0c;
-    }
-
-    .zx-page-sub {
-        color: #7b8290;
-        font-size: 13.5px;
-        margin: 0 0 18px;
-    }
-
-    .zx-card {
-        background: #fff;
-        border: 1px solid #e8ebf0;
-        border-radius: 14px;
-        padding: 24px;
-        max-width: 900px;
-    }
-
-    .btn-zx {
-        background: var(--zx-red);
-        border-color: var(--zx-red);
-        color: #fff;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-    }
-
-        .btn-zx:hover {
-            background: var(--zx-red2);
-            border-color: var(--zx-red2);
-            color: #fff;
-        }
-
-    .zx-table thead {
-        background: #0b0b0c;
-        color: #fff;
-    }
-
-        .zx-table thead th {
-            border-bottom: none;
-            font-weight: 600;
-            font-size: 12.5px;
-            text-transform: uppercase;
-            letter-spacing: .3px;
-        }
-
-    #grandTotal {
-        font-weight: 700;
-        font-size: 18px;
-    }
+    .zx-page-head h1 { font-family:'Oswald',system-ui,sans-serif; font-weight:700; font-size:22px; margin:0 0 4px; color:#0b0b0c; }
+    .zx-page-sub { color:#7b8290; font-size:13.5px; margin:0 0 18px; }
+    .zx-card { background:#fff; border:1px solid #e8ebf0; border-radius:14px; padding:24px; max-width:900px; }
+    .btn-zx { background:var(--zx-red); border-color:var(--zx-red); color:#fff; font-weight:600; display:inline-flex; align-items:center; gap:7px; }
+    .btn-zx:hover { background:var(--zx-red2); border-color:var(--zx-red2); color:#fff; }
+    .zx-table thead { background:#0b0b0c; color:#fff; }
+    .zx-table thead th { border-bottom:none; font-weight:600; font-size:12.5px; text-transform:uppercase; letter-spacing:.3px; }
+    #grandTotal { font-weight:700; font-size:18px; }
 </style>
 
 <div class="zx-page-head">
@@ -74,14 +27,14 @@
         <div class="row">
             <div class="col-md-6 mb-3">
                 <label class="form-label">Customer</label>
-                <select name="customerId" class="form-select" asp-items="ViewBag.CustomerID" required>
+                <select id="customerId" name="customerId" class="form-select" asp-items="ViewBag.CustomerID" data-searchable="true" required>
                     <option value="">-- Select Customer --</option>
                 </select>
             </div>
             <div class="col-md-6 mb-3">
                 <label class="form-label">Vehicle <span class="text-muted fw-normal">(optional)</span></label>
-                <select name="vehicleId" class="form-select" asp-items="ViewBag.VehicleID">
-                    <option value="">-- None --</option>
+                <select id="vehicleId" name="vehicleId" class="form-select" data-searchable="true" disabled>
+                    <option value="">-- Select Customer First --</option>
                 </select>
             </div>
         </div>
@@ -94,24 +47,41 @@
         </div>
 
         <h6 class="mt-4 mb-2">Line Items</h6>
+        <p class="zx-page-sub mb-2">Products priced by panel need a Vehicle picked above to look up the matching price.</p>
+        <div id="pricingLoadError" class="alert alert-warning py-2 px-3" style="display:none; font-size:13px;">
+            Couldn't load panel pricing for this vehicle - panel-priced products will need a manual Unit Price for now.
+        </div>
+        <div class="table-responsive">
         <table class="table zx-table" id="linesTable">
             <thead>
                 <tr>
                     <th>Product</th>
-                    <th style="width:110px;">Qty</th>
-                    <th style="width:150px;">Unit Price</th>
+                    <th style="width:150px;">Tint Variant</th>
+                    <th style="width:150px;">Panel</th>
+                    <th style="width:100px;">Qty</th>
+                    <th style="width:140px;">Unit Price</th>
                     <th style="width:60px;"></th>
                 </tr>
             </thead>
             <tbody>
                 <tr class="line-row">
                     <td>
-                        <select name="productId" class="form-select product-select" required>
+                        <select name="productId" class="form-select product-select" data-searchable="true" required>
                             <option value="">-- Select Product --</option>
                             @foreach (var p in products)
                             {
                                 <option value="@p.ProductID" data-price="@p.DefaultPrice">@p.ProductName</option>
                             }
+                        </select>
+                    </td>
+                    <td>
+                        <select class="form-select tint-variant-select" disabled>
+                            <option value="">-- N/A --</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select class="form-select panel-select" disabled>
+                            <option value="">-- N/A --</option>
                         </select>
                     </td>
                     <td><input type="number" name="quantity" class="form-control" value="1" min="1" required /></td>
@@ -120,15 +90,42 @@
                 </tr>
             </tbody>
         </table>
+        </div>
         <button type="button" class="btn btn-outline-secondary btn-sm mb-3" id="addRow">+ Add Items</button>
 
+        <template id="lineRowTemplate">
+            <tr class="line-row">
+                <td>
+                    <select name="productId" class="form-select product-select" data-searchable="true" required>
+                        <option value="">-- Select Product --</option>
+                        @foreach (var p in products)
+                        {
+                            <option value="@p.ProductID" data-price="@p.DefaultPrice">@p.ProductName</option>
+                        }
+                    </select>
+                </td>
+                <td>
+                    <select class="form-select tint-variant-select" disabled>
+                        <option value="">-- N/A --</option>
+                    </select>
+                </td>
+                <td>
+                    <select class="form-select panel-select" disabled>
+                        <option value="">-- N/A --</option>
+                    </select>
+                </td>
+                <td><input type="number" name="quantity" class="form-control" value="1" min="1" required /></td>
+                <td><input type="number" step="0.01" name="unitPrice" class="form-control unit-price" min="0" required /></td>
+                <td><button type="button" class="btn btn-sm btn-outline-danger remove-row">&times;</button></td>
+            </tr>
+        </template>
 
         <div class="text-end mb-3">
             Total: <span id="grandTotal">₱0.00</span>
         </div>
 
         <button type="submit" class="btn btn-zx">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" /><path d="M17 21v-8H7v8" /><path d="M7 3v5h8" /></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
             Complete Sale
         </button>
         <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
@@ -137,39 +134,208 @@
 
 @section Scripts {
     <script>
-        $(function() {
+        $(function () {
+            var $customer = $('#customerId');
+            var $vehicle = $('#vehicleId');
+
+            // Every Pricing row for the selected vehicle's classification -
+            // empty until a vehicle is picked, since panel pricing depends
+            // on it. Re-fetched whenever the vehicle changes.
+            var pricingMatrix = [];
+
+            function loadVehicles(customerId) {
+                $vehicle.prop('disabled', true).empty();
+
+                if (!customerId) {
+                    $vehicle.append($('<option></option>').val('').text('-- Select Customer First --'));
+                    return;
+                }
+
+                $.getJSON('@Url.Action("VehiclesForCustomer")', { customerId: customerId })
+                    .done(function (data) {
+                        $vehicle.empty();
+                        $vehicle.append($('<option></option>').val('').text('-- None --'));
+                        $.each(data, function (i, v) {
+                            $vehicle.append($('<option></option>').val(v.value).text(v.text));
+                        });
+                        $vehicle.prop('disabled', false);
+
+                        // Only one vehicle on file for this customer - skip
+                        // making the user pick it themselves.
+                        if (data.length === 1) {
+                            $vehicle.val(data[0].value).trigger('change');
+                        }
+                    });
+            }
+
+            $customer.on('change', function () {
+                loadVehicles($(this).val());
+            });
+
+            function loadPricingMatrix(vehicleId) {
+                if (!vehicleId) {
+                    pricingMatrix = [];
+                    reevaluateAllRows();
+                    return;
+                }
+
+                $.getJSON('@Url.Action("PricingForVehicle")', { vehicleId: vehicleId })
+                    .done(function (data) {
+                        pricingMatrix = data;
+                        $('#pricingLoadError').hide();
+                        reevaluateAllRows();
+                    })
+                    .fail(function (xhr) {
+                        pricingMatrix = [];
+                        console.error('PricingForVehicle failed:', xhr.status, xhr.responseText);
+                        $('#pricingLoadError').show();
+                        reevaluateAllRows();
+                    });
+            }
+
+            $vehicle.on('change', function () {
+                loadPricingMatrix($(this).val());
+            });
+
+            function rowsForProduct(productId) {
+                return pricingMatrix.filter(function (r) { return String(r.productId) === String(productId); });
+            }
+
+            function resetSelect($select, placeholder) {
+                $select.empty().append($('<option></option>').val('').text(placeholder)).prop('disabled', true);
+            }
+
+            function refreshPanels($row, tintVariantId) {
+                var productId = $row.find('.product-select').val();
+                var $panel = $row.find('.panel-select');
+                var rows = rowsForProduct(productId).filter(function (r) {
+                    return tintVariantId ? String(r.tintVariantId) === String(tintVariantId) : !r.tintVariantId;
+                });
+
+                resetSelect($panel, '-- Select Panel --');
+                if (rows.length === 0) return;
+
+                $.each(rows, function (i, r) {
+                    $panel.append($('<option></option>').val(r.panelId).text(r.panelName).attr('data-price', r.price));
+                });
+                $panel.prop('disabled', false);
+
+                // Only one panel option for this product/variant - skip
+                // making the user pick it themselves.
+                if (rows.length === 1) {
+                    $panel.val(rows[0].panelId).trigger('change');
+                }
+            }
+
+            function refreshTintVariants($row) {
+                var productId = $row.find('.product-select').val();
+                var $tint = $row.find('.tint-variant-select');
+                var rows = rowsForProduct(productId);
+
+                var variants = [];
+                var seen = {};
+                $.each(rows, function (i, r) {
+                    if (r.tintVariantId && !seen[r.tintVariantId]) {
+                        seen[r.tintVariantId] = true;
+                        variants.push({ id: r.tintVariantId, name: r.tintVariantName });
+                    }
+                });
+
+                if (variants.length === 0) {
+                    // No tint-variant split for this product - go straight to panels.
+                    resetSelect($tint, '-- N/A --');
+                    refreshPanels($row, null);
+                    return;
+                }
+
+                resetSelect($tint, '-- Select Tint Variant --');
+                $.each(variants, function (i, v) {
+                    $tint.append($('<option></option>').val(v.id).text(v.name));
+                });
+                $tint.prop('disabled', false);
+                resetSelect($row.find('.panel-select'), '-- Select Tint Variant First --');
+
+                if (variants.length === 1) {
+                    $tint.val(variants[0].id).trigger('change');
+                }
+            }
+
+            function evaluateProductRow($row) {
+                var $product = $row.find('.product-select');
+                var productId = $product.val();
+                var rows = rowsForProduct(productId);
+
+                if (rows.length > 0) {
+                    // Matrix-priced product - needs Tint Variant/Panel picked
+                    // to resolve an exact price, so clear any stale value.
+                    $row.find('.unit-price').val('');
+                    refreshTintVariants($row);
+                } else {
+                    resetSelect($row.find('.tint-variant-select'), '-- N/A --');
+                    resetSelect($row.find('.panel-select'), '-- N/A --');
+
+                    var price = $product.find(':selected').data('price');
+                    if (price !== undefined && price !== '') {
+                        $row.find('.unit-price').val(parseFloat(price).toFixed(2));
+                    }
+                }
+                recalcTotal();
+            }
+
+            function reevaluateAllRows() {
+                $('.line-row').each(function () { evaluateProductRow($(this)); });
+            }
+
             function recalcTotal() {
                 var total = 0;
-                $('.line-row').each(function() {
+                $('.line-row').each(function () {
                     var qty = parseFloat($(this).find('input[name=quantity]').val()) || 0;
                     var price = parseFloat($(this).find('input[name=unitPrice]').val()) || 0;
                     total += qty * price;
                 });
-                $('#grandTotal').text('₱' + total.toFixed(2));
+                $('#grandTotal').text('₱' + total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
             }
 
-            $(document).on('change', '.product-select', function() {
+            $(document).on('change', '.product-select', function () {
+                evaluateProductRow($(this).closest('tr'));
+            });
+
+            $(document).on('change', '.tint-variant-select', function () {
+                refreshPanels($(this).closest('tr'), $(this).val());
+                recalcTotal();
+            });
+
+            $(document).on('change', '.panel-select', function () {
+                var $row = $(this).closest('tr');
                 var price = $(this).find(':selected').data('price');
                 if (price !== undefined && price !== '') {
-                    $(this).closest('tr').find('.unit-price').val(parseFloat(price).toFixed(2));
+                    $row.find('.unit-price').val(parseFloat(price).toFixed(2));
                 }
                 recalcTotal();
             });
 
             $(document).on('input', 'input[name=quantity], input[name=unitPrice]', recalcTotal);
 
-            $('#addRow').on('click', function() {
-                var newRow = $('.line-row').first().clone();
-                newRow.find('select, input').val('');
-                newRow.find('input[name=quantity]').val(1);
-                $('#linesTable tbody').append(newRow);
+            $('#addRow').on('click', function () {
+                // Clone from the inert <template>, not the live first row - the
+                // live row's select has already been enhanced into a searchable
+                // dropdown, and cloning that enhanced DOM directly would copy a
+                // wrapper with no event listeners wired up.
+                var frag = document.getElementById('lineRowTemplate').content.cloneNode(true);
+                $('#linesTable tbody').append(frag);
             });
 
-            $(document).on('click', '.remove-row', function() {
-                if ($('.line-row').length > 1) {
-                    $(this).closest('tr').remove();
-                    recalcTotal();
+            $(document).on('click', '.remove-row', function () {
+                $(this).closest('tr').remove();
+
+                // Always leave at least one row so there's somewhere to add
+                // a product - but the click itself should never be a no-op.
+                if ($('.line-row').length === 0) {
+                    var frag = document.getElementById('lineRowTemplate').content.cloneNode(true);
+                    $('#linesTable tbody').append(frag);
                 }
+
+                recalcTotal();
             });
         });
     </script>

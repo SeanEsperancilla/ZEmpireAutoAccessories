@@ -22,6 +22,7 @@ namespace ZEmpireAutoAccessories.Data
         public DbSet<Customer> Customers => Set<Customer>();
         public DbSet<Vehicle> Vehicles => Set<Vehicle>();
         public DbSet<VehicleClassification> VehicleClassifications => Set<VehicleClassification>();
+        public DbSet<VehicleModelGuide> VehicleModelGuides => Set<VehicleModelGuide>();
 
         // ----- cat -----
         public DbSet<ProductCategory> ProductCategories => Set<ProductCategory>();
@@ -77,7 +78,15 @@ namespace ZEmpireAutoAccessories.Data
             b.Entity<ApplicationUser>(e =>
             {
                 e.ToTable("AspNetUsers", "asp");
-                e.Property(x => x.FullName).HasMaxLength(150).IsRequired();
+                // Not IsRequired(): that makes EF's materializer assume the
+                // column is never null and skip its DBNull check, so a user
+                // row with no FullName (accounts inserted straight into SQL
+                // rather than through this app) throws SqlNullValueException
+                // on every query that touches it - and 12 different screens
+                // Include(x => x.User). AppUserClaimsPrincipalFactory already
+                // falls back to UserName when FullName is blank, which only
+                // works if the row can be loaded in the first place.
+                e.Property(x => x.FullName).HasMaxLength(150);
                 e.Property(x => x.CreatedAt).HasColumnType("datetime2(0)");
             });
             b.Entity<ApplicationRole>().ToTable("AspNetRoles", "asp");
@@ -88,6 +97,19 @@ namespace ZEmpireAutoAccessories.Data
             b.Entity<IdentityUserToken<string>>().ToTable("AspNetUserTokens", "asp");
 
             // ---------- crm ----------
+            // FullName's C# type is non-nullable, which by default makes EF
+            // Core's materializer assume the column can never be null and
+            // skip its DBNull check - if any existing row actually has NULL
+            // there (bad data predating the app's own validation, e.g. a
+            // direct DB import), reading it throws SqlNullValueException.
+            // IsRequired(false) keeps that check in place regardless of the
+            // CLR type; the app's own Create/Edit forms already enforce
+            // FullName via [Required] at the ModelState level.
+            b.Entity<Customer>(e =>
+            {
+                e.Property(x => x.FullName).IsRequired(false);
+            });
+
             b.Entity<Vehicle>(e =>
             {
                 e.HasOne(x => x.Customer).WithMany(c => c.Vehicles)
@@ -221,7 +243,7 @@ namespace ZEmpireAutoAccessories.Data
             b.Entity<ServiceInvoice>(e =>
             {
                 e.HasOne(x => x.InvoiceNoSeries).WithMany().HasForeignKey(x => x.InvoiceNoSeriesID).OnDelete(DeleteBehavior.Restrict);
-                e.HasOne(x => x.JobOrder).WithMany().HasForeignKey(x => x.JobOrderID).OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(x => x.JobOrder).WithMany(j => j.ServiceInvoices).HasForeignKey(x => x.JobOrderID).OnDelete(DeleteBehavior.Restrict);
                 e.HasOne(x => x.Customer).WithMany().HasForeignKey(x => x.CustomerID).OnDelete(DeleteBehavior.Restrict);
                 e.HasOne(x => x.Vehicle).WithMany().HasForeignKey(x => x.VehicleID).OnDelete(DeleteBehavior.Restrict);
                 e.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);

@@ -1,58 +1,20 @@
-﻿@model ZEmpireAutoAccessories.Models.Quotation
+@model ZEmpireAutoAccessories.Models.Quotation
 
 @{
     ViewData["Title"] = "Delete Quotation";
-    var blocked = Model.JobOrder != null;
+    var blockedByJobOrder = Model.JobOrder != null;
+    var blocked = blockedByJobOrder;
     var deleteError = TempData["DeleteError"] as string;
 }
 
 <style>
-    .zx-page-head h1 {
-        font-family: 'Oswald',system-ui,sans-serif;
-        font-weight: 700;
-        font-size: 22px;
-        margin: 0 0 18px;
-        color: #0b0b0c;
-    }
-
-    .zx-card {
-        background: #fff;
-        border: 1px solid #f3c9cb;
-        border-radius: 14px;
-        padding: 24px;
-        max-width: 560px;
-    }
-
-    dt {
-        color: #7b8290;
-        font-weight: 600;
-        font-size: 12.5px;
-        text-transform: uppercase;
-        letter-spacing: .3px;
-    }
-
-    dd {
-        margin-bottom: 14px;
-        font-size: 15px;
-        color: #0b0b0c;
-    }
-
-    .alert-danger {
-        display: flex;
-        align-items: flex-start;
-        gap: 10px;
-    }
-
-        .alert-danger svg {
-            flex: none;
-            margin-top: 2px;
-        }
-
-    .btn-danger, .btn-outline-secondary {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-    }
+    .zx-page-head h1 { font-family:'Oswald',system-ui,sans-serif; font-weight:700; font-size:22px; margin:0 0 18px; color:#0b0b0c; }
+    .zx-card { background:#fff; border:1px solid #f3c9cb; border-radius:14px; padding:24px; max-width:560px; }
+    dt { color:#7b8290; font-weight:600; font-size:12.5px; text-transform:uppercase; letter-spacing:.3px; }
+    dd { margin-bottom:14px; font-size:15px; color:#0b0b0c; }
+    .alert-danger { display:flex; align-items:flex-start; gap:10px; }
+    .alert-danger svg { flex:none; margin-top:2px; }
+    .btn-danger, .btn-outline-secondary { display:inline-flex; align-items:center; gap:7px; }
 </style>
 
 <div class="zx-page-head">
@@ -62,21 +24,23 @@
 @if (!string.IsNullOrEmpty(deleteError))
 {
     <div class="alert alert-danger">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line x1="12" x2="12.01" y1="16" y2="16" /></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
         <div>@deleteError</div>
     </div>
 }
 else if (blocked)
 {
     <div class="alert alert-danger">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line x1="12" x2="12.01" y1="16" y2="16" /></svg>
-        <div>Can't delete this quotation. It has already been converted to a job order.</div>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+        <div>
+            Can't delete this quotation. It has already been converted to a job order.
+        </div>
     </div>
 }
 else
 {
     <div class="alert alert-danger">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
         <div>Are you sure you want to delete this quotation? This cannot be undone.</div>
     </div>
 }
@@ -101,7 +65,7 @@ else
     @if (blocked)
     {
         <a asp-action="Index" class="btn btn-outline-secondary">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
             Back to list
         </a>
     }
@@ -110,7 +74,7 @@ else
         <form asp-action="Delete" method="post" class="d-inline">
             <input type="hidden" asp-for="QuotationID" />
             <button type="submit" class="btn btn-danger">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                 Delete
             </button>
             <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -11,10 +12,17 @@ namespace ZEmpireAutoAccessories.Controllers
     public class EmployeeController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly RoleManager<ApplicationRole> _roleManager;
 
-        public EmployeeController(ApplicationDbContext context)
+        public EmployeeController(
+            ApplicationDbContext context,
+            UserManager<ApplicationUser> userManager,
+            RoleManager<ApplicationRole> roleManager)
         {
             _context = context;
+            _userManager = userManager;
+            _roleManager = roleManager;
         }
 
         // GET: Employee
@@ -49,24 +57,72 @@ namespace ZEmpireAutoAccessories.Controllers
         // GET: Employee/Create
         public async Task<IActionResult> Create()
         {
-            await LoadUserDropdown();
+            await LoadRoleDropdown();
 
             return View(new Employee { IsActive = true });
         }
 
         // POST: Employee/Create
+        // Creates a brand-new login account for this employee (there's no
+        // screen anywhere else in the app to create one ahead of time).
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Employee employee)
+        public async Task<IActionResult> Create(Employee employee, string userName, string password, string role)
         {
             ModelState.Remove(nameof(Employee.User));
+            ModelState.Remove(nameof(Employee.UserId));
+
+            if (string.IsNullOrWhiteSpace(userName))
+                ModelState.AddModelError(nameof(userName), "Login username is required.");
+
+            if (string.IsNullOrWhiteSpace(password))
+                ModelState.AddModelError(nameof(password), "Initial password is required.");
+
+            if (string.IsNullOrWhiteSpace(role))
+                ModelState.AddModelError(nameof(role), "Role is required.");
+
+            if (!string.IsNullOrWhiteSpace(employee.EmployeeNumber) &&
+                await _context.Employees.AnyAsync(e => e.EmployeeNumber == employee.EmployeeNumber))
+            {
+                ModelState.AddModelError(string.Empty, $"Employee number '{employee.EmployeeNumber}' is already taken.");
+            }
 
             if (!ModelState.IsValid)
             {
-                await LoadUserDropdown(employee.UserId);
+                await LoadRoleDropdown(role);
                 return View(employee);
             }
 
+            var newUser = new ApplicationUser
+            {
+                UserName = userName.Trim(),
+                FullName = $"{employee.FirstName} {employee.LastName}".Trim(),
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+            };
+
+            var createResult = await _userManager.CreateAsync(newUser, password);
+            if (!createResult.Succeeded)
+            {
+                foreach (var error in createResult.Errors)
+                    ModelState.AddModelError(string.Empty, error.Description);
+
+                await LoadRoleDropdown(role);
+                return View(employee);
+            }
+
+            var roleResult = await SetSingleRole(newUser, role);
+            if (!roleResult.Succeeded)
+            {
+                foreach (var error in roleResult.Errors)
+                    ModelState.AddModelError(string.Empty, error.Description);
+
+                await _userManager.DeleteAsync(newUser);
+                await LoadRoleDropdown(role);
+                return View(employee);
+            }
+
+            employee.UserId = newUser.Id;
             employee.CreatedAt = DateTime.UtcNow;
 
             _context.Employees.Add(employee);
@@ -89,6 +145,9 @@ namespace ZEmpireAutoAccessories.Controllers
             if (employee == null)
                 return NotFound();
 
+            var currentRoles = await _userManager.GetRolesAsync(employee.User);
+            await LoadRoleDropdown(currentRoles.FirstOrDefault());
+
             return View(employee);
         }
 
@@ -97,15 +156,62 @@ namespace ZEmpireAutoAccessories.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             int id,
-            Employee employee)
+            Employee employee,
+            string userName,
+            string role)
         {
             if (id != employee.EmployeeID)
                 return NotFound();
 
             ModelState.Remove(nameof(Employee.User));
 
+            if (string.IsNullOrWhiteSpace(userName))
+                ModelState.AddModelError(nameof(userName), "Login username is required.");
+
+            if (string.IsNullOrWhiteSpace(role))
+                ModelState.AddModelError(nameof(role), "Role is required.");
+
+            if (!string.IsNullOrWhiteSpace(employee.EmployeeNumber) &&
+                await _context.Employees.AnyAsync(e => e.EmployeeNumber == employee.EmployeeNumber && e.EmployeeID != id))
+            {
+                ModelState.AddModelError(string.Empty, $"Employee number '{employee.EmployeeNumber}' is already taken.");
+            }
+
             if (!ModelState.IsValid)
+            {
+                employee.User = await _context.Users.FirstOrDefaultAsync(u => u.Id == employee.UserId) ?? employee.User;
+                await LoadRoleDropdown(role);
                 return View(employee);
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == employee.UserId);
+            if (user == null)
+                return NotFound();
+
+            if (!string.Equals(user.UserName, userName.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                var result = await _userManager.SetUserNameAsync(user, userName.Trim());
+                if (!result.Succeeded)
+                {
+                    foreach (var error in result.Errors)
+                        ModelState.AddModelError(string.Empty, error.Description);
+
+                    employee.User = user;
+                    await LoadRoleDropdown(role);
+                    return View(employee);
+                }
+            }
+
+            var roleResult = await SetSingleRole(user, role);
+            if (!roleResult.Succeeded)
+            {
+                foreach (var error in roleResult.Errors)
+                    ModelState.AddModelError(string.Empty, error.Description);
+
+                employee.User = user;
+                await LoadRoleDropdown(role);
+                return View(employee);
+            }
 
             employee.UpdatedAt = DateTime.UtcNow;
 
@@ -184,23 +290,63 @@ namespace ZEmpireAutoAccessories.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        private async Task LoadUserDropdown(string? selectedUserId = null)
+        // POST: Employee/ResetPassword/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPassword(int id, string newPassword, string confirmPassword)
         {
-            var assignedUserIds = await _context.Employees
-                .Select(e => e.UserId)
+            var employee = await _context.Employees
+                .Include(e => e.User)
+                .FirstOrDefaultAsync(e => e.EmployeeID == id);
+
+            if (employee == null)
+                return NotFound();
+
+            if (newPassword != confirmPassword)
+            {
+                TempData["ResetPasswordError"] = "The new password and confirmation don't match.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(employee.User);
+            var result = await _userManager.ResetPasswordAsync(employee.User, token, newPassword);
+
+            if (!result.Succeeded)
+            {
+                TempData["ResetPasswordError"] = string.Join(" ", result.Errors.Select(e => e.Description));
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            TempData["Success"] = $"Password reset for {employee.User.UserName}.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        // Removes any roles the user currently holds and adds the one selected -
+        // this app only ever wants a user in exactly one of Admin/Staff at a time.
+        private async Task<IdentityResult> SetSingleRole(ApplicationUser user, string role)
+        {
+            var currentRoles = await _userManager.GetRolesAsync(user);
+            if (currentRoles.Count == 1 && currentRoles[0] == role)
+                return IdentityResult.Success;
+
+            if (currentRoles.Count > 0)
+            {
+                var removeResult = await _userManager.RemoveFromRolesAsync(user, currentRoles);
+                if (!removeResult.Succeeded)
+                    return removeResult;
+            }
+
+            return await _userManager.AddToRoleAsync(user, role);
+        }
+
+        private async Task LoadRoleDropdown(string? selectedRole = null)
+        {
+            var roles = await _roleManager.Roles
+                .OrderBy(r => r.Name)
+                .Select(r => r.Name!)
                 .ToListAsync();
 
-            var availableUsers = await _context.Users
-                .Where(u => !assignedUserIds.Contains(u.Id) || u.Id == selectedUserId)
-                .OrderBy(u => u.UserName)
-                .Select(u => new
-                {
-                    u.Id,
-                    Display = u.UserName + " (" + u.FullName + ")"
-                })
-                .ToListAsync();
-
-            ViewData["UserId"] = new SelectList(availableUsers, "Id", "Display", selectedUserId);
+            ViewData["Role"] = new SelectList(roles, selectedRole);
         }
 
         private bool EmployeeExists(int id)

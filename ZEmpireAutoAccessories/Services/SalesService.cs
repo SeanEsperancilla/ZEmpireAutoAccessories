@@ -23,6 +23,7 @@ namespace ZEmpireAutoAccessories.Services
         {
             return await _context.Sales
                 .Include(s => s.Customer)
+                .Include(s => s.Vehicle)
                 .Include(s => s.User)
                 .Include(s => s.PaymentMode)
                 .Include(s => s.SaleDetails)
@@ -30,14 +31,52 @@ namespace ZEmpireAutoAccessories.Services
                 .FirstOrDefaultAsync(s => s.SalesID == saleId);
         }
 
-        public async Task<List<Sale>> GetSales()
+        public async Task<List<Sale>> GetSales(string? q = null, int? productId = null, DateOnly? dateFrom = null, DateOnly? dateTo = null)
         {
-            return await _context.Sales
+            var query = _context.Sales
                 .Include(s => s.Customer)
                 .Include(s => s.User)
                 .Include(s => s.PaymentMode)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var term = q.Trim();
+                query = query.Where(s =>
+                    s.InvoiceNumber.Contains(term) ||
+                    s.Customer.FullName.Contains(term));
+            }
+
+            if (productId.HasValue)
+                query = query.Where(s => s.SaleDetails.Any(d => d.ProductID == productId.Value));
+
+            if (dateFrom.HasValue)
+                query = query.Where(s => s.SalesDate >= dateFrom.Value.ToDateTime(TimeOnly.MinValue));
+
+            if (dateTo.HasValue)
+                query = query.Where(s => s.SalesDate < dateTo.Value.AddDays(1).ToDateTime(TimeOnly.MinValue));
+
+            return await query
                 .OrderByDescending(s => s.SalesDate)
                 .ToListAsync();
+        }
+
+        public async Task<int> GetUnitsSold(int productId, DateOnly? dateFrom = null, DateOnly? dateTo = null)
+        {
+            var query = _context.SalesDetails
+                .Where(d => d.ProductID == productId)
+                .AsQueryable();
+
+            if (dateFrom.HasValue)
+                query = query.Where(d => d.Sale.SalesDate >= dateFrom.Value.ToDateTime(TimeOnly.MinValue));
+
+            if (dateTo.HasValue)
+                query = query.Where(d => d.Sale.SalesDate < dateTo.Value.AddDays(1).ToDateTime(TimeOnly.MinValue));
+
+            // SUM() over zero matching rows (nothing sold in range) comes
+            // back as SQL NULL, not 0 - project through a nullable int so
+            // EF can represent that, then default it.
+            return await query.SumAsync(d => (int?)d.Quantity) ?? 0;
         }
 
         public async Task<Sale> CreateSale(
@@ -82,9 +121,13 @@ namespace ZEmpireAutoAccessories.Services
                         .FirstOrDefaultAsync(p => p.ProductID == item.ProductID)
                         ?? throw new KeyNotFoundException($"Product ID {item.ProductID} was not found.");
 
+                    // SUM() over zero matching rows (a product never
+                    // stocked in/out yet) comes back as SQL NULL, not 0 -
+                    // project through a nullable decimal so EF can
+                    // represent that, then default it.
                     var stockOnHand = await _context.InventoryTransactions
                         .Where(t => t.ProductID == item.ProductID)
-                        .SumAsync(t => t.TransactionType == "IN" ? t.Quantity : -t.Quantity);
+                        .SumAsync(t => (decimal?)(t.TransactionType == "IN" ? t.Quantity : -t.Quantity)) ?? 0;
 
                     if (stockOnHand < item.Quantity)
                         throw new InvalidOperationException($"Insufficient stock for {product.ProductName}.");

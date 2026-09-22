@@ -69,19 +69,21 @@ namespace ZEmpireAutoAccessories.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("FullName,ContactNumber")] Customer customer)
         {
+            if (string.IsNullOrWhiteSpace(customer.ContactNumber))
+                ModelState.AddModelError(nameof(Customer.ContactNumber), "Contact number is required.");
+
             if (!ModelState.IsValid)
                 return View(customer);
 
             customer.FullName = customer.FullName.Trim();
-            customer.ContactNumber = string.IsNullOrWhiteSpace(customer.ContactNumber)
-                ? null : customer.ContactNumber.Trim();
+            customer.ContactNumber = customer.ContactNumber!.Trim();
             customer.CreatedAt = DateTime.UtcNow;
 
             _context.Customers.Add(customer);
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = $"Customer \"{customer.FullName}\" was added.";
-            return RedirectToAction(nameof(Index));
+            TempData["Success"] = $"Customer \"{customer.FullName}\" was added. Now add their vehicle.";
+            return RedirectToAction("Create", "Vehicle", new { customerId = customer.CustomerID });
         }
 
         // GET: Customer/Edit/5
@@ -106,6 +108,9 @@ namespace ZEmpireAutoAccessories.Controllers
             if (id != customer.CustomerID)
                 return NotFound();
 
+            if (string.IsNullOrWhiteSpace(customer.ContactNumber))
+                ModelState.AddModelError(nameof(Customer.ContactNumber), "Contact number is required.");
+
             if (!ModelState.IsValid)
                 return View(customer);
 
@@ -116,8 +121,7 @@ namespace ZEmpireAutoAccessories.Controllers
                 return NotFound();
 
             existing.FullName = customer.FullName.Trim();
-            existing.ContactNumber = string.IsNullOrWhiteSpace(customer.ContactNumber)
-                ? null : customer.ContactNumber.Trim();
+            existing.ContactNumber = customer.ContactNumber!.Trim();
 
             await _context.SaveChangesAsync();
 

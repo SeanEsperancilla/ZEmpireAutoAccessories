@@ -37,13 +37,26 @@ namespace ZEmpireAutoAccessories.Services
                     p.PanelID == panelId);
         }
 
-        public async Task<List<Pricing>> GetAllPricing()
+        public async Task<List<Pricing>> GetAllPricing(string? q = null)
         {
-            return await _context.Pricings
+            var query = _context.Pricings
                 .Include(p => p.Product)
                 .Include(p => p.VehicleClassification)
                 .Include(p => p.Panel)
                 .Include(p => p.TintVariant)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var term = q.Trim();
+                query = query.Where(p =>
+                    p.Product.ProductName.Contains(term) ||
+                    (p.TintVariant != null && p.TintVariant.VariantName.Contains(term)) ||
+                    p.VehicleClassification.ClassificationName.Contains(term) ||
+                    p.Panel.PanelName.Contains(term));
+            }
+
+            return await query
                 .OrderBy(p => p.Product.ProductName)
                 .ToListAsync();
         }

@@ -85,6 +85,38 @@ namespace ZEmpireAutoAccessories.Controllers
         }
 
         [HttpGet]
+        public IActionResult ChangePassword() => View(new ChangePasswordViewModel());
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return RedirectToAction(nameof(Login));
+
+            var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                    ModelState.AddModelError(string.Empty, error.Description);
+
+                return View(model);
+            }
+
+            // Changing the password rotates the security stamp, which would
+            // otherwise sign the user out on their very next request.
+            await _signInManager.RefreshSignInAsync(user);
+
+            TempData["Success"] = "Your password has been changed.";
+            return RedirectToAction(nameof(ChangePassword));
+        }
+
+        [HttpGet]
         [AllowAnonymous]
         public IActionResult AccessDenied() => View();
 

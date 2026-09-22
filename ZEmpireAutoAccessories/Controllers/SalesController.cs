@@ -1,10 +1,11 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ZEmpireAutoAccessories.Authorization;
 using ZEmpireAutoAccessories.Data;
 using ZEmpireAutoAccessories.Models;
+using ZEmpireAutoAccessories.Services;
 using ZEmpireAutoAccessories.Services.Interfaces;
 
 namespace ZEmpireAutoAccessories.Controllers
@@ -26,10 +27,21 @@ namespace ZEmpireAutoAccessories.Controllers
             _quotationService = quotationService;
         }
 
-        // GET: Sale
-        public async Task<IActionResult> Index()
+        // GET: Sale?q=...&productId=...&dateFrom=...&dateTo=...
+        public async Task<IActionResult> Index(string? q, int? productId, DateOnly? dateFrom, DateOnly? dateTo)
         {
-            var sales = await _salesService.GetSales();
+            var sales = await _salesService.GetSales(q, productId, dateFrom, dateTo);
+
+            ViewData["Search"] = q;
+            ViewData["ProductID"] = new SelectList(
+                await _context.Products.OrderBy(p => p.ProductName).ToListAsync(),
+                "ProductID", "ProductName", productId);
+            ViewData["DateFrom"] = dateFrom;
+            ViewData["DateTo"] = dateTo;
+
+            if (productId.HasValue)
+                ViewData["UnitsSold"] = await _salesService.GetUnitsSold(productId.Value, dateFrom, dateTo);
+
             return View(sales);
         }
 
@@ -44,6 +56,62 @@ namespace ZEmpireAutoAccessories.Controllers
                 return NotFound();
 
             return View(sale);
+        }
+
+        // GET: Sale/Pdf/5
+        public async Task<IActionResult> Pdf(int? id)
+        {
+            if (id == null)
+                return NotFound();
+
+            var sale = await _salesService.GetSale(id.Value);
+            if (sale == null)
+                return NotFound();
+
+            var pdf = DocumentPdfBuilder.BuildSalePdf(sale);
+            return File(pdf, "application/pdf", $"{sale.InvoiceNumber}.pdf");
+        }
+
+        // GET: Sale/VehiclesForCustomer?customerId=5
+        public async Task<IActionResult> VehiclesForCustomer(int customerId)
+        {
+            var vehicles = await _context.Vehicles
+                .Where(v => v.CustomerID == customerId)
+                .OrderBy(v => v.PlateNumber)
+                .Select(v => new
+                {
+                    value = v.VehicleID,
+                    text = (v.PlateNumber ?? "No Plate") + " - " + v.Brand + " " + v.Model
+                })
+                .ToListAsync();
+
+            return Json(vehicles);
+        }
+
+        // GET: Sale/PricingForVehicle?vehicleId=5
+        // Every Pricing row for this vehicle's classification, so the line-item
+        // rows can look up the real matrix price (Product x Tint Variant x
+        // Panel) client-side instead of just the product's flat DefaultPrice.
+        public async Task<IActionResult> PricingForVehicle(int vehicleId)
+        {
+            var vehicle = await _context.Vehicles.FindAsync(vehicleId);
+            if (vehicle == null)
+                return Json(new List<object>());
+
+            var matrix = await _context.Pricings
+                .Where(p => p.VehicleClassificationID == vehicle.VehicleClassificationID)
+                .Select(p => new
+                {
+                    productId = p.ProductID,
+                    tintVariantId = p.TintVariantID,
+                    tintVariantName = p.TintVariant != null ? p.TintVariant.VariantName : null,
+                    panelId = p.PanelID,
+                    panelName = p.Panel.PanelName,
+                    price = p.Price
+                })
+                .ToListAsync();
+
+            return Json(matrix);
         }
 
         // GET: Sale/Create

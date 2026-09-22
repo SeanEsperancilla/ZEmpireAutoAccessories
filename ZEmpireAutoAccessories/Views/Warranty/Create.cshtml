@@ -62,19 +62,19 @@
 
         <div class="mb-3">
             <label asp-for="SalesDetailID" class="form-label">Sale Item</label>
-            <select asp-for="SalesDetailID" class="form-select" asp-items="ViewBag.SalesDetailID">
+            <select asp-for="SalesDetailID" class="form-select" asp-items="ViewBag.SalesDetailID" data-searchable="true">
                 <option value="">-- None --</option>
             </select>
         </div>
         <div class="mb-3">
             <label asp-for="ServiceInvoiceDetailID" class="form-label">Service Invoice Item</label>
-            <select asp-for="ServiceInvoiceDetailID" class="form-select" asp-items="ViewBag.ServiceInvoiceDetailID">
+            <select asp-for="ServiceInvoiceDetailID" class="form-select" asp-items="ViewBag.ServiceInvoiceDetailID" data-searchable="true">
                 <option value="">-- None --</option>
             </select>
         </div>
         <div class="mb-3">
             <label asp-for="JobOrderID" class="form-label">Job Order</label>
-            <select asp-for="JobOrderID" class="form-select" asp-items="ViewBag.JobOrderID">
+            <select asp-for="JobOrderID" class="form-select" asp-items="ViewBag.JobOrderID" data-searchable="true">
                 <option value="">-- None --</option>
             </select>
         </div>

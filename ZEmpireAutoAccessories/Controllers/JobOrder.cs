@@ -1,10 +1,11 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ZEmpireAutoAccessories.Authorization;
 using ZEmpireAutoAccessories.Data;
 using ZEmpireAutoAccessories.Models;
+using ZEmpireAutoAccessories.Services;
 
 namespace ZEmpireAutoAccessories.Controllers
 {
@@ -18,20 +19,36 @@ namespace ZEmpireAutoAccessories.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> Index(string? status)
+        // GET: JobOrder?status=Pending&q=...
+        public async Task<IActionResult> Index(string? status, string? q)
         {
-            var jobOrders = await _context.JobOrders
+            var query = _context.JobOrders
                 .Include(j => j.Customer)
                 .Include(j => j.Vehicle)
                 .Include(j => j.AssignedEmployee)
-                .Where(j => status == null || j.Status == status)
+                .Include(j => j.Quotation)
+                .Include(j => j.ServiceInvoices)
+                .Where(j => status == null || j.Status == status);
+
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var term = q.Trim();
+                query = query.Where(j =>
+                    j.JobOrderNumber.Contains(term) ||
+                    j.Customer.FullName.Contains(term) ||
+                    (j.Vehicle.PlateNumber != null && j.Vehicle.PlateNumber.Contains(term)));
+            }
+
+            var jobOrders = await query
                 .OrderByDescending(j => j.JobOrderDate)
                 .ToListAsync();
 
             ViewData["Status"] = status;
+            ViewData["Search"] = q;
             return View(jobOrders);
         }
 
+        // GET: JobOrder/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -43,6 +60,69 @@ namespace ZEmpireAutoAccessories.Controllers
                 .Include(j => j.JobType)
                 .Include(j => j.AssignedEmployee)
                 .Include(j => j.Quotation)
+                .Include(j => j.ServiceInvoices)
+                .Include(j => j.Details)
+                    .ThenInclude(d => d.Product)
+                .Include(j => j.Details)
+                    .ThenInclude(d => d.Service)
+                .Include(j => j.Details)
+                    .ThenInclude(d => d.TintVariant)
+                .Include(j => j.Details)
+                    .ThenInclude(d => d.Panel)
+                .FirstOrDefaultAsync(j => j.JobOrderID == id);
+
+            if (jobOrder == null)
+                return NotFound();
+
+            await LoadLineDropdowns();
+
+            // Every Pricing row for this job order's vehicle classification,
+            // for the Add Line Item form to look up the real matrix price
+            // (Product x Tint Variant x Panel) client-side instead of just
+            // the product's flat DefaultPrice.
+            ViewData["PricingMatrix"] = await _context.Pricings
+                .Where(p => p.VehicleClassificationID == jobOrder.Vehicle.VehicleClassificationID)
+                .Select(p => new
+                {
+                    productId = p.ProductID,
+                    tintVariantId = p.TintVariantID,
+                    tintVariantName = p.TintVariant != null ? p.TintVariant.VariantName : null,
+                    panelId = p.PanelID,
+                    panelName = p.Panel.PanelName,
+                    price = p.Price
+                })
+                .ToListAsync();
+
+            return View(jobOrder);
+        }
+
+        // GET: JobOrder/VehiclesForCustomer?customerId=5
+        public async Task<IActionResult> VehiclesForCustomer(int customerId)
+        {
+            var vehicles = await _context.Vehicles
+                .Where(v => v.CustomerID == customerId)
+                .OrderBy(v => v.PlateNumber)
+                .Select(v => new
+                {
+                    value = v.VehicleID,
+                    text = (v.PlateNumber ?? "No Plate") + " - " + v.Brand + " " + v.Model
+                })
+                .ToListAsync();
+
+            return Json(vehicles);
+        }
+
+        // GET: JobOrder/Pdf/5
+        public async Task<IActionResult> Pdf(int? id)
+        {
+            if (id == null)
+                return NotFound();
+
+            var jobOrder = await _context.JobOrders
+                .Include(j => j.Customer)
+                .Include(j => j.Vehicle)
+                .Include(j => j.JobType)
+                .Include(j => j.AssignedEmployee)
                 .Include(j => j.Details)
                     .ThenInclude(d => d.Product)
                 .Include(j => j.Details)
@@ -52,16 +132,18 @@ namespace ZEmpireAutoAccessories.Controllers
             if (jobOrder == null)
                 return NotFound();
 
-            await LoadLineDropdowns();
-            return View(jobOrder);
+            var pdf = DocumentPdfBuilder.BuildJobOrderPdf(jobOrder);
+            return File(pdf, "application/pdf", $"{jobOrder.JobOrderNumber}.pdf");
         }
 
+        // GET: JobOrder/Create
         public async Task<IActionResult> Create()
         {
             await LoadHeaderDropdowns();
             return View(new JobOrder { JobOrderDate = DateTime.Now });
         }
 
+        // POST: JobOrder/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
@@ -88,12 +170,14 @@ namespace ZEmpireAutoAccessories.Controllers
             _context.JobOrders.Add(jobOrder);
             await _context.SaveChangesAsync();
 
+            // Number depends on the generated ID, so it's set in a second save.
             jobOrder.JobOrderNumber = $"JO-{jobOrder.JobOrderID:D6}";
             await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Details), new { id = jobOrder.JobOrderID });
         }
 
+        // GET: JobOrder/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -107,6 +191,7 @@ namespace ZEmpireAutoAccessories.Controllers
             return View(jobOrder);
         }
 
+        // POST: JobOrder/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
@@ -149,6 +234,7 @@ namespace ZEmpireAutoAccessories.Controllers
             return RedirectToAction(nameof(Details), new { id });
         }
 
+        // GET: JobOrder/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -167,6 +253,7 @@ namespace ZEmpireAutoAccessories.Controllers
             return View(jobOrder);
         }
 
+        // POST: JobOrder/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
@@ -197,28 +284,53 @@ namespace ZEmpireAutoAccessories.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // POST: JobOrder/AddLine
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddLine(
             int jobOrderId,
             int? productId,
             int? serviceId,
+            int? tintVariantId,
+            int? panelId,
             string? description,
             int quantity,
             string unit,
             decimal unitPrice)
         {
-            var jobOrder = await _context.JobOrders.FindAsync(jobOrderId);
+            var jobOrder = await _context.JobOrders
+                .Include(j => j.Vehicle)
+                .FirstOrDefaultAsync(j => j.JobOrderID == jobOrderId);
+
             if (jobOrder == null)
                 return NotFound();
 
             if (quantity > 0 && unitPrice >= 0 && (productId != null || serviceId != null))
             {
+                // Record which exact Pricing row (Product x Tint Variant x
+                // Vehicle Classification x Panel) this line's price came from,
+                // when the Add Line Item form resolved one client-side.
+                int? pricingId = null;
+                if (productId != null && panelId != null)
+                {
+                    pricingId = await _context.Pricings
+                        .Where(p =>
+                            p.ProductID == productId &&
+                            p.TintVariantID == tintVariantId &&
+                            p.VehicleClassificationID == jobOrder.Vehicle.VehicleClassificationID &&
+                            p.PanelID == panelId)
+                        .Select(p => (int?)p.PricingID)
+                        .FirstOrDefaultAsync();
+                }
+
                 _context.JobOrderDetails.Add(new JobOrderDetail
                 {
                     JobOrderID = jobOrderId,
                     ProductID = productId,
                     ServiceID = serviceId,
+                    TintVariantID = pricingId != null ? tintVariantId : null,
+                    PanelID = pricingId != null ? panelId : null,
+                    PricingID = pricingId,
                     Description = description,
                     Quantity = quantity,
                     Unit = string.IsNullOrWhiteSpace(unit) ? "Unit" : unit,
@@ -231,6 +343,7 @@ namespace ZEmpireAutoAccessories.Controllers
             return RedirectToAction(nameof(Details), new { id = jobOrderId });
         }
 
+        // POST: JobOrder/RemoveLine
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RemoveLine(int detailId, int jobOrderId)
@@ -245,6 +358,7 @@ namespace ZEmpireAutoAccessories.Controllers
             return RedirectToAction(nameof(Details), new { id = jobOrderId });
         }
 
+        // POST: JobOrder/SetStatus
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SetStatus(int id, string status)
@@ -314,15 +428,13 @@ namespace ZEmpireAutoAccessories.Controllers
             ViewData["AssignedEmployeeID"] = new SelectList(employees, "EmployeeID", "Display", jobOrder?.AssignedEmployeeID);
         }
 
+        // Rendered as plain <option> tags in the view (not asp-items) so each
+        // one can carry a data-price attribute - SelectListItem has no
+        // attribute bag to hang that off of.
         private async Task LoadLineDropdowns()
         {
-            ViewData["ProductID"] = new SelectList(
-                await _context.Products.Where(p => p.IsActive).OrderBy(p => p.ProductName).ToListAsync(),
-                "ProductID", "ProductName");
-
-            ViewData["ServiceID"] = new SelectList(
-                await _context.Services.Where(s => s.IsActive).OrderBy(s => s.ServiceName).ToListAsync(),
-                "ServiceID", "ServiceName");
+            ViewData["Products"] = await _context.Products.Where(p => p.IsActive).OrderBy(p => p.ProductName).ToListAsync();
+            ViewData["Services"] = await _context.Services.Where(s => s.IsActive).OrderBy(s => s.ServiceName).ToListAsync();
         }
     }
 }

@@ -21,9 +21,11 @@ namespace ZEmpireAutoAccessories.Controllers
             _pricingService = pricingService;
         }
 
-        public async Task<IActionResult> Index()
+        // GET: Pricing?q=...
+        public async Task<IActionResult> Index(string? q)
         {
-            var pricing = await _pricingService.GetAllPricing();
+            var pricing = await _pricingService.GetAllPricing(q);
+            ViewData["Search"] = q;
             return View(pricing);
         }
 

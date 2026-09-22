@@ -15,9 +15,24 @@ namespace ZEmpireAutoAccessories.Controllers
             _inventoryService = inventoryService;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? status)
         {
             var stockLevels = await _inventoryService.GetStockLevels();
+
+            const decimal lowStockThreshold = 5;
+
+            if (!string.IsNullOrEmpty(status))
+            {
+                stockLevels = status switch
+                {
+                    "OutOfStock" => stockLevels.Where(s => (s.StockOnHand ?? 0) <= 0).ToList(),
+                    "LowStock" => stockLevels.Where(s => (s.StockOnHand ?? 0) > 0 && (s.StockOnHand ?? 0) <= lowStockThreshold).ToList(),
+                    "InStock" => stockLevels.Where(s => (s.StockOnHand ?? 0) > lowStockThreshold).ToList(),
+                    _ => stockLevels
+                };
+            }
+
+            ViewData["Status"] = status;
             return View(stockLevels);
         }
 

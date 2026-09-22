@@ -14,6 +14,20 @@ namespace ZEmpireAutoAccessories.Controllers
     [Authorize(Roles = "Admin")]
     public class SecurityController : Controller
     {
+        // Module names that a real controller still gates access on via
+        // [ModuleAuthorize(...)] - deleting one of these would forbid
+        // everyone (Admin included, since this page is the only thing not
+        // gated by the module matrix) from that whole section of the app
+        // until someone re-adds it here. Custom/extra module rows an Admin
+        // added themselves aren't in this list and can still be deleted.
+        private static readonly HashSet<string> ProtectedModuleNames = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "Customers", "Inventory", "Job Orders", "Job Types", "Price History",
+            "Pricing", "Products", "Quotation", "Reports", "Sales",
+            "Service Invoices", "Services", "User Management", "Vehicle Checklist",
+            "Vehicles", "Warranty"
+        };
+
         private readonly ApplicationDbContext _context;
 
         public SecurityController(ApplicationDbContext context)
@@ -66,8 +80,19 @@ namespace ZEmpireAutoAccessories.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SavePermissions(List<PermissionCell> cells)
         {
+            var adminRoleId = await _context.Roles
+                .Where(r => r.Name == "Admin")
+                .Select(r => r.Id)
+                .FirstOrDefaultAsync();
+
             foreach (var cell in cells)
             {
+                // Admin always keeps full access - this screen is the only
+                // way back in for any module gated by the matrix, so an
+                // Admin accidentally unchecking their own row here can never
+                // be allowed to lock every Admin out of that module.
+                var canAccess = cell.RoleId == adminRoleId || cell.CanAccess;
+
                 var existing = await _context.RolePermissions.FirstOrDefaultAsync(p =>
                     p.RoleId == cell.RoleId && p.ModuleID == cell.ModuleID);
 
@@ -77,12 +102,12 @@ namespace ZEmpireAutoAccessories.Controllers
                     {
                         RoleId = cell.RoleId,
                         ModuleID = cell.ModuleID,
-                        CanAccess = cell.CanAccess
+                        CanAccess = canAccess
                     });
                 }
                 else
                 {
-                    existing.CanAccess = cell.CanAccess;
+                    existing.CanAccess = canAccess;
                 }
             }
 
@@ -119,6 +144,14 @@ namespace ZEmpireAutoAccessories.Controllers
 
             if (module != null)
             {
+                if (ProtectedModuleNames.Contains(module.ModuleName))
+                {
+                    TempData["SecurityMessage"] =
+                        $"Can't delete \"{module.ModuleName}\" - it's a built-in module a real screen depends on. " +
+                        "Uncheck it above instead to hide it from a role.";
+                    return RedirectToAction(nameof(Index));
+                }
+
                 _context.RolePermissions.RemoveRange(module.RolePermissions);
                 _context.Modules.Remove(module);
 

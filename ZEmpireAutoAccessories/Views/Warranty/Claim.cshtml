@@ -1,0 +1,70 @@
+@model ZEmpireAutoAccessories.Models.Warranty
+
+@{
+    ViewData["Title"] = "Claim Warranty";
+}
+
+<style>
+    .zx-page-head h1 { font-family:'Oswald',system-ui,sans-serif; font-weight:700; font-size:22px; margin:0 0 4px; color:#0b0b0c; }
+    .zx-page-sub { color:#7b8290; font-size:13.5px; margin:0 0 18px; }
+    .zx-card { background:#fff; border:1px solid #e8ebf0; border-radius:14px; padding:24px; max-width:560px; }
+    dt { color:#7b8290; font-weight:600; font-size:12.5px; text-transform:uppercase; letter-spacing:.3px; }
+    dd { margin-bottom:14px; font-size:15px; color:#0b0b0c; }
+    .btn-zx, .btn-outline-secondary { display:inline-flex; align-items:center; gap:7px; }
+    .btn-zx { background:#16a34a; border-color:#16a34a; color:#fff; font-weight:600; }
+    .btn-zx:hover { background:#15803d; border-color:#15803d; color:#fff; }
+</style>
+
+<div class="zx-page-head">
+    <h1>Claim Warranty</h1>
+</div>
+<p class="zx-page-sub">Confirm this warranty claim. This will mark it as Claimed and cannot be undone from here.</p>
+
+<div class="zx-card">
+    <dl class="row mb-3">
+        <dt class="col-sm-4">Linked To</dt>
+        <dd class="col-sm-8">
+            @if (Model.SalesDetail != null)
+            {
+                @:Sale @Model.SalesDetail.Sale.InvoiceNumber — @Model.SalesDetail.Product.ProductName
+            }
+            else if (Model.ServiceInvoiceDetail != null)
+            {
+                @:Service Invoice @Model.ServiceInvoiceDetail.ServiceInvoice.InvoiceNumber
+            }
+            else if (Model.JobOrder != null)
+            {
+                @:Job Order @Model.JobOrder.JobOrderNumber — @Model.JobOrder.Customer.FullName
+            }
+            else
+            {
+                @:—
+            }
+        </dd>
+
+        <dt class="col-sm-4">Warranty End</dt>
+        <dd class="col-sm-8">@(Model.WarrantyEndDate?.ToString("MMM d, yyyy") ?? "—")</dd>
+
+        @if (!string.IsNullOrEmpty(Model.WarrantyTerms))
+        {
+            <dt class="col-sm-4">Terms</dt>
+            <dd class="col-sm-8">@Model.WarrantyTerms</dd>
+        }
+    </dl>
+
+    <form asp-action="Claim" method="post">
+        <input type="hidden" name="id" value="@Model.WarrantyID" />
+
+        <div class="mb-3">
+            <label class="form-label">Claim Notes <span class="text-muted fw-normal">(optional)</span></label>
+            <textarea name="claimNotes" class="form-control" rows="3" placeholder="What was claimed / replaced, etc."></textarea>
+            <div class="form-text">Appended to this warranty's Remarks along with the claim date and your name.</div>
+        </div>
+
+        <button type="submit" class="btn btn-zx">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+            Confirm Claim
+        </button>
+        <a asp-action="Details" asp-route-id="@Model.WarrantyID" class="btn btn-outline-secondary">Cancel</a>
+    </form>
+</div>

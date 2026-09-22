@@ -33,9 +33,12 @@ namespace ZEmpireAutoAccessories.Services
 
         public async Task<decimal> GetStockOnHand(int productId)
         {
+            // SUM() over zero matching rows (a product with no transactions
+            // yet) comes back as SQL NULL, not 0 - project through a
+            // nullable decimal so EF can represent that, then default it.
             return await _context.InventoryTransactions
                 .Where(t => t.ProductID == productId)
-                .SumAsync(t => t.TransactionType == "IN" ? t.Quantity : -t.Quantity);
+                .SumAsync(t => (decimal?)(t.TransactionType == "IN" ? t.Quantity : -t.Quantity)) ?? 0;
         }
 
         public async Task<List<VwStockOnHand>> GetStockLevels()

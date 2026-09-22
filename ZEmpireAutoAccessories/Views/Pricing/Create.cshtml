@@ -55,7 +55,7 @@
 
         <div class="mb-3">
             <label asp-for="ProductID" class="form-label"></label>
-            <select asp-for="ProductID" class="form-select" asp-items="ViewBag.ProductID">
+            <select asp-for="ProductID" class="form-select" asp-items="ViewBag.ProductID" data-searchable="true">
                 <option value="">-- Select Product --</option>
             </select>
             <span asp-validation-for="ProductID" class="text-danger"></span>
@@ -63,7 +63,7 @@
 
         <div class="mb-3">
             <label asp-for="TintVariantID" class="form-label">Tint Variant <span class="text-muted fw-normal">(optional, for non-tint products leave blank)</span></label>
-            <select asp-for="TintVariantID" class="form-select" asp-items="ViewBag.TintVariantID">
+            <select asp-for="TintVariantID" class="form-select" asp-items="ViewBag.TintVariantID" data-searchable="true">
                 <option value="">-- None --</option>
             </select>
         </div>
