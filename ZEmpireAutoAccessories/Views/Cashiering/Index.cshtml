@@ -1,0 +1,525 @@
+@model ZEmpireAutoAccessories.Models.CashieringViewModel
+
+@{
+    ViewData["Title"] = "Cashiering";
+    var today = DateOnly.FromDateTime(DateTime.Now);
+    var isToday = Model.DateFrom == today && Model.DateTo == today;
+
+    // Cashiering is its own module, so someone can hold it without holding
+    // Sales or Service Invoices. Those controllers enforce their own
+    // [ModuleAuthorize], so only offer the links that won't 403.
+    var canOpenSales = User.HasClaim(AppClaims.ModuleAccess, "Sales");
+    var canOpenInvoices = User.HasClaim(AppClaims.ModuleAccess, "Service Invoices");
+}
+
+<style>
+    .zx-page-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+        .zx-page-head h1 {
+            font-family: 'Oswald',system-ui,sans-serif;
+            font-weight: 700;
+            font-size: 22px;
+            margin: 0;
+            color: #0b0b0c;
+        }
+
+    .zx-range {
+        font-size: 13px;
+        color: #7b8290;
+        font-weight: 500;
+    }
+
+    .btn-zx {
+        background: var(--zx-red);
+        border-color: var(--zx-red);
+        color: #fff;
+        font-weight: 600;
+    }
+
+        .btn-zx:hover {
+            background: var(--zx-red2);
+            border-color: var(--zx-red2);
+            color: #fff;
+        }
+
+    .zx-card {
+        background: #fff;
+        border: 1px solid #e8ebf0;
+        border-radius: 14px;
+        overflow: hidden;
+    }
+
+    .zx-table thead {
+        background: #0b0b0c;
+        color: #fff;
+    }
+
+        .zx-table thead th {
+            border-bottom: none;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+        }
+
+    .zx-table td, .zx-table th {
+        vertical-align: middle;
+    }
+
+    /* ----- summary tiles ----- */
+    .tile-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit,minmax(200px,1fr));
+        gap: 14px;
+        margin-bottom: 20px;
+    }
+
+    .tile {
+        background: #fff;
+        border: 1px solid #e8ebf0;
+        border-radius: 14px;
+        padding: 16px 18px;
+    }
+
+        .tile .label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            color: #7b8290;
+            font-weight: 600;
+        }
+
+        .tile .value {
+            font-family: 'Oswald',system-ui,sans-serif;
+            font-size: 26px;
+            font-weight: 700;
+            color: #0b0b0c;
+            margin-top: 4px;
+            line-height: 1.1;
+        }
+
+        .tile .sub {
+            font-size: 12px;
+            color: #7b8290;
+            margin-top: 2px;
+        }
+
+        .tile.grand {
+            background: #0b0b0c;
+            border-color: #0b0b0c;
+        }
+
+            .tile.grand .label {
+                color: #9aa1ad;
+            }
+
+            .tile.grand .value {
+                color: #fff;
+            }
+
+            .tile.grand .sub {
+                color: #9aa1ad;
+            }
+
+        .tile.warn .value {
+            color: #b45309;
+        }
+
+    /* ----- filters ----- */
+    .filter-card {
+        background: #fff;
+        border: 1px solid #e8ebf0;
+        border-radius: 14px;
+        padding: 16px 18px;
+        margin-bottom: 20px;
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit,minmax(170px,1fr));
+        gap: 12px;
+        align-items: end;
+    }
+
+    .filter-grid label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #4b5563;
+        margin-bottom: 4px;
+        display: block;
+    }
+
+    .quick-links {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+    }
+
+    .quick-pill {
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        border: 1px solid #e8ebf0;
+        background: #fff;
+        color: #4b5563;
+        transition: all .15s ease;
+    }
+
+        .quick-pill:hover {
+            border-color: #c7ccd6;
+            color: #0b0b0c;
+        }
+
+        .quick-pill.active {
+            background: #0b0b0c;
+            color: #fff;
+            border-color: transparent;
+        }
+
+    /* ----- badges ----- */
+    .badge-paid {
+        background: rgba(34,197,94,.15);
+        color: #15803d;
+        font-weight: 600;
+    }
+
+    .badge-pending {
+        background: rgba(148,163,184,.2);
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    .badge-cancelled {
+        background: rgba(239,68,68,.15);
+        color: #b91c1c;
+        font-weight: 600;
+    }
+
+    .badge-refunded {
+        background: rgba(245,158,11,.15);
+        color: #b45309;
+        font-weight: 600;
+    }
+
+    .src-tag {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .3px;
+        padding: 2px 8px;
+        border-radius: 6px;
+    }
+
+    .src-sale {
+        background: rgba(59,130,246,.14);
+        color: #1d4ed8;
+    }
+
+    .src-invoice {
+        background: rgba(168,85,247,.14);
+        color: #7e22ce;
+    }
+
+    .row-uncollected td {
+        background: #fcfcfd;
+        color: #9aa1ad;
+    }
+
+    .icon-btn {
+        width: 32px;
+        height: 32px;
+        display: inline-grid;
+        place-items: center;
+        border-radius: 8px;
+        border: 1px solid #e8ebf0;
+        background: #fff;
+        color: #4b5563;
+        transition: all .15s ease;
+        text-decoration: none;
+    }
+
+        .icon-btn:hover {
+            background: #0b0b0c;
+            color: #fff;
+            border-color: #0b0b0c;
+        }
+
+    .breakdown-table td, .breakdown-table th {
+        padding: .5rem .75rem;
+        font-size: 13.5px;
+    }
+
+    .breakdown-head {
+        font-family: 'Oswald',system-ui,sans-serif;
+        font-weight: 700;
+        font-size: 15px;
+        padding: 14px 18px 0;
+        margin: 0;
+        color: #0b0b0c;
+    }
+</style>
+
+<div class="zx-page-head">
+    <div>
+        <h1>Cashiering</h1>
+        <div class="zx-range">
+            @if (isToday)
+            {
+                <text>Today &middot; @Model.DateFrom.ToString("MMM d, yyyy")</text>
+            }
+            else if (Model.DateFrom == Model.DateTo)
+            {
+                <text>@Model.DateFrom.ToString("MMM d, yyyy")</text>
+            }
+            else
+            {
+                <text>@Model.DateFrom.ToString("MMM d, yyyy") &ndash; @Model.DateTo.ToString("MMM d, yyyy")</text>
+            }
+        </div>
+    </div>
+    <div class="d-flex gap-2">
+        @if (canOpenSales)
+        {
+            <a class="btn btn-outline-dark" asp-controller="Sales" asp-action="Create">+ New Sale</a>
+        }
+        @if (canOpenInvoices)
+        {
+            <a class="btn btn-zx" asp-controller="ServiceInvoice" asp-action="Create">+ New Service Invoice</a>
+        }
+    </div>
+</div>
+
+<div class="tile-row">
+    <div class="tile grand">
+        <div class="label">Total Collected</div>
+        <div class="value">@("₱" + Model.GrandTotal.ToString("N2"))</div>
+        <div class="sub">@Model.CollectedCount transaction@(Model.CollectedCount == 1 ? "" : "s")</div>
+    </div>
+    <div class="tile">
+        <div class="label">Product Sales</div>
+        <div class="value">@("₱" + Model.SalesTotal.ToString("N2"))</div>
+        <div class="sub">from sales.Sales</div>
+    </div>
+    <div class="tile">
+        <div class="label">Service Invoices</div>
+        <div class="value">@("₱" + Model.ServiceInvoiceTotal.ToString("N2"))</div>
+        <div class="sub">paid invoices only</div>
+    </div>
+    <div class="tile warn">
+        <div class="label">Not Collected</div>
+        <div class="value">@("₱" + Model.UncollectedTotal.ToString("N2"))</div>
+        <div class="sub">@Model.UncollectedCount pending / cancelled / refunded</div>
+    </div>
+</div>
+
+<div class="filter-card">
+    <form asp-action="Index" method="get">
+        <div class="filter-grid">
+            <div>
+                <label for="from">From</label>
+                <input type="date" id="from" name="from" class="form-control"
+                       value="@(Model.DateFrom.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div>
+                <label for="to">To</label>
+                <input type="date" id="to" name="to" class="form-control"
+                       value="@(Model.DateTo.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div>
+                <label for="q">Search</label>
+                <input type="text" id="q" name="q" class="form-control"
+                       placeholder="Invoice # or customer" value="@Model.Search" />
+            </div>
+            <div>
+                <label for="paymentModeId">Payment Mode</label>
+                <select id="paymentModeId" name="paymentModeId" class="form-select"
+                        asp-items="ViewBag.PaymentModeID">
+                    <option value="">All</option>
+                </select>
+            </div>
+            <div>
+                <label for="userId">Cashier</label>
+                <select id="userId" name="userId" class="form-select" asp-items="ViewBag.UserId">
+                    <option value="">All</option>
+                </select>
+            </div>
+            <div>
+                <label for="source">Type</label>
+                <select id="source" name="source" class="form-select">
+                    <option value="">All</option>
+                    <option value="@CashierSource.Sale" selected="@(Model.Source == CashierSource.Sale)">Product Sales</option>
+                    <option value="@CashierSource.ServiceInvoice" selected="@(Model.Source == CashierSource.ServiceInvoice)">Service Invoices</option>
+                </select>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-zx flex-grow-1">Apply</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
+            </div>
+        </div>
+    </form>
+
+    <div class="quick-links">
+        <a asp-action="Index"
+           class="quick-pill @(isToday ? "active" : "")">Today</a>
+        <a asp-action="Index"
+           asp-route-from="@(today.AddDays(-1).ToString("yyyy-MM-dd"))"
+           asp-route-to="@(today.AddDays(-1).ToString("yyyy-MM-dd"))"
+           class="quick-pill">Yesterday</a>
+        <a asp-action="Index"
+           asp-route-from="@(today.AddDays(-6).ToString("yyyy-MM-dd"))"
+           asp-route-to="@(today.ToString("yyyy-MM-dd"))"
+           class="quick-pill">Last 7 days</a>
+        <a asp-action="Index"
+           asp-route-from="@(new DateOnly(today.Year, today.Month, 1).ToString("yyyy-MM-dd"))"
+           asp-route-to="@(today.ToString("yyyy-MM-dd"))"
+           class="quick-pill">This month</a>
+    </div>
+</div>
+
+@if (Model.ByPaymentMode.Count > 0 || Model.ByCashier.Count > 0)
+{
+    <div class="row g-3 mb-3">
+        @if (Model.ByPaymentMode.Count > 0)
+        {
+            <div class="col-md-6">
+                <div class="zx-card h-100">
+                    <h2 class="breakdown-head">Collected by Payment Mode</h2>
+                    <table class="table breakdown-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Mode</th>
+                                <th class="text-center">Txns</th>
+                                <th class="text-end pe-3">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var mode in Model.ByPaymentMode)
+                            {
+                                <tr>
+                                    <td>@mode.PaymentModeName</td>
+                                    <td class="text-center">@mode.TransactionCount</td>
+                                    <td class="text-end pe-3">@("₱" + mode.Total.ToString("N2"))</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+        @if (Model.ByCashier.Count > 0)
+        {
+            <div class="col-md-6">
+                <div class="zx-card h-100">
+                    <h2 class="breakdown-head">Collected by Cashier</h2>
+                    <table class="table breakdown-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Cashier</th>
+                                <th class="text-center">Txns</th>
+                                <th class="text-end pe-3">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var cashier in Model.ByCashier)
+                            {
+                                <tr>
+                                    <td>@(cashier.CashierName ?? "—")</td>
+                                    <td class="text-center">@cashier.TransactionCount</td>
+                                    <td class="text-end pe-3">@("₱" + cashier.Total.ToString("N2"))</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<div class="zx-card">
+    <div class="table-responsive">
+        <table class="table zx-table mb-0">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Invoice #</th>
+                    <th>Date &amp; Time</th>
+                    <th>Customer</th>
+                    <th>Vehicle</th>
+                    <th>Payment</th>
+                    <th>Cashier</th>
+                    <th class="text-end">Total</th>
+                    <th class="text-end">Tendered</th>
+                    <th class="text-end">Change</th>
+                    <th>Status</th>
+                    <th class="text-end pe-3">Open</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var txn in Model.Transactions)
+                {
+                    var isSale = txn.Source == CashierSource.Sale;
+                    var openController = isSale ? "Sales" : "ServiceInvoice";
+                    var openTitle = isSale ? "Open sale" : "Open service invoice";
+                    var canOpen = isSale ? canOpenSales : canOpenInvoices;
+                    <tr class="@(txn.IsCollected ? "" : "row-uncollected")">
+                        <td>
+                            <span class="src-tag @(isSale ? "src-sale" : "src-invoice")">
+                                @(isSale ? "Sale" : "Service")
+                            </span>
+                        </td>
+                        <td>@txn.InvoiceNumber</td>
+                        <td>@txn.TransactionDate.ToString("MMM d, yyyy h:mm tt")</td>
+                        <td>@(txn.CustomerName ?? "—")</td>
+                        <td>@(txn.PlateNumber ?? "—")</td>
+                        <td>@txn.PaymentModeName</td>
+                        <td>@(txn.CashierName ?? "—")</td>
+                        <td class="text-end">@("₱" + txn.TotalAmount.ToString("N2"))</td>
+                        <td class="text-end">
+                            @(txn.AmountPaid.HasValue ? "₱" + txn.AmountPaid.Value.ToString("N2") : "—")
+                        </td>
+                        <td class="text-end">
+                            @(txn.ChangeAmount.HasValue ? "₱" + txn.ChangeAmount.Value.ToString("N2") : "—")
+                        </td>
+                        <td><span class="badge badge-@txn.Status.ToLower()">@txn.Status</span></td>
+                        <td class="text-end pe-3">
+                            @if (canOpen)
+                            {
+                                <a class="icon-btn"
+                                   asp-controller="@openController"
+                                   asp-action="Details"
+                                   asp-route-id="@txn.SourceId"
+                                   title="@openTitle">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /><circle cx="12" cy="12" r="3" /></svg>
+                                </a>
+                            }
+                            else
+                            {
+                                <span class="text-muted">—</span>
+                            }
+                        </td>
+                    </tr>
+                }
+                @if (Model.Transactions.Count == 0)
+                {
+                    <tr>
+                        <td colspan="12" class="text-center text-muted py-4">
+                            No sales or service invoices in this range.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
