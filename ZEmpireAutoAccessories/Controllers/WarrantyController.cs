@@ -176,8 +176,74 @@ namespace ZEmpireAutoAccessories.Controllers
             if (salesDetailId != null || serviceInvoiceDetailId != null || jobOrderId != null)
                 warranty.WarrantyStartDate = DateOnly.FromDateTime(DateTime.Today);
 
+            await DescribeLink(warranty);
             await LoadDropdowns(warranty);
             return View(warranty);
+        }
+
+        /// <summary>
+        /// Describes the record this warranty is being linked to, for the
+        /// Create form's context banner. Someone arriving from a sale line
+        /// already knows what they are covering - the form should say it back
+        /// rather than making them read it out of three dropdowns. Sets
+        /// nothing when the form was opened blank, and the pickers show
+        /// instead.
+        /// </summary>
+        private async Task DescribeLink(Warranty warranty)
+        {
+            if (warranty.SalesDetailID != null)
+            {
+                var line = await _context.SalesDetails
+                    .Include(d => d.Sale).ThenInclude(s => s.Customer)
+                    .Include(d => d.Product)
+                    .FirstOrDefaultAsync(d => d.SalesDetailID == warranty.SalesDetailID);
+
+                if (line != null)
+                {
+                    ViewData["LinkKind"] = "Sale";
+                    ViewData["LinkRef"] = line.Sale.InvoiceNumber;
+                    ViewData["LinkItem"] = $"{line.Product.ProductName} (Qty {line.Quantity})";
+                    ViewData["LinkCustomer"] = line.Sale.Customer.FullName;
+                    ViewData["LinkBackUrl"] = Url.Action("Details", "Sales", new { id = line.SalesID });
+                }
+                return;
+            }
+
+            if (warranty.ServiceInvoiceDetailID != null)
+            {
+                var line = await _context.ServiceInvoiceDetails
+                    .Include(d => d.ServiceInvoice).ThenInclude(i => i.Customer)
+                    .Include(d => d.Product)
+                    .Include(d => d.Service)
+                    .FirstOrDefaultAsync(d => d.ServiceInvoiceDetailID == warranty.ServiceInvoiceDetailID);
+
+                if (line != null)
+                {
+                    ViewData["LinkKind"] = "Service Invoice";
+                    ViewData["LinkRef"] = line.ServiceInvoice.InvoiceNumber;
+                    ViewData["LinkItem"] =
+                        line.Product?.ProductName ?? line.Service?.ServiceName ?? line.Description;
+                    ViewData["LinkCustomer"] = line.ServiceInvoice.Customer.FullName;
+                    ViewData["LinkBackUrl"] = Url.Action("Details", "ServiceInvoice", new { id = line.ServiceInvoiceID });
+                }
+                return;
+            }
+
+            if (warranty.JobOrderID != null)
+            {
+                var job = await _context.JobOrders
+                    .Include(j => j.Customer)
+                    .FirstOrDefaultAsync(j => j.JobOrderID == warranty.JobOrderID);
+
+                if (job != null)
+                {
+                    ViewData["LinkKind"] = "Job Order";
+                    ViewData["LinkRef"] = job.JobOrderNumber;
+                    ViewData["LinkItem"] = job.Status;
+                    ViewData["LinkCustomer"] = job.Customer.FullName;
+                    ViewData["LinkBackUrl"] = Url.Action("Details", "JobOrder", new { id = job.JobOrderID });
+                }
+            }
         }
 
         // POST: Warranty/Create
@@ -185,15 +251,30 @@ namespace ZEmpireAutoAccessories.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
             [Bind("SalesDetailID,ServiceInvoiceDetailID,JobOrderID,WarrantyStartDate,WarrantyEndDate,WarrantyTerms,WarrantyStatus,Remarks")]
-            Warranty warranty)
+            Warranty warranty,
+            bool linked = false)
         {
             if (warranty.SalesDetailID == null && warranty.ServiceInvoiceDetailID == null && warranty.JobOrderID == null)
             {
                 ModelState.AddModelError(string.Empty, "Link the warranty to a sale item, a service invoice item, or a job order.");
             }
 
+            if (warranty.WarrantyEndDate != null && warranty.WarrantyStartDate != null &&
+                warranty.WarrantyEndDate < warranty.WarrantyStartDate)
+            {
+                ModelState.AddModelError(nameof(Warranty.WarrantyEndDate),
+                    "The end date can't be before the start date.");
+            }
+
             if (!ModelState.IsValid)
             {
+                // Came in from a line item - keep the banner and the hidden
+                // link across the round trip, rather than dropping the user
+                // back to three empty pickers with no idea what they were
+                // covering.
+                if (linked)
+                    await DescribeLink(warranty);
+
                 await LoadDropdowns(warranty);
                 return View(warranty);
             }

@@ -3,6 +3,17 @@
 @{
     ViewData["Title"] = "New Warranty";
     var statusOptions = (string[])ViewData["StatusOptions"]!;
+
+    // Set by the controller when this form was opened from a sale line, an
+    // invoice line or a job order. In that case the record is already known,
+    // so the form states it and hides the three pickers instead of asking a
+    // question the user has already answered.
+    var linkKind = ViewData["LinkKind"] as string;
+    var linkRef = ViewData["LinkRef"] as string;
+    var linkItem = ViewData["LinkItem"] as string;
+    var linkCustomer = ViewData["LinkCustomer"] as string;
+    var linkBackUrl = ViewData["LinkBackUrl"] as string;
+    var linked = !string.IsNullOrEmpty(linkKind);
 }
 
 <style>
@@ -54,39 +65,72 @@
 <div class="zx-page-head">
     <h1>New Warranty</h1>
 </div>
-<p class="zx-page-sub">Link this warranty to a sale item, a service invoice item, or a job order — pick one.</p>
+@if (linked)
+{
+    <p class="zx-page-sub">Covering one item. The dates and terms below are all that's left to fill in.</p>
+}
+else
+{
+    <p class="zx-page-sub">Link this warranty to a sale item, a service invoice item, or a job order — pick one.</p>
+}
 
 <div class="zx-card">
     <form asp-action="Create" method="post">
         <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
-        <div class="mb-3">
-            <label asp-for="SalesDetailID" class="form-label">Sale Item</label>
-            <select asp-for="SalesDetailID" class="form-select" asp-items="ViewBag.SalesDetailID">
-                <option value="">-- None --</option>
-            </select>
-        </div>
-        <div class="mb-3">
-            <label asp-for="ServiceInvoiceDetailID" class="form-label">Service Invoice Item</label>
-            <select asp-for="ServiceInvoiceDetailID" class="form-select" asp-items="ViewBag.ServiceInvoiceDetailID">
-                <option value="">-- None --</option>
-            </select>
-        </div>
-        <div class="mb-3">
-            <label asp-for="JobOrderID" class="form-label">Job Order</label>
-            <select asp-for="JobOrderID" class="form-select" asp-items="ViewBag.JobOrderID">
-                <option value="">-- None --</option>
-            </select>
-        </div>
+        @if (linked)
+        {
+            <input type="hidden" name="linked" value="true" />
+            <input type="hidden" asp-for="SalesDetailID" />
+            <input type="hidden" asp-for="ServiceInvoiceDetailID" />
+            <input type="hidden" asp-for="JobOrderID" />
+
+            <div class="link-context mb-3">
+                <div class="link-kind">@linkKind</div>
+                <div class="link-ref">@linkRef</div>
+                <div class="link-item">@linkItem</div>
+                @if (!string.IsNullOrEmpty(linkCustomer))
+                {
+                    <div class="link-customer">@linkCustomer</div>
+                }
+                @if (!string.IsNullOrEmpty(linkBackUrl))
+                {
+                    <a class="link-back" href="@linkBackUrl">Not this one? Go back</a>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="mb-3">
+                <label asp-for="SalesDetailID" class="form-label">Sale Item</label>
+                <select asp-for="SalesDetailID" class="form-select" asp-items="ViewBag.SalesDetailID">
+                    <option value="">-- None --</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label asp-for="ServiceInvoiceDetailID" class="form-label">Service Invoice Item</label>
+                <select asp-for="ServiceInvoiceDetailID" class="form-select" asp-items="ViewBag.ServiceInvoiceDetailID">
+                    <option value="">-- None --</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label asp-for="JobOrderID" class="form-label">Job Order</label>
+                <select asp-for="JobOrderID" class="form-select" asp-items="ViewBag.JobOrderID">
+                    <option value="">-- None --</option>
+                </select>
+            </div>
+        }
 
         <div class="row">
             <div class="col-md-6 mb-3">
                 <label asp-for="WarrantyStartDate" class="form-label"></label>
                 <input asp-for="WarrantyStartDate" type="date" class="form-control" />
+                <span asp-validation-for="WarrantyStartDate" class="text-danger"></span>
             </div>
             <div class="col-md-6 mb-3">
                 <label asp-for="WarrantyEndDate" class="form-label"></label>
                 <input asp-for="WarrantyEndDate" type="date" class="form-control" />
+                <span asp-validation-for="WarrantyEndDate" class="text-danger"></span>
             </div>
         </div>
 
@@ -115,6 +159,15 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" /><path d="M17 21v-8H7v8" /><path d="M7 3v5h8" /></svg>
             Save
         </button>
-        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+        @* Cancel should undo the trip the user actually made - back to the
+           sale or invoice they came from, not the warranty list. *@
+        @if (linked && !string.IsNullOrEmpty(linkBackUrl))
+        {
+            <a href="@linkBackUrl" class="btn btn-outline-secondary">Cancel</a>
+        }
+        else
+        {
+            <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+        }
     </form>
 </div>

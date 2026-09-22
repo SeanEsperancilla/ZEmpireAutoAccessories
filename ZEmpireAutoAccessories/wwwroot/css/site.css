@@ -123,3 +123,55 @@ body {
   background: rgba(239,68,68,.15);
   color: #b91c1c;
 }
+
+/* Context card on Warranty/Create when the form was opened from a sale
+   line, an invoice line or a job order. States what is being covered so
+   the three link pickers can stay hidden. */
+.link-context {
+  border: 1px solid #e8ebf0;
+  border-left: 3px solid var(--zx-red);
+  border-radius: 12px;
+  background: #fbfbfc;
+  padding: 14px 16px;
+}
+
+.link-context .link-kind {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: #7b8290;
+}
+
+.link-context .link-ref {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 17px;
+  color: #0b0b0c;
+  margin-top: 2px;
+}
+
+.link-context .link-item {
+  font-size: 14px;
+  color: #0b0b0c;
+  margin-top: 2px;
+}
+
+.link-context .link-customer {
+  font-size: 13px;
+  color: #7b8290;
+  margin-top: 1px;
+}
+
+.link-context .link-back {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--zx-red);
+  text-decoration: none;
+}
+
+.link-context .link-back:hover {
+  text-decoration: underline;
+}
