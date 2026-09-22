@@ -218,6 +218,11 @@
     </div>
 
     <h6 class="mb-3">Add Line Item</h6>
+
+    @if (TempData["LineError"] is string lineError)
+    {
+        <div class="alert alert-danger py-2 px-3" style="font-size:13.5px;">@lineError</div>
+    }
     <form asp-action="AddLine" method="post" class="row g-2 align-items-end">
         <input type="hidden" name="serviceInvoiceId" value="@Model.ServiceInvoiceID" />
 
@@ -255,7 +260,8 @@
         </div>
         <div class="col-md-4">
             <label class="form-label">Description</label>
-            <input type="text" name="description" class="form-control" placeholder="Required" />
+            <input id="addLineDescription" type="text" name="description" class="form-control"
+                   placeholder="Filled in when you pick a product or service" />
         </div>
         <div class="col-md-2">
             <label class="form-label" title="How many units of this product or service">Qty</label>
@@ -331,6 +337,7 @@
             var $tintVariant = $('#addLineTintVariant');
             var $panel = $('#addLinePanel');
             var $price = $('#addLinePrice');
+            var $description = $('#addLineDescription');
             if (!$product.length || !$service.length || !$tintVariant.length || !$panel.length || !$price.length) { return; }
 
             function rowsForProduct(productId) {
@@ -397,6 +404,20 @@
             // sets its value to '', so its own handler sees a falsy val()
             // and skips straight past its "clear the other one" branch -
             // that's what stops this pair from bouncing back and forth.
+            // Description is required by AddLine, so fill it from the item
+            // that was picked - leaving it to be typed is what made Add look
+            // like it did nothing. A description the user has edited is left
+            // alone; clearing the box opts back into auto-fill.
+            function autoFillDescription(text) {
+                if (!$description.length) { return; }
+                if ($description.data('touched')) { return; }
+                $description.val(text || '');
+            }
+
+            $description.on('input', function () {
+                $description.data('touched', $description.val().trim() !== '');
+            });
+
             $product.on('change', function () {
                 var productId = parseInt($(this).val(), 10) || 0;
                 if (!productId) {
@@ -406,6 +427,7 @@
                 }
 
                 $service.val('').trigger('change');
+                autoFillDescription($(this).find(':selected').text().trim());
 
                 var rows = rowsForProduct(productId);
                 if (rows.length === 0) {
@@ -435,6 +457,7 @@
                 var price = $(this).find(':selected').data('price');
                 if (price !== undefined) { $price.val(parseFloat(price).toFixed(2)); }
 
+                autoFillDescription($(this).find(':selected').text().trim());
                 $product.val('').trigger('change');
                 resetSelect($tintVariant, '-- N/A --');
                 resetSelect($panel, '-- N/A --');

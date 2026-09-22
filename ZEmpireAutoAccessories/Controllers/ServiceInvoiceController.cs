@@ -455,28 +455,46 @@ namespace ZEmpireAutoAccessories.Controllers
             if (invoice == null)
                 return NotFound();
 
-            if (quantity > 0 && unitPrice >= 0 && !string.IsNullOrWhiteSpace(description))
+            // This used to be one silent `if` - anything it rejected redirected
+            // straight back to Details with no line added and nothing said,
+            // which reads as the page simply refreshing. Say what was wrong.
+            string? lineError = null;
+            if (string.IsNullOrWhiteSpace(description))
+                lineError = "Description is required for a line item. Picking a product or service fills it in for you.";
+            else if (quantity <= 0)
+                lineError = "Quantity must be more than zero.";
+            else if (unitPrice < 0)
+                lineError = "Price can't be negative.";
+            else if (discountAmount < 0)
+                lineError = "Line discount can't be negative.";
+            else if (discountAmount > quantity * unitPrice)
+                lineError = $"Line discount can't be more than the line total of ₱{(quantity * unitPrice):N2}.";
+
+            if (lineError != null)
             {
-                _context.ServiceInvoiceDetails.Add(new ServiceInvoiceDetail
-                {
-                    ServiceInvoiceID = serviceInvoiceId,
-                    ProductID = productId,
-                    ServiceID = serviceId,
-                    TintVariantID = productId != null ? tintVariantId : null,
-                    PanelID = productId != null ? panelId : null,
-                    Description = description,
-                    Quantity = quantity,
-                    Unit = string.IsNullOrWhiteSpace(unit) ? "Unit" : unit,
-                    UnitPrice = unitPrice,
-                    DiscountAmount = discountAmount
-                });
-
-                await _context.SaveChangesAsync();
-
-                await _context.Entry(invoice).Collection(i => i.Details).LoadAsync();
-                RecalculateTotals(invoice);
-                await _context.SaveChangesAsync();
+                TempData["LineError"] = lineError;
+                return RedirectToAction(nameof(Details), new { id = serviceInvoiceId });
             }
+
+            _context.ServiceInvoiceDetails.Add(new ServiceInvoiceDetail
+            {
+                ServiceInvoiceID = serviceInvoiceId,
+                ProductID = productId,
+                ServiceID = serviceId,
+                TintVariantID = productId != null ? tintVariantId : null,
+                PanelID = productId != null ? panelId : null,
+                Description = description,
+                Quantity = quantity,
+                Unit = string.IsNullOrWhiteSpace(unit) ? "Unit" : unit,
+                UnitPrice = unitPrice,
+                DiscountAmount = discountAmount
+            });
+
+            await _context.SaveChangesAsync();
+
+            await _context.Entry(invoice).Collection(i => i.Details).LoadAsync();
+            RecalculateTotals(invoice);
+            await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Details), new { id = serviceInvoiceId });
         }
