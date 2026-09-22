@@ -138,6 +138,8 @@ namespace ZEmpireAutoAccessories.Controllers
             if (product == null)
                 return NotFound();
 
+            ViewData["BlockReason"] = await BuildBlockReason(id.Value);
+
             return View(product);
         }
 
@@ -146,16 +148,66 @@ namespace ZEmpireAutoAccessories.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var product =
-                await _context.Products.FindAsync(id);
+            var product = await _context.Products.FindAsync(id);
+            if (product == null)
+                return RedirectToAction(nameof(Index));
 
-            if (product != null)
+            var blockReason = await BuildBlockReason(id);
+            if (blockReason != null)
+            {
+                TempData["DeleteError"] = blockReason;
+                return RedirectToAction(nameof(Delete), new { id });
+            }
+
+            try
             {
                 _context.Products.Remove(product);
                 await _context.SaveChangesAsync();
             }
+            catch (DbUpdateException)
+            {
+                TempData["DeleteError"] =
+                    "Can't delete this product. It still has related records elsewhere in the system.";
+                return RedirectToAction(nameof(Delete), new { id });
+            }
 
             return RedirectToAction(nameof(Index));
+        }
+
+        /// <summary>
+        /// cat.Product is the parent of eight ON DELETE RESTRICT foreign keys,
+        /// so deleting one that is referenced anywhere is refused by the
+        /// database. Say which rows are holding it instead of letting that
+        /// surface as an unhandled DbUpdateException.
+        /// </summary>
+        private async Task<string?> BuildBlockReason(int productId)
+        {
+            var pricing = await _context.Pricings.CountAsync(p => p.ProductID == productId);
+            var variants = await _context.TintVariants.CountAsync(v => v.ProductID == productId);
+
+            var quotationLines = await _context.QuotationDetails.CountAsync(d => d.ProductID == productId);
+            var jobOrderLines = await _context.JobOrderDetails.CountAsync(d => d.ProductID == productId);
+            var saleLines = await _context.SalesDetails.CountAsync(d => d.ProductID == productId);
+            var invoiceLines = await _context.ServiceInvoiceDetails.CountAsync(d => d.ProductID == productId);
+
+            var stockChecks = await _context.InventoryCheckDetails.CountAsync(d => d.ProductID == productId);
+            var stockMoves = await _context.InventoryTransactions.CountAsync(t => t.ProductID == productId);
+
+            var parts = new List<string>();
+            if (pricing > 0) { parts.Add($"{pricing} pricing record{(pricing == 1 ? "" : "s")}"); }
+            if (variants > 0) { parts.Add($"{variants} tint variant{(variants == 1 ? "" : "s")}"); }
+
+            var lines = quotationLines + jobOrderLines + saleLines + invoiceLines;
+            if (lines > 0) { parts.Add($"{lines} line item{(lines == 1 ? "" : "s")}"); }
+
+            var stock = stockChecks + stockMoves;
+            if (stock > 0) { parts.Add($"{stock} inventory record{(stock == 1 ? "" : "s")}"); }
+
+            if (parts.Count == 0)
+                return null;
+
+            return "Can't delete this product. It's referenced by " + string.Join(", ", parts) +
+                   ". Mark it inactive instead, or remove those records first.";
         }
 
         private async Task LoadDropdowns(Product? product = null)

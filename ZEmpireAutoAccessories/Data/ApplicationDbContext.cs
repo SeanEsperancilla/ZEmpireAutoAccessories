@@ -118,6 +118,17 @@ namespace ZEmpireAutoAccessories.Data
                     .HasForeignKey(x => x.VehicleClassificationID).OnDelete(DeleteBehavior.Restrict);
             });
 
+            // crm.VehicleModelGuide is the one table with no foreign key of its
+            // own in the database, so EF built this relationship purely by
+            // convention - and convention makes a required relationship
+            // cascade. Every other relationship in this model is Restrict, and
+            // deleting a classification should not quietly take the brand/model
+            // guide rows with it. Stated explicitly so it cannot drift.
+            b.Entity<VehicleModelGuide>()
+                .HasOne(x => x.VehicleClassification).WithMany()
+                .HasForeignKey(x => x.VehicleClassificationID)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // ---------- cat ----------
             b.Entity<Product>().HasOne(x => x.Category).WithMany(c => c.Products)
                 .HasForeignKey(x => x.CategoryID).OnDelete(DeleteBehavior.Restrict);
