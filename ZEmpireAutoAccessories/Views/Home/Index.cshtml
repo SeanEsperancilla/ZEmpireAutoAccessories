@@ -34,7 +34,11 @@
         ("Customers & Vehicles",  new[] { "Customers", "Vehicles", "Warranty" }),
         ("Operations",            new[] { "Job Orders", "Vehicle Checklist", "Services", "Job Types" }),
         ("Catalog & Inventory",   new[] { "Products", "Inventory", "Pricing", "Price History" }),
+<<<<<<< HEAD
+        ("Sales & Billing",       new[] { "Quotation", "Sales", "Service Invoices, Cashierin" }),
+=======
         ("Sales & Billing",       new[] { "Quotation", "Sales", "Service Invoices", "Cashiering" }),
+>>>>>>> 53dfb5b6420218aab94b057c293d1acb28c4a5ff
         ("Administration",        new[] { "User Management", "Roles" }),    
     };
 
@@ -343,6 +347,7 @@
                     "Warranty" => Url.Action("Index", "Warranty"),
                     "Reports" => Url.Action("Index", "Report"),
                     "Services" => Url.Action("Index", "Service"),
+
                     _ => null
                 };
                 <div class="col-6 col-md-4 col-lg-3" data-mod-name="@module">
