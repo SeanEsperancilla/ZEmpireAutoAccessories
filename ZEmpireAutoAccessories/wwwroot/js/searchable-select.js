@@ -1,10 +1,10 @@
-/* Searchable select: progressively enhances <select data-searchable="true">
- * elements into a dropdown you can also type in, without changing how the
- * form submits or how ASP.NET's unobtrusive validation works. Focusing or
- * clicking shows the whole list at once, exactly like a plain <select>;
- * typing narrows it. Nothing has to be typed to reach the options, so it
- * is only worth putting on the long lists (customers, products) - short
- * ones are better left as ordinary selects.
+/* Searchable select: progressively enhances every <select> on the page into
+ * a dropdown you can also type in, without changing how the form submits or
+ * how ASP.NET's unobtrusive validation works. Focusing or clicking shows the
+ * whole list at once, exactly like a plain <select>; typing narrows it.
+ * Nothing has to be typed to reach the options, so a short list behaves the
+ * same as it always did. Put data-searchable="false" on a select to leave it
+ * as a native control.
  *
  * The original <select> is kept in the DOM (visually hidden, not
  * display:none, so jQuery Validate's default `ignore: ":hidden"` doesn't
@@ -284,12 +284,17 @@
         syncFromSelect();
     }
 
+    // Every <select> is enhanced. Opt a single one back out to a native
+    // control with data-searchable="false". Multi-selects and list boxes
+    // are skipped outright - this widget only knows how to hold one value.
+    var SELECTOR = 'select:not([data-searchable="false"]):not([multiple]):not([size])';
+
     function scan(root) {
         if (!root || !root.querySelectorAll) { return; }
-        if (root.matches && root.matches("select[data-searchable]")) {
+        if (root.matches && root.matches(SELECTOR)) {
             initOne(root);
         }
-        root.querySelectorAll("select[data-searchable]").forEach(initOne);
+        root.querySelectorAll(SELECTOR).forEach(initOne);
     }
 
     document.addEventListener("DOMContentLoaded", function () {

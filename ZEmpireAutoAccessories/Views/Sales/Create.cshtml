@@ -27,7 +27,7 @@
         <div class="row">
             <div class="col-md-6 mb-3">
                 <label class="form-label">Customer</label>
-                <select id="customerId" name="customerId" class="form-select" asp-items="ViewBag.CustomerID" required data-searchable="true">
+                <select id="customerId" name="customerId" class="form-select" asp-items="ViewBag.CustomerID" required>
                     <option value="">-- Select Customer --</option>
                 </select>
             </div>
@@ -66,7 +66,7 @@
             <tbody>
                 <tr class="line-row">
                     <td>
-                        <select name="productId" class="form-select product-select" required data-searchable="true">
+                        <select name="productId" class="form-select product-select" required>
                             <option value="">-- Select Product --</option>
                             @foreach (var p in products)
                             {
@@ -96,7 +96,7 @@
         <template id="lineRowTemplate">
             <tr class="line-row">
                 <td>
-                    <select name="productId" class="form-select product-select" required data-searchable="true">
+                    <select name="productId" class="form-select product-select" required>
                         <option value="">-- Select Product --</option>
                         @foreach (var p in products)
                         {
