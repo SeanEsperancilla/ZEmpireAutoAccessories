@@ -154,11 +154,30 @@ namespace ZEmpireAutoAccessories.Controllers
             return RedirectToAction(nameof(Details), new { id });
         }
 
-        // GET: Warranty/Create
-        public async Task<IActionResult> Create()
+        // GET: Warranty/Create?salesDetailId=5
+        //      Warranty/Create?serviceInvoiceDetailId=7
+        //      Warranty/Create?jobOrderId=3
+        //
+        // The Sale and Service Invoice detail screens link here per line item,
+        // so the line is already known - pre-select it rather than making
+        // someone find it again in a dropdown of every line ever recorded.
+        public async Task<IActionResult> Create(int? salesDetailId, int? serviceInvoiceDetailId, int? jobOrderId)
         {
-            await LoadDropdowns();
-            return View(new Warranty { WarrantyStatus = "Active" });
+            var warranty = new Warranty
+            {
+                WarrantyStatus = "Active",
+                SalesDetailID = salesDetailId,
+                ServiceInvoiceDetailID = serviceInvoiceDetailId,
+                JobOrderID = jobOrderId
+            };
+
+            // Arriving from a line item means the warranty starts today unless
+            // the user says otherwise; a blank form leaves the dates alone.
+            if (salesDetailId != null || serviceInvoiceDetailId != null || jobOrderId != null)
+                warranty.WarrantyStartDate = DateOnly.FromDateTime(DateTime.Today);
+
+            await LoadDropdowns(warranty);
+            return View(warranty);
         }
 
         // POST: Warranty/Create

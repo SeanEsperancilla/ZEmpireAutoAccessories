@@ -55,7 +55,31 @@ namespace ZEmpireAutoAccessories.Controllers
             if (sale == null)
                 return NotFound();
 
+            ViewData["WarrantyByLine"] = await LoadWarrantiesForLines(
+                sale.SaleDetails.Select(d => d.SalesDetailID).ToList());
+
             return View(sale);
+        }
+
+        /// <summary>
+        /// The warranty already covering each sale line, keyed by SalesDetailID,
+        /// so the details screen can offer "+ Warranty" on lines without one and
+        /// link to the existing record on lines that have one. sales.Warranty
+        /// does not stop a line being covered twice, so the newest wins.
+        /// </summary>
+        private async Task<Dictionary<int, Warranty>> LoadWarrantiesForLines(List<int> salesDetailIds)
+        {
+            if (salesDetailIds.Count == 0)
+                return new Dictionary<int, Warranty>();
+
+            var warranties = await _context.Warranties
+                .Where(w => w.SalesDetailID != null && salesDetailIds.Contains(w.SalesDetailID.Value))
+                .OrderByDescending(w => w.WarrantyID)
+                .ToListAsync();
+
+            return warranties
+                .GroupBy(w => w.SalesDetailID!.Value)
+                .ToDictionary(g => g.Key, g => g.First());
         }
 
         // GET: Sale/Pdf/5

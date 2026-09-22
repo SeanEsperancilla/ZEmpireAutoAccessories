@@ -64,6 +64,21 @@ namespace ZEmpireAutoAccessories.Controllers
 
             await LoadLineDropdowns();
 
+            // sales.Warranty.ServiceInvoiceDetailID points back at these lines,
+            // so each one can show its cover or offer to create it pre-linked.
+            // Nothing stops a line being covered twice, so the newest wins.
+            var lineIds = invoice.Details.Select(d => d.ServiceInvoiceDetailID).ToList();
+            var covers = lineIds.Count == 0
+                ? new List<Warranty>()
+                : await _context.Warranties
+                    .Where(w => w.ServiceInvoiceDetailID != null && lineIds.Contains(w.ServiceInvoiceDetailID.Value))
+                    .OrderByDescending(w => w.WarrantyID)
+                    .ToListAsync();
+
+            ViewData["WarrantyByLine"] = covers
+                .GroupBy(w => w.ServiceInvoiceDetailID!.Value)
+                .ToDictionary(g => g.Key, g => g.First());
+
             // Every Pricing row for this invoice's vehicle classification,
             // for the Add Line Item form to look up the real matrix price
             // (Product x Tint Variant x Panel) client-side instead of just

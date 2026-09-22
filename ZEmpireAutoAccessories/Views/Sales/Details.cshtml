@@ -2,6 +2,13 @@
 
 @{
     ViewData["Title"] = "Sale Details";
+
+    // sales.Warranty.SalesDetailID points back at these lines, so each one can
+    // show its cover or offer to create it. Only shown to users who hold the
+    // Warranty module, since WarrantyController enforces it anyway.
+    var warrantyByLine = ViewData["WarrantyByLine"] as Dictionary<int, ZEmpireAutoAccessories.Models.Warranty>
+                         ?? new Dictionary<int, ZEmpireAutoAccessories.Models.Warranty>();
+    var canUseWarranty = User.HasClaim(AppClaims.ModuleAccess, "Warranty");
 }
 
 <style>
@@ -61,6 +68,10 @@
                 <th>Quantity</th>
                 <th>Unit Price</th>
                 <th>Sub Total</th>
+                @if (canUseWarranty)
+                {
+                    <th>Warranty</th>
+                }
             </tr>
         </thead>
         <tbody>
@@ -71,11 +82,37 @@
                     <td>@line.Quantity</td>
                     <td>@("₱" + line.UnitPrice.ToString("N2"))</td>
                     <td>@("₱" + line.SubTotal.ToString("N2"))</td>
+                    @if (canUseWarranty)
+                    {
+                        <td>
+                            @if (warrantyByLine.TryGetValue(line.SalesDetailID, out var cover))
+                            {
+                                <a class="warranty-chip @("status-" + (cover.WarrantyStatus ?? "none").ToLower())"
+                                   asp-controller="Warranty" asp-action="Details" asp-route-id="@cover.WarrantyID">
+                                    @(cover.WarrantyStatus ?? "Linked")
+                                    @if (cover.WarrantyEndDate != null)
+                                    {
+                                        <span class="until">until @cover.WarrantyEndDate.Value.ToString("MMM d, yyyy")</span>
+                                    }
+                                </a>
+                            }
+                            else
+                            {
+                                <a class="warranty-add"
+                                   asp-controller="Warranty" asp-action="Create"
+                                   asp-route-salesDetailId="@line.SalesDetailID">+ Warranty</a>
+                            }
+                        </td>
+                    }
                 </tr>
             }
             <tr class="totals-row">
                 <td colspan="3" class="text-end">Total</td>
                 <td>@("₱" + Model.TotalAmount.ToString("N2"))</td>
+                @if (canUseWarranty)
+                {
+                    <td></td>
+                }
             </tr>
         </tbody>
     </table>

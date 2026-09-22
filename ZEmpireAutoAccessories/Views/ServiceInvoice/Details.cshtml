@@ -2,6 +2,13 @@
 
 @{
     ViewData["Title"] = "Service Invoice Details";
+
+    // sales.Warranty.ServiceInvoiceDetailID points back at these lines, so each
+    // one can show its cover or offer to create it. Only for users holding the
+    // Warranty module, since WarrantyController enforces it anyway.
+    var warrantyByLine = ViewData["WarrantyByLine"] as Dictionary<int, ZEmpireAutoAccessories.Models.Warranty>
+                         ?? new Dictionary<int, ZEmpireAutoAccessories.Models.Warranty>();
+    var canUseWarranty = User.HasClaim(AppClaims.ModuleAccess, "Warranty");
 }
 
 <style>
@@ -135,6 +142,10 @@
                 <th>Unit Price</th>
                 <th>Discount</th>
                 <th>Sub Total</th>
+                @if (canUseWarranty)
+                {
+                    <th>Warranty</th>
+                }
                 <th class="text-end pe-3">Action</th>
             </tr>
         </thead>
@@ -160,6 +171,28 @@
                     <td>@("₱" + line.UnitPrice.ToString("N2"))</td>
                     <td>@("₱" + line.DiscountAmount.ToString("N2"))</td>
                     <td>@("₱" + line.SubTotal.ToString("N2"))</td>
+                    @if (canUseWarranty)
+                    {
+                        <td>
+                            @if (warrantyByLine.TryGetValue(line.ServiceInvoiceDetailID, out var cover))
+                            {
+                                <a class="warranty-chip @("status-" + (cover.WarrantyStatus ?? "none").ToLower())"
+                                   asp-controller="Warranty" asp-action="Details" asp-route-id="@cover.WarrantyID">
+                                    @(cover.WarrantyStatus ?? "Linked")
+                                    @if (cover.WarrantyEndDate != null)
+                                    {
+                                        <span class="until">until @cover.WarrantyEndDate.Value.ToString("MMM d, yyyy")</span>
+                                    }
+                                </a>
+                            }
+                            else
+                            {
+                                <a class="warranty-add"
+                                   asp-controller="Warranty" asp-action="Create"
+                                   asp-route-serviceInvoiceDetailId="@line.ServiceInvoiceDetailID">+ Warranty</a>
+                            }
+                        </td>
+                    }
                     <td class="text-end pe-3">
                         <button type="button" class="icon-btn danger remove-line-btn" title="Remove line item"
                                 data-bs-toggle="modal" data-bs-target="#removeLineModal"
@@ -173,12 +206,12 @@
             @if (!Model.Details.Any())
             {
                 <tr>
-                    <td colspan="7" class="text-center text-muted py-3">No line items yet.</td>
+                    <td colspan="@(canUseWarranty ? 8 : 7)" class="text-center text-muted py-3">No line items yet.</td>
                 </tr>
             }
             <tr class="totals-row">
                 <td colspan="5" class="text-end">Total</td>
-                <td colspan="2">@("₱" + Model.TotalAmount.ToString("N2"))</td>
+                <td colspan="@(canUseWarranty ? 3 : 2)">@("₱" + Model.TotalAmount.ToString("N2"))</td>
             </tr>
         </tbody>
     </table>
