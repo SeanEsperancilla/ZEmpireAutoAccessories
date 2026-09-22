@@ -23,9 +23,16 @@ namespace ZEmpireAutoAccessories.Models
         // never null and skip its DBNull check - which throws
         // SqlNullValueException the moment it reads one of those rows,
         // including through every list that Includes Customer.
+        // Philippine mobile number, exactly as it is dialled: 11 digits
+        // beginning 09, no spaces or dashes (e.g. 09121231231). Deliberately
+        // not [Phone], which accepts spaces, dashes and country codes and
+        // would let a number through in a shape this app does not want.
+        // The column is nvarchar(30), so older rows may hold a longer or
+        // differently formatted value; those only have to pass this on edit.
         [MaxLength(30, ErrorMessage = "Contact number can't be longer than 30 characters.")]
         [Display(Name = "Contact number")]
-        [Phone(ErrorMessage = "Enter a valid contact number.")]
+        [RegularExpression(@"^09\d{9}$",
+            ErrorMessage = "Enter an 11-digit mobile number starting with 09 and no spaces, e.g. 09121231231.")]
         public string? ContactNumber { get; set; }
 
         public DateTime CreatedAt { get; set; }

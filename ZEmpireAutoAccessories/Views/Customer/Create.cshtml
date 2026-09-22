@@ -67,7 +67,8 @@
 
         <div class="mb-3">
             <label asp-for="ContactNumber" class="form-label"></label>
-            <input asp-for="ContactNumber" class="form-control" placeholder="e.g. 0917 123 4567" required />
+            <input asp-for="ContactNumber" class="form-control" placeholder="09121231231"
+                   inputmode="numeric" maxlength="11" autocomplete="tel" required />
             <span asp-validation-for="ContactNumber" class="text-danger"></span>
         </div>
 
@@ -81,4 +82,18 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        // The contact number is stored exactly as dialled - 11 digits from
+        // 09, nothing else - so drop anything else as it is typed or pasted.
+        // Saves a round trip for the common case of pasting "0912 123 1231".
+        (function () {
+            var contact = document.getElementById('ContactNumber');
+            if (!contact) { return; }
+
+            contact.addEventListener('input', function () {
+                var digits = contact.value.replace(/\D/g, '').slice(0, 11);
+                if (digits !== contact.value) { contact.value = digits; }
+            });
+        })();
+    </script>
 }
