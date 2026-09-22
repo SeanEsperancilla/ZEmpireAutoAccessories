@@ -9,7 +9,7 @@
 
 <div class="crm-field">
     <label asp-for="CustomerID"></label>
-    <select asp-for="CustomerID" asp-items="customers" class="form-select">
+    <select asp-for="CustomerID" asp-items="customers" class="form-select" data-searchable="true">
         <option value="">— Select a customer —</option>
     </select>
     <span asp-validation-for="CustomerID" class="field-validation-error"></span>
