@@ -64,6 +64,7 @@
         <div class="mb-3">
             <label asp-for="Remarks" class="form-label">Remarks <span class="text-muted fw-normal">(optional)</span></label>
             <textarea asp-for="Remarks" class="form-control" rows="2"></textarea>
+            <span asp-validation-for="Remarks" class="text-danger"></span>
         </div>
 
         <button type="submit" class="btn btn-zx">

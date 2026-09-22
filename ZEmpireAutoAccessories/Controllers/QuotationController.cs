@@ -195,6 +195,18 @@ namespace ZEmpireAutoAccessories.Controllers
             if (existing == null)
                 return NotFound();
 
+            // CK_Quotation_Total requires TotalAmount >= 0, so a discount
+            // bigger than the lines plus tax is refused by the database. Say
+            // so against the Discount field instead of failing on save.
+            var lineTotal = existing.Details.Sum(d => d.Quantity * d.UnitPrice);
+            if (quotation.DiscountAmount > lineTotal + quotation.TaxAmount)
+            {
+                ModelState.AddModelError(nameof(Quotation.DiscountAmount),
+                    $"Discount can't be more than the quotation total of ₱{(lineTotal + quotation.TaxAmount):N2}.");
+                await LoadHeaderDropdowns(quotation);
+                return View(quotation);
+            }
+
             existing.CustomerID = quotation.CustomerID;
             existing.VehicleID = quotation.VehicleID;
             existing.JobTypeID = quotation.JobTypeID;

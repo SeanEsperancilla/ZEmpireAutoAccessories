@@ -71,6 +71,7 @@
         <div class="mb-3">
             <label asp-for="Description" class="form-label">Description <span class="text-muted fw-normal">(optional)</span></label>
             <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+            <span asp-validation-for="Description" class="text-danger"></span>
         </div>
 
         <div class="mb-3">

@@ -83,11 +83,27 @@ namespace ZEmpireAutoAccessories.Models
         public int PaymentModeID { get; set; }
 
         public DateTime InvoiceDate { get; set; }
+
+        // SubTotal, TotalAmount and ChangeAmount are computed by
+        // RecalculateTotals, never typed in. The three that are typed in each
+        // back a >= 0 CHECK constraint (CK_ServiceInvoice_Discount, _Tax and
+        // _AmountPaid), so catch a negative here rather than at the database.
         public decimal SubTotal { get; set; }
+
+        [Range(0, 9999999999.99, ErrorMessage = "Discount can't be negative.")]
+        [Display(Name = "Discount")]
         public decimal DiscountAmount { get; set; }
+
+        [Range(0, 9999999999.99, ErrorMessage = "Tax can't be negative.")]
+        [Display(Name = "Tax")]
         public decimal TaxAmount { get; set; }
+
         public decimal TotalAmount { get; set; }
+
+        [Range(0, 9999999999.99, ErrorMessage = "Amount paid can't be negative.")]
+        [Display(Name = "Amount paid")]
         public decimal AmountPaid { get; set; }
+
         public decimal ChangeAmount { get; set; }
 
         [MaxLength(500)]
@@ -163,9 +179,19 @@ namespace ZEmpireAutoAccessories.Models
         public DateTime QuotationDate { get; set; }
         public DateOnly? ValidUntil { get; set; }
 
+        // As on ServiceInvoice: SubTotal and TotalAmount are computed, and
+        // the two that are typed in each back a >= 0 CHECK constraint
+        // (CK_Quotation_Discount, CK_Quotation_Tax).
         public decimal SubTotal { get; set; }
+
+        [Range(0, 9999999999.99, ErrorMessage = "Discount can't be negative.")]
+        [Display(Name = "Discount")]
         public decimal DiscountAmount { get; set; }
+
+        [Range(0, 9999999999.99, ErrorMessage = "Tax can't be negative.")]
+        [Display(Name = "Tax")]
         public decimal TaxAmount { get; set; }
+
         public decimal TotalAmount { get; set; }
 
         [MaxLength(500)]

@@ -317,6 +317,15 @@ namespace ZEmpireAutoAccessories.Controllers
                 ModelState.AddModelError(string.Empty, "Link the warranty to a sale item, a service invoice item, or a job order.");
             }
 
+            // Same check Create makes - a cover that ends before it starts is
+            // not a cover, and nothing in the database stops it.
+            if (warranty.WarrantyEndDate != null && warranty.WarrantyStartDate != null &&
+                warranty.WarrantyEndDate < warranty.WarrantyStartDate)
+            {
+                ModelState.AddModelError(nameof(Warranty.WarrantyEndDate),
+                    "The end date can't be before the start date.");
+            }
+
             if (!ModelState.IsValid)
             {
                 await LoadDropdowns(warranty);

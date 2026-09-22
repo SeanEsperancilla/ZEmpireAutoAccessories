@@ -337,6 +337,18 @@ namespace ZEmpireAutoAccessories.Controllers
             if (existing == null)
                 return NotFound();
 
+            // CK_ServiceInvoice_Total requires TotalAmount >= 0, so a discount
+            // bigger than the lines plus tax is refused by the database. Say
+            // so against the Discount field instead of failing on save.
+            var lineTotal = existing.Details.Sum(d => d.SubTotal);
+            if (invoice.DiscountAmount > lineTotal + invoice.TaxAmount)
+            {
+                ModelState.AddModelError(nameof(ServiceInvoice.DiscountAmount),
+                    $"Discount can't be more than the invoice total of ₱{(lineTotal + invoice.TaxAmount):N2}.");
+                await LoadHeaderDropdowns(invoice);
+                return View(invoice);
+            }
+
             existing.CustomerID = invoice.CustomerID;
             existing.VehicleID = invoice.VehicleID;
             existing.JobOrderID = invoice.JobOrderID;

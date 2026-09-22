@@ -55,6 +55,7 @@
         <div class="mb-3">
             <label asp-for="Remarks" class="form-label"></label>
             <textarea asp-for="Remarks" class="form-control" rows="3"></textarea>
+            <span asp-validation-for="Remarks" class="text-danger"></span>
         </div>
 
         <button type="submit" class="btn btn-zx">

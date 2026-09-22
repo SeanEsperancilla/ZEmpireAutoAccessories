@@ -60,28 +60,33 @@
             </div>
             <div class="col-md-6 mb-3">
                 <label asp-for="Odometer" class="form-label">Odometer <span class="text-muted fw-normal">(optional)</span></label>
-                <input asp-for="Odometer" class="form-control" />
+                <input asp-for="Odometer" type="number" min="0" class="form-control" />
+                <span asp-validation-for="Odometer" class="text-danger"></span>
             </div>
         </div>
 
         <div class="mb-3">
             <label asp-for="ExistingFilmShade" class="form-label"></label>
             <input asp-for="ExistingFilmShade" class="form-control" />
+            <span asp-validation-for="ExistingFilmShade" class="text-danger"></span>
         </div>
 
         <div class="mb-3">
             <label asp-for="ReasonForChanging" class="form-label"></label>
             <textarea asp-for="ReasonForChanging" class="form-control" rows="2"></textarea>
+            <span asp-validation-for="ReasonForChanging" class="text-danger"></span>
         </div>
 
         <div class="mb-3">
             <label asp-for="Complaint" class="form-label"></label>
             <textarea asp-for="Complaint" class="form-control" rows="2"></textarea>
+            <span asp-validation-for="Complaint" class="text-danger"></span>
         </div>
 
         <div class="mb-3">
             <label asp-for="SpecialInstruction" class="form-label"></label>
             <textarea asp-for="SpecialInstruction" class="form-control" rows="2"></textarea>
+            <span asp-validation-for="SpecialInstruction" class="text-danger"></span>
         </div>
 
         <button type="submit" class="btn btn-zx">
@@ -93,6 +98,7 @@
 </div>
 
 @section Scripts {
+    <partial name="_ValidationScriptsPartial" />
     <script>
         (function () {
             var $customer = $('#CustomerID');
