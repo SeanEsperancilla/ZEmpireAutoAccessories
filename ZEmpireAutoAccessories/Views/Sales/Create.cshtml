@@ -7,7 +7,11 @@
 <style>
     .zx-page-head h1 { font-family:'Oswald',system-ui,sans-serif; font-weight:700; font-size:22px; margin:0 0 4px; color:#0b0b0c; }
     .zx-page-sub { color:#7b8290; font-size:13.5px; margin:0 0 18px; }
-    .zx-card { background:#fff; border:1px solid #e8ebf0; border-radius:14px; padding:24px; max-width:900px; }
+    /* Was capped at 900px, which left the line-item table cramped - the
+       Product column got whatever the five fixed columns did not take,
+       about 250px, too narrow for a name like "Profilm Nano Ceramic Tint"
+       while the rest of the screen sat empty. */
+    .zx-card { background:#fff; border:1px solid #e8ebf0; border-radius:14px; padding:24px; max-width:1240px; }
     .btn-zx { background:var(--zx-red); border-color:var(--zx-red); color:#fff; font-weight:600; display:inline-flex; align-items:center; gap:7px; }
     .btn-zx:hover { background:var(--zx-red2); border-color:var(--zx-red2); color:#fff; }
     .zx-table thead { background:#0b0b0c; color:#fff; }
@@ -55,12 +59,15 @@
         <table class="table zx-table" id="linesTable">
             <thead>
                 <tr>
-                    <th>Product</th>
-                    <th style="width:150px;">Tint Variant</th>
-                    <th style="width:150px;">Panel</th>
-                    <th style="width:100px;">Qty</th>
+                    @* Percentages for the three that hold names, so they
+                       share the extra width instead of the table leaving a
+                       gap; fixed widths only for the numeric columns. *@
+                    <th style="width:34%;">Product</th>
+                    <th style="width:22%;">Tint Variant</th>
+                    <th style="width:22%;">Panel</th>
+                    <th style="width:90px;">Qty</th>
                     <th style="width:140px;">Unit Price</th>
-                    <th style="width:60px;"></th>
+                    <th style="width:52px;"></th>
                 </tr>
             </thead>
             <tbody>

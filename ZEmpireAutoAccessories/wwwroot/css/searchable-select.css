@@ -33,12 +33,15 @@
     cursor: not-allowed;
 }
 
+/* Fixed, not absolute: the menu has to escape every clipping ancestor it
+   might sit inside - .table-responsive (whose overflow-x:auto forces
+   overflow-y to auto as well, so it both clips the menu and grows a
+   stray scrollbar) and the .zx-card { overflow:hidden } used on ten
+   index pages. Coordinates come from the input's bounding rect and are
+   set inline by positionMenu(). */
 .ss-menu {
-    position: absolute;
+    position: fixed;
     z-index: 1055;
-    top: calc(100% + 4px);
-    left: 0;
-    right: 0;
     max-height: 260px;
     overflow-y: auto;
     background: #fff;

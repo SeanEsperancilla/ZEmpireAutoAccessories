@@ -169,6 +169,39 @@
             setActive(anyVisible ? 0 : -1);
         }
 
+        var MENU_MAX_HEIGHT = 260;
+        var MENU_GAP = 4;
+
+        // The menu is position:fixed, so it has to be told where to sit.
+        // Below the input by default; above it when there is not enough room
+        // below and more room above - otherwise a row near the bottom of the
+        // window would open into a sliver.
+        function positionMenu() {
+            var rect = input.getBoundingClientRect();
+            var below = window.innerHeight - rect.bottom - MENU_GAP;
+            var above = rect.top - MENU_GAP;
+            var flip = below < Math.min(MENU_MAX_HEIGHT, 160) && above > below;
+
+            menu.style.left = rect.left + "px";
+            menu.style.width = rect.width + "px";
+
+            if (flip) {
+                menu.style.top = "auto";
+                menu.style.bottom = (window.innerHeight - rect.top + MENU_GAP) + "px";
+                menu.style.maxHeight = Math.max(80, Math.min(MENU_MAX_HEIGHT, above)) + "px";
+            } else {
+                menu.style.bottom = "auto";
+                menu.style.top = (rect.bottom + MENU_GAP) + "px";
+                menu.style.maxHeight = Math.max(80, Math.min(MENU_MAX_HEIGHT, below)) + "px";
+            }
+        }
+
+        // Capture phase, so scrolling any container the input sits in counts,
+        // not just the window.
+        function onViewportChange() {
+            if (!menu.hidden) { positionMenu(); }
+        }
+
         // showAll ignores whatever is sitting in the box, which is the
         // current selection's own text - opening on focus should offer the
         // whole list, not just the option already chosen.
@@ -176,12 +209,19 @@
             if (select.disabled) { return; }
             menu.hidden = false;
             input.setAttribute("aria-expanded", "true");
+            // Place it before filtering: filter() highlights the first match
+            // and scrolls it into view, which needs the real geometry.
+            positionMenu();
             filter(showAll ? "" : input.value);
+            window.addEventListener("scroll", onViewportChange, true);
+            window.addEventListener("resize", onViewportChange);
         }
 
         function closeMenu(revert) {
             menu.hidden = true;
             input.setAttribute("aria-expanded", "false");
+            window.removeEventListener("scroll", onViewportChange, true);
+            window.removeEventListener("resize", onViewportChange);
             setActive(-1);
             if (revert) {
                 input.value = currentOptionText();
