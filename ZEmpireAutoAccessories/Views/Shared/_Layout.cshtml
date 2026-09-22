@@ -9,10 +9,15 @@
     var myModules = User.FindAll(AppClaims.ModuleAccess).Select(c => c.Value)
                         .Where(m => m != "Dashboard").ToList();
 
-    // Cashiering has no row in sec.Module: it only combines Sales and Service
-    // Invoices, so holding either one is what opens it (CashieringController
-    // is gated the same way). Listed here so it needs no database change.
-    if (myModules.Contains("Sales") || myModules.Contains("Service Invoices"))
+    // Cashiering needs no row in sec.Module: it only combines Sales and
+    // Service Invoices, so holding either one is what opens it
+    // (CashieringController is gated the same way). Added here so it works
+    // with no database change - but skipped when a Cashiering row does
+    // exist and has already come through as a claim, or the menu would
+    // list it twice.
+    if ((myModules.Contains("Sales", StringComparer.OrdinalIgnoreCase) ||
+         myModules.Contains("Service Invoices", StringComparer.OrdinalIgnoreCase)) &&
+        !myModules.Contains("Cashiering", StringComparer.OrdinalIgnoreCase))
     {
         myModules.Add("Cashiering");
     }
