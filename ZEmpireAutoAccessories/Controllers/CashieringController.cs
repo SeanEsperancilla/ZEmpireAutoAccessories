@@ -68,6 +68,23 @@ namespace ZEmpireAutoAccessories.Controllers
             model.CanSeeSales = canSeeSales;
             model.CanSeeServiceInvoices = canSeeInvoices;
 
+            // The day's takings are Admin-only, the same way the dashboard
+            // withholds peso figures from Staff. Cleared here rather than
+            // merely hidden in the view, so a Staff response never carries
+            // the numbers at all.
+            model.CanSeeTotals = User.IsInRole("Admin");
+            if (!model.CanSeeTotals)
+            {
+                model.SalesTotal = 0m;
+                model.ServiceInvoiceTotal = 0m;
+                model.GrandTotal = 0m;
+                model.UncollectedTotal = 0m;
+                model.CollectedCount = 0;
+                model.UncollectedCount = 0;
+                model.ByPaymentMode.Clear();
+                model.ByCashier.Clear();
+            }
+
             await LoadFilterDropdowns(model);
 
             return View(model);

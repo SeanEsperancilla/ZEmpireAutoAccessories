@@ -302,34 +302,39 @@
     </div>
 </div>
 
-<div class="tile-row">
-    <div class="tile grand">
-        <div class="label">Total Collected</div>
-        <div class="value">@("₱" + Model.GrandTotal.ToString("N2"))</div>
-        <div class="sub">@Model.CollectedCount transaction@(Model.CollectedCount == 1 ? "" : "s")</div>
-    </div>
-    @if (canOpenSales)
-    {
-        <div class="tile">
-            <div class="label">Product Sales</div>
-            <div class="value">@("₱" + Model.SalesTotal.ToString("N2"))</div>
-            <div class="sub">from sales.Sales</div>
+@* The day's takings are Admin-only. The controller has already zeroed
+   these for anyone else, so this is what they read, not a second gate. *@
+@if (Model.CanSeeTotals)
+{
+    <div class="tile-row">
+        <div class="tile grand">
+            <div class="label">Total Collected</div>
+            <div class="value">@("₱" + Model.GrandTotal.ToString("N2"))</div>
+            <div class="sub">@Model.CollectedCount transaction@(Model.CollectedCount == 1 ? "" : "s")</div>
         </div>
-    }
-    @if (canOpenInvoices)
-    {
-        <div class="tile">
-            <div class="label">Service Invoices</div>
-            <div class="value">@("₱" + Model.ServiceInvoiceTotal.ToString("N2"))</div>
-            <div class="sub">paid invoices only</div>
+        @if (canOpenSales)
+        {
+            <div class="tile">
+                <div class="label">Product Sales</div>
+                <div class="value">@("₱" + Model.SalesTotal.ToString("N2"))</div>
+                <div class="sub">from sales.Sales</div>
+            </div>
+        }
+        @if (canOpenInvoices)
+        {
+            <div class="tile">
+                <div class="label">Service Invoices</div>
+                <div class="value">@("₱" + Model.ServiceInvoiceTotal.ToString("N2"))</div>
+                <div class="sub">paid invoices only</div>
+            </div>
+        }
+        <div class="tile warn">
+            <div class="label">Not Collected</div>
+            <div class="value">@("₱" + Model.UncollectedTotal.ToString("N2"))</div>
+            <div class="sub">@Model.UncollectedCount pending / cancelled / refunded</div>
         </div>
-    }
-    <div class="tile warn">
-        <div class="label">Not Collected</div>
-        <div class="value">@("₱" + Model.UncollectedTotal.ToString("N2"))</div>
-        <div class="sub">@Model.UncollectedCount pending / cancelled / refunded</div>
     </div>
-</div>
+}
 
 <div class="filter-card">
     <form asp-action="Index" method="get">
@@ -398,7 +403,9 @@
     </div>
 </div>
 
-@if (Model.ByPaymentMode.Count > 0 || Model.ByCashier.Count > 0)
+@* Also Admin-only: these are the same takings split up, and they add
+   back to the Total Collected above. *@
+@if (Model.CanSeeTotals && (Model.ByPaymentMode.Count > 0 || Model.ByCashier.Count > 0))
 {
     <div class="row g-3 mb-3">
         @if (Model.ByPaymentMode.Count > 0)

@@ -121,5 +121,15 @@ namespace ZEmpireAutoAccessories.Models
         // uses these to hide the tiles, filters and links for the other half.
         public bool CanSeeSales { get; set; }
         public bool CanSeeServiceInvoices { get; set; }
+
+        /// <summary>
+        /// Whether the day's takings may be shown. Admin only, matching the
+        /// dashboard, where peso figures are already withheld from Staff. A
+        /// cashier still gets the transaction list - they need it to work the
+        /// counter - but not the totals it rolls up to. When this is false
+        /// the controller leaves the totals below at zero rather than
+        /// trusting the view to hide them.
+        /// </summary>
+        public bool CanSeeTotals { get; set; }
     }
 }
