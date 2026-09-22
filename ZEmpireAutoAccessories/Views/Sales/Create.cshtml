@@ -27,13 +27,13 @@
         <div class="row">
             <div class="col-md-6 mb-3">
                 <label class="form-label">Customer</label>
-                <select id="customerId" name="customerId" class="form-select" asp-items="ViewBag.CustomerID" data-searchable="true" required>
+                <select id="customerId" name="customerId" class="form-select" asp-items="ViewBag.CustomerID" required>
                     <option value="">-- Select Customer --</option>
                 </select>
             </div>
             <div class="col-md-6 mb-3">
                 <label class="form-label">Vehicle <span class="text-muted fw-normal">(optional)</span></label>
-                <select id="vehicleId" name="vehicleId" class="form-select" data-searchable="true" disabled>
+                <select id="vehicleId" name="vehicleId" class="form-select" disabled>
                     <option value="">-- Select Customer First --</option>
                 </select>
             </div>
@@ -66,7 +66,7 @@
             <tbody>
                 <tr class="line-row">
                     <td>
-                        <select name="productId" class="form-select product-select" data-searchable="true" required>
+                        <select name="productId" class="form-select product-select" required>
                             <option value="">-- Select Product --</option>
                             @foreach (var p in products)
                             {
@@ -96,7 +96,7 @@
         <template id="lineRowTemplate">
             <tr class="line-row">
                 <td>
-                    <select name="productId" class="form-select product-select" data-searchable="true" required>
+                    <select name="productId" class="form-select product-select" required>
                         <option value="">-- Select Product --</option>
                         @foreach (var p in products)
                         {
@@ -317,10 +317,10 @@
             $(document).on('input', 'input[name=quantity], input[name=unitPrice]', recalcTotal);
 
             $('#addRow').on('click', function () {
-                // Clone from the inert <template>, not the live first row - the
-                // live row's select has already been enhanced into a searchable
-                // dropdown, and cloning that enhanced DOM directly would copy a
-                // wrapper with no event listeners wired up.
+                // Clone from the inert <template>, not the live first row -
+                // the live row's Tint Variant and Panel lists have already
+                // been narrowed to whatever product it is showing, and a new
+                // row should start empty rather than inherit them.
                 var frag = document.getElementById('lineRowTemplate').content.cloneNode(true);
                 $('#linesTable tbody').append(frag);
             });

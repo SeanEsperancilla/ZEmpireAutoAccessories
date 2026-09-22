@@ -55,7 +55,7 @@
 
         <div class="mb-3">
             <label asp-for="ProductID" class="form-label"></label>
-            <select asp-for="ProductID" class="form-select" asp-items="ViewBag.ProductID" data-searchable="true">
+            <select asp-for="ProductID" class="form-select" asp-items="ViewBag.ProductID">
                 <option value="">-- Select Product --</option>
             </select>
             <span asp-validation-for="ProductID" class="text-danger"></span>
@@ -67,7 +67,7 @@
                variants of the product that was picked. Rendering the full
                catalog here as well would flash every product's variants
                before the script trimmed them. *@
-            <select asp-for="TintVariantID" class="form-select" data-searchable="true" disabled>
+            <select asp-for="TintVariantID" class="form-select" disabled>
                 <option value="">-- Select Product First --</option>
             </select>
         </div>
@@ -107,8 +107,9 @@
     <partial name="_ValidationScriptsPartial" />
     <script>
         // Narrow Tint Variant to the product that was picked, and fill in
-        // anything there is only one of. Selects are updated through native
-        // events so the searchable-select wrapper re-syncs its display.
+        // anything there is only one of. Setting a select's value in code
+        // fires no event of its own, so each change is dispatched by hand
+        // for anything listening further down the form.
         (function () {
             var variants = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewData["VariantsByProduct"]));
             var product = document.getElementById('ProductID');
