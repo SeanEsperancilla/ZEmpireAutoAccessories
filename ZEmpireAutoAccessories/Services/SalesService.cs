@@ -130,7 +130,10 @@ namespace ZEmpireAutoAccessories.Services
                         .SumAsync(t => (decimal?)(t.TransactionType == "IN" ? t.Quantity : -t.Quantity)) ?? 0;
 
                     if (stockOnHand < item.Quantity)
-                        throw new InvalidOperationException($"Insufficient stock for {product.ProductName}.");
+                        throw new InvalidOperationException(
+                            stockOnHand <= 0
+                                ? $"{product.ProductName} is out of stock."
+                                : $"Not enough stock for {product.ProductName} - only {stockOnHand:N0} left, {item.Quantity:N0} requested.");
 
                     _context.SalesDetails.Add(new SaleDetail
                     {

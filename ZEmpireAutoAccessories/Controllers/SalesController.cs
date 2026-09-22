@@ -186,6 +186,8 @@ namespace ZEmpireAutoAccessories.Controllers
                 var sale = await _salesService.CreateSale(
                     CurrentUserId, customerId, paymentModeId, invoiceNumber, vehicleId, items);
 
+                // Details opens the receipt by itself on this one visit.
+                TempData["SaleCompleted"] = sale.InvoiceNumber;
                 return RedirectToAction(nameof(Details), new { id = sale.SalesID });
             }
             catch (Exception ex)
@@ -289,6 +291,19 @@ namespace ZEmpireAutoAccessories.Controllers
                 .Where(p => p.IsActive)
                 .OrderBy(p => p.ProductName)
                 .ToListAsync();
+
+            // Stock on hand per product, so a line can warn while it is being
+            // typed instead of the whole sale failing in CreateSale. Same
+            // arithmetic as dbo.vw_StockOnHand and the check that service
+            // makes - this is the friendly half, not the authority.
+            ViewData["StockByProduct"] = await _context.InventoryTransactions
+                .GroupBy(t => t.ProductID)
+                .Select(g => new
+                {
+                    ProductID = g.Key,
+                    Stock = g.Sum(t => t.TransactionType == "IN" ? t.Quantity : -t.Quantity)
+                })
+                .ToDictionaryAsync(x => x.ProductID, x => x.Stock);
         }
     }
 }

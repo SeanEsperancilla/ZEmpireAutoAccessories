@@ -175,3 +175,97 @@ body {
 .link-context .link-back:hover {
   text-decoration: underline;
 }
+
+/* ---- page width ----------------------------------------------------
+   Bootstrap's .container tops out at 1320px, so on a wide monitor the
+   line-item tables sit in the middle with a lot of dead screen either
+   side. Use the full width past that point, keeping a 1in gutter left
+   and right so nothing runs into the edge. */
+@media (min-width: 1400px) {
+  .container {
+    max-width: none;
+    padding-left: 1in;
+    padding-right: 1in;
+  }
+}
+
+/* Each page sets its own .zx-card max-width in an inline <style> that
+   loads after this file, so a plain .zx-card rule here would lose on
+   source order. `body .zx-card` outranks it on specificity instead, and
+   lets the wide transaction cards use the space the container just
+   gained rather than stopping short of it. */
+@media (min-width: 1400px) {
+  body .zx-card {
+    max-width: none;
+  }
+}
+
+/* ---- phone ---------------------------------------------------------
+   The forms are built as multi-column rows and fixed-width tables, which
+   are fine on a counter PC and cramped on a phone. These only relax
+   spacing and let things stack - no page's own colours or layout intent
+   is touched. */
+@media (max-width: 575.98px) {
+  .container {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .zx-card {
+    padding: 16px !important;
+    border-radius: 12px;
+  }
+
+  .zx-page-head h1 {
+    font-size: 19px !important;
+  }
+
+  /* Action buttons beside a page title go full width rather than
+     squeezing three abbreviations onto one line. */
+  .zx-page-head > div:last-child {
+    width: 100%;
+  }
+
+  .zx-page-head > div:last-child .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  /* Definition lists on the detail screens read better stacked than as
+     two narrow columns. */
+  .zx-card dl.row dt,
+  .zx-card dl.row dd {
+    width: 100%;
+    max-width: 100%;
+    flex: 0 0 100%;
+  }
+
+  .zx-card dl.row dd {
+    margin-bottom: 10px;
+  }
+
+  /* Filter bars and line-item forms stack instead of scrolling sideways. */
+  .filter-row,
+  .filter-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .filter-row .field {
+    width: 100%;
+  }
+
+  .filter-row .field .form-select,
+  .filter-row .field .form-control {
+    min-width: 0 !important;
+    width: 100%;
+  }
+
+  /* Summary tiles go one per row on a phone. */
+  .tile-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .table-responsive > .table {
+    font-size: 13px;
+  }
+}

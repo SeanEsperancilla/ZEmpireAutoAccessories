@@ -2,6 +2,11 @@
 @{
     ViewData["Title"] = "New Sale";
     var products = ViewData["Products"] as List<Product> ?? new();
+
+    // Stock on hand per product, rendered onto each option so a line can
+    // warn as it is typed. CreateSale re-checks it inside its transaction -
+    // this is only to save the trip.
+    var stockByProduct = ViewData["StockByProduct"] as Dictionary<int, decimal> ?? new();
 }
 
 <style>
@@ -17,6 +22,7 @@
     .zx-table thead { background:#0b0b0c; color:#fff; }
     .zx-table thead th { border-bottom:none; font-weight:600; font-size:12.5px; text-transform:uppercase; letter-spacing:.3px; }
     #grandTotal { font-weight:700; font-size:18px; }
+    .stock-warning { color:#b91c1c; font-size:11.5px; font-weight:600; margin-top:3px; }
 </style>
 
 <div class="zx-page-head">
@@ -52,6 +58,9 @@
 
         <h6 class="mt-4 mb-2">Line Items</h6>
         <p class="zx-page-sub mb-2">Products priced by panel need a Vehicle picked above to look up the matching price.</p>
+        <div id="stockBlocked" class="alert alert-danger py-2 px-3" style="display:none; font-size:13px;">
+            One or more lines ask for more than there is in stock. Fix the highlighted quantities to continue.
+        </div>
         <div id="pricingLoadError" class="alert alert-warning py-2 px-3" style="display:none; font-size:13px;">
             Couldn't load panel pricing for this vehicle - panel-priced products will need a manual Unit Price for now.
         </div>
@@ -77,7 +86,7 @@
                             <option value="">-- Select Product --</option>
                             @foreach (var p in products)
                             {
-                                <option value="@p.ProductID" data-price="@p.DefaultPrice">@p.ProductName</option>
+                                <option value="@p.ProductID" data-price="@p.DefaultPrice" data-stock="@(stockByProduct.TryGetValue(p.ProductID, out var st) ? st : 0)">@p.ProductName@(stockByProduct.TryGetValue(p.ProductID, out var sa) && sa > 0 ? $" ({sa:N0} in stock)" : " (out of stock)")</option>
                             }
                         </select>
                     </td>
@@ -98,7 +107,7 @@
             </tbody>
         </table>
         </div>
-        <button type="button" class="btn btn-outline-secondary btn-sm mb-3" id="addRow">+ Add Items</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm mb-3" id="addRow">+ Add Item</button>
 
         <template id="lineRowTemplate">
             <tr class="line-row">
@@ -107,7 +116,7 @@
                         <option value="">-- Select Product --</option>
                         @foreach (var p in products)
                         {
-                            <option value="@p.ProductID" data-price="@p.DefaultPrice">@p.ProductName</option>
+                            <option value="@p.ProductID" data-price="@p.DefaultPrice" data-stock="@(stockByProduct.TryGetValue(p.ProductID, out var st) ? st : 0)">@p.ProductName@(stockByProduct.TryGetValue(p.ProductID, out var sa) && sa > 0 ? $" ({sa:N0} in stock)" : " (out of stock)")</option>
                         }
                     </select>
                 </td>
@@ -293,6 +302,46 @@
                 $('.line-row').each(function () { evaluateProductRow($(this)); });
             }
 
+            // Stock guard. CreateSale re-checks inside its transaction and is
+            // the authority; this only stops the trip when the answer is
+            // already known, and says how many are actually left.
+            function checkStockRow($row) {
+                var $product = $row.find('.product-select');
+                var $qty = $row.find('input[name=quantity]');
+                var $cell = $qty.closest('td');
+
+                $cell.find('.stock-warning').remove();
+                $qty.removeClass('is-invalid');
+
+                if (!$product.val()) { return true; }
+
+                var stock = parseFloat($product.find(':selected').attr('data-stock'));
+                if (isNaN(stock)) { return true; }
+
+                var qty = parseFloat($qty.val()) || 0;
+                if (stock <= 0) {
+                    $qty.addClass('is-invalid');
+                    $cell.append('<div class="stock-warning">Out of stock</div>');
+                    return false;
+                }
+                if (qty > stock) {
+                    $qty.addClass('is-invalid');
+                    $cell.append('<div class="stock-warning">Only ' + stock + ' left</div>');
+                    return false;
+                }
+                return true;
+            }
+
+            function refreshStockState() {
+                var ok = true;
+                $('.line-row').each(function () {
+                    if (!checkStockRow($(this))) { ok = false; }
+                });
+                $('#saleForm button[type=submit]').prop('disabled', !ok);
+                $('#stockBlocked').toggle(!ok);
+                return ok;
+            }
+
             function recalcTotal() {
                 var total = 0;
                 $('.line-row').each(function () {
@@ -310,6 +359,7 @@
             $(document).on('change', '.tint-variant-select', function () {
                 refreshPanels($(this).closest('tr'), $(this).val());
                 recalcTotal();
+                refreshStockState();
             });
 
             $(document).on('change', '.panel-select', function () {
@@ -321,7 +371,12 @@
                 recalcTotal();
             });
 
-            $(document).on('input', 'input[name=quantity], input[name=unitPrice]', recalcTotal);
+            $(document).on('input', 'input[name=quantity], input[name=unitPrice]', function () {
+                recalcTotal();
+                refreshStockState();
+            });
+
+            $(document).on('change', '.product-select', refreshStockState);
 
             $('#addRow').on('click', function () {
                 // Clone from the inert <template>, not the live first row -
@@ -330,6 +385,7 @@
                 // row should start empty rather than inherit them.
                 var frag = document.getElementById('lineRowTemplate').content.cloneNode(true);
                 $('#linesTable tbody').append(frag);
+                refreshStockState();
             });
 
             $(document).on('click', '.remove-row', function () {

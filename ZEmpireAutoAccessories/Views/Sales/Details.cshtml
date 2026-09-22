@@ -3,6 +3,10 @@
 @{
     ViewData["Title"] = "Sale Details";
 
+    // Set by Create - the receipt opens by itself the first time this page is
+    // reached after completing a sale, and never again on a revisit.
+    var justCompleted = TempData["SaleCompleted"] is string;
+
     // sales.Warranty.SalesDetailID points back at these lines, so each one can
     // show its cover or offer to create it. Only shown to users who hold the
     // Warranty module, since WarrantyController enforces it anyway.
@@ -28,9 +32,11 @@
 <div class="zx-page-head">
     <h1>Sale @Model.InvoiceNumber</h1>
     <div>
-        <a class="btn btn-pdf" asp-action="Pdf" asp-route-id="@Model.SalesID" target="_blank">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
-            Generate PDF
+        @* The receipt already opened when the sale was completed, so from
+           here on this is a reprint - printer icon, not a document one. *@
+        <a id="reprintLink" class="btn btn-pdf" asp-action="Pdf" asp-route-id="@Model.SalesID" target="_blank">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v5"/><rect width="12" height="8" x="6" y="14" rx="1"/></svg>
+            Reprint Sales Invoice
         </a>
         <a class="btn btn-outline-secondary" asp-action="Index">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
@@ -118,3 +124,28 @@
     </table>
     </div>
 </div>
+
+@if (justCompleted)
+{
+    <div class="alert alert-success mt-3">
+        <strong>Sale recorded.</strong>
+        The receipt should have opened in a new tab &mdash;
+        <a href="@Url.Action("Pdf", new { id = Model.SalesID })" target="_blank">open it here</a> if your browser blocked it.
+    </div>
+}
+
+@* A section cannot live inside an @@if, so the condition goes inside it. *@
+@section Scripts {
+    @if (justCompleted)
+    {
+        <script>
+            // Browsers block window.open outside a click, so the banner above
+            // always carries a link - this only saves the extra click when the
+            // popup is allowed.
+            (function () {
+                try { window.open('@Url.Action("Pdf", new { id = Model.SalesID })', '_blank'); }
+                catch (e) { /* the banner link covers it */ }
+            })();
+        </script>
+    }
+}
