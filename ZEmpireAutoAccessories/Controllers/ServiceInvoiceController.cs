@@ -349,6 +349,23 @@ namespace ZEmpireAutoAccessories.Controllers
                 return View(invoice);
             }
 
+            // CK_ServiceInvoice_Change requires ChangeAmount >= 0 and
+            // CK_ServiceInvoice_Math requires ChangeAmount = AmountPaid -
+            // TotalAmount, so between them the table cannot hold a part
+            // payment. Edit is the one place a real tendered amount is typed
+            // in, so refuse a short one here - RecalculateTotals used to
+            // quietly raise it to the total instead, which meant the field
+            // accepted a number and then saved a different one.
+            var newTotal = lineTotal - invoice.DiscountAmount + invoice.TaxAmount;
+            if (invoice.AmountPaid < newTotal)
+            {
+                ModelState.AddModelError(nameof(ServiceInvoice.AmountPaid),
+                    $"Amount paid can't be less than the invoice total of ₱{newTotal:N2}. " +
+                    "This invoice records payment in full plus any change, so it can't hold a part payment.");
+                await LoadHeaderDropdowns(invoice);
+                return View(invoice);
+            }
+
             existing.CustomerID = invoice.CustomerID;
             existing.VehicleID = invoice.VehicleID;
             existing.JobOrderID = invoice.JobOrderID;
@@ -358,7 +375,9 @@ namespace ZEmpireAutoAccessories.Controllers
             existing.AmountPaid = invoice.AmountPaid;
             existing.Remarks = invoice.Remarks;
 
-            RecalculateTotals(existing);
+            // The amount tendered was checked above, so keep it exactly as
+            // typed rather than letting the clamp raise it.
+            RecalculateTotals(existing, clampAmountPaid: false);
             await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Details), new { id });
@@ -505,19 +524,23 @@ namespace ZEmpireAutoAccessories.Controllers
             return RedirectToAction(nameof(Details), new { id });
         }
 
-        private static void RecalculateTotals(ServiceInvoice invoice)
+        /// <summary>
+        /// Recomputes SubTotal, TotalAmount and ChangeAmount from the lines.
+        ///
+        /// clampAmountPaid carries the tendered amount up to the new total.
+        /// That is right where the total moved on its own - creating the
+        /// invoice, adding or removing a line - because nobody has said what
+        /// was handed over yet, and CK_ServiceInvoice_Change would reject a
+        /// negative change. It is wrong on Edit, where the amount is typed
+        /// in: raising it there would save a number the user did not enter.
+        /// Edit passes false and validates instead.
+        /// </summary>
+        private static void RecalculateTotals(ServiceInvoice invoice, bool clampAmountPaid = true)
         {
             invoice.SubTotal = invoice.Details.Sum(d => d.SubTotal);
             invoice.TotalAmount = invoice.SubTotal - invoice.DiscountAmount + invoice.TaxAmount;
 
-            // CK_ServiceInvoice_Change requires ChangeAmount >= 0, and
-            // CK_ServiceInvoice_Math requires ChangeAmount = AmountPaid -
-            // TotalAmount exactly - together, AmountPaid can never trail
-            // TotalAmount on a saved row. Line items can be added before an
-            // exact amount tendered is known, so keep AmountPaid caught up
-            // to the total as it grows; Edit can still set the real amount
-            // (and any real change) once that's known.
-            if (invoice.AmountPaid < invoice.TotalAmount)
+            if (clampAmountPaid && invoice.AmountPaid < invoice.TotalAmount)
             {
                 invoice.AmountPaid = invoice.TotalAmount;
             }
