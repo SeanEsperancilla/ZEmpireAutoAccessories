@@ -63,8 +63,12 @@
 
         <div class="mb-3">
             <label asp-for="TintVariantID" class="form-label">Tint Variant <span class="text-muted fw-normal">(optional, for non-tint products leave blank)</span></label>
-            <select asp-for="TintVariantID" class="form-select" asp-items="ViewBag.TintVariantID" data-searchable="true">
-                <option value="">-- None --</option>
+            @* Options are filled in by the script below, narrowed to the
+               variants of the product that was picked. Rendering the full
+               catalog here as well would flash every product's variants
+               before the script trimmed them. *@
+            <select asp-for="TintVariantID" class="form-select" data-searchable="true" disabled>
+                <option value="">-- Select Product First --</option>
             </select>
         </div>
 
@@ -101,4 +105,88 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Narrow Tint Variant to the product that was picked, and fill in
+        // anything there is only one of. Selects are updated through native
+        // events so the searchable-select wrapper re-syncs its display.
+        (function () {
+            var variants = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewData["VariantsByProduct"]));
+            var product = document.getElementById('ProductID');
+            var tintVariant = document.getElementById('TintVariantID');
+            if (!product || !tintVariant) { return; }
+
+            var initialVariantId = '@(Model?.TintVariantID?.ToString() ?? "")';
+
+            function setOptions(select, placeholder, items, selectedValue) {
+                select.innerHTML = '';
+
+                var blank = document.createElement('option');
+                blank.value = '';
+                blank.textContent = placeholder;
+                select.appendChild(blank);
+
+                items.forEach(function (item) {
+                    var option = document.createElement('option');
+                    option.value = item.id;
+                    option.textContent = item.name;
+                    select.appendChild(option);
+                });
+
+                select.disabled = items.length === 0;
+
+                // Exactly one to choose from - choose it, rather than making
+                // someone open a dropdown with a single entry in it.
+                if (items.length === 1) {
+                    select.value = items[0].id;
+                } else if (selectedValue) {
+                    select.value = selectedValue;
+                } else {
+                    select.value = '';
+                }
+
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
+            function refreshVariants(selectedValue) {
+                var productId = parseInt(product.value, 10);
+                if (!productId) {
+                    setOptions(tintVariant, '-- Select Product First --', [], null);
+                    return;
+                }
+
+                var forProduct = variants.filter(function (v) {
+                    return v.productId === productId;
+                });
+
+                // A product with no tint variants is priced per panel alone,
+                // so leaving this blank is the correct answer, not an
+                // unfinished field.
+                setOptions(
+                    tintVariant,
+                    forProduct.length === 0 ? '-- None (product has no tint variants) --' : '-- None --',
+                    forProduct,
+                    selectedValue);
+            }
+
+            product.addEventListener('change', function () { refreshVariants(null); });
+
+            // Single-option convenience for the two plain lists as well. They
+            // are rendered server-side, so this only has to look at what is
+            // already in the DOM: a placeholder plus exactly one real option.
+            ['VehicleClassificationID', 'PanelID'].forEach(function (id) {
+                var select = document.getElementById(id);
+                if (!select || select.value) { return; }
+
+                var real = Array.prototype.filter.call(select.options, function (o) { return o.value !== ''; });
+                if (real.length === 1) {
+                    select.value = real[0].value;
+                    select.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+
+            // Re-entering the form after a validation error: keep the product
+            // that was chosen and restore the variant that went with it.
+            refreshVariants(initialVariantId);
+        })();
+    </script>
 }

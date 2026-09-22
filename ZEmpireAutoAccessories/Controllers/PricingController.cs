@@ -225,6 +225,22 @@ namespace ZEmpireAutoAccessories.Controllers
                 .ToListAsync();
             ViewData["TintVariantID"] = new SelectList(tintVariants, "TintVariantID", "Display", pricing?.TintVariantID);
 
+            // Which variants belong to which product, so the form can narrow
+            // the Tint Variant list to the product that was picked instead of
+            // offering every variant in the catalog. cat.Pricing carries a
+            // composite FK on (TintVariantID, ProductID), so a mismatched
+            // pair is rejected by the database anyway - this keeps it off the
+            // form in the first place.
+            ViewData["VariantsByProduct"] = await _context.TintVariants
+                .OrderBy(v => v.VariantName)
+                .Select(v => new
+                {
+                    productId = v.ProductID,
+                    id = v.TintVariantID,
+                    name = v.VariantName
+                })
+                .ToListAsync();
+
             ViewData["VehicleClassificationID"] = new SelectList(
                 await _context.VehicleClassifications.OrderBy(v => v.ClassificationName).ToListAsync(),
                 "VehicleClassificationID", "ClassificationName", pricing?.VehicleClassificationID);
