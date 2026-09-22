@@ -71,6 +71,22 @@ namespace ZEmpireAutoAccessories.Services
             if (price < 0)
                 throw new ArgumentException("Price cannot be negative.");
 
+            // cat.Pricing carries a composite FK (FK_Pricing_Variant_Product)
+            // on (TintVariantID, ProductID) into cat.TintVariant, so the
+            // variant must belong to the product being priced. The Tint
+            // Variant dropdown lists every variant across every product, so
+            // a mismatched pair is easy to pick - catch it here rather than
+            // letting SQL Server reject the insert with a raw FK error.
+            if (tintVariantId != null)
+            {
+                var variantBelongsToProduct = await _context.TintVariants
+                    .AnyAsync(v => v.TintVariantID == tintVariantId && v.ProductID == productId);
+
+                if (!variantBelongsToProduct)
+                    throw new InvalidOperationException(
+                        "The selected tint variant does not belong to the selected product.");
+            }
+
             var existing = await GetPricing(productId, tintVariantId, vehicleClassificationId, panelId);
             if (existing != null)
                 throw new InvalidOperationException(

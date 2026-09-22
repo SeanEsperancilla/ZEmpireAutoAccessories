@@ -40,6 +40,9 @@ namespace ZEmpireAutoAccessories.Models
         [MaxLength(400)]
         public string? Complaint { get; set; }
 
+        // CK_JobOrder_Odometer rejects negatives at the database level; the
+        // Range keeps that from surfacing as a raw SQL error on save.
+        [Range(0, int.MaxValue, ErrorMessage = "Odometer can't be negative.")]
         public int? Odometer { get; set; }
 
         public string? ClientSignature { get; set; }
