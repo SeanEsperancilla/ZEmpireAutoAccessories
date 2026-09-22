@@ -15,6 +15,15 @@
         modules.Add("Quotation");
     }
 
+    // Cashiering has no row in sec.Module either - it only combines Sales and
+    // Service Invoices, so holding either one is what opens it, matching the
+    // gate on CashieringController. No database change needed to switch it on.
+    if (modules.Contains("Sales", StringComparer.OrdinalIgnoreCase) ||
+        modules.Contains("Service Invoices", StringComparer.OrdinalIgnoreCase))
+    {
+        modules.Add("Cashiering");
+    }
+
     // Ordered category map. Modules render under the first category that lists
     // them, in the order defined here; anything not listed falls into "More".
     // Categories with no accessible modules are skipped, so a Staff role only

@@ -5,11 +5,13 @@
     var today = DateOnly.FromDateTime(DateTime.Now);
     var isToday = Model.DateFrom == today && Model.DateTo == today;
 
-    // Cashiering is its own module, so someone can hold it without holding
-    // Sales or Service Invoices. Those controllers enforce their own
-    // [ModuleAuthorize], so only offer the links that won't 403.
-    var canOpenSales = User.HasClaim(AppClaims.ModuleAccess, "Sales");
-    var canOpenInvoices = User.HasClaim(AppClaims.ModuleAccess, "Service Invoices");
+    // Cashiering has no module of its own - it is opened by holding Sales or
+    // Service Invoices, and the controller has already limited the rows to
+    // the half the user holds. The same two flags decide which tiles,
+    // filters and links are worth showing.
+    var canOpenSales = Model.CanSeeSales;
+    var canOpenInvoices = Model.CanSeeServiceInvoices;
+    var seesBothSources = canOpenSales && canOpenInvoices;
 }
 
 <style>
@@ -306,16 +308,22 @@
         <div class="value">@("₱" + Model.GrandTotal.ToString("N2"))</div>
         <div class="sub">@Model.CollectedCount transaction@(Model.CollectedCount == 1 ? "" : "s")</div>
     </div>
-    <div class="tile">
-        <div class="label">Product Sales</div>
-        <div class="value">@("₱" + Model.SalesTotal.ToString("N2"))</div>
-        <div class="sub">from sales.Sales</div>
-    </div>
-    <div class="tile">
-        <div class="label">Service Invoices</div>
-        <div class="value">@("₱" + Model.ServiceInvoiceTotal.ToString("N2"))</div>
-        <div class="sub">paid invoices only</div>
-    </div>
+    @if (canOpenSales)
+    {
+        <div class="tile">
+            <div class="label">Product Sales</div>
+            <div class="value">@("₱" + Model.SalesTotal.ToString("N2"))</div>
+            <div class="sub">from sales.Sales</div>
+        </div>
+    }
+    @if (canOpenInvoices)
+    {
+        <div class="tile">
+            <div class="label">Service Invoices</div>
+            <div class="value">@("₱" + Model.ServiceInvoiceTotal.ToString("N2"))</div>
+            <div class="sub">paid invoices only</div>
+        </div>
+    }
     <div class="tile warn">
         <div class="label">Not Collected</div>
         <div class="value">@("₱" + Model.UncollectedTotal.ToString("N2"))</div>
@@ -354,14 +362,17 @@
                     <option value="">All</option>
                 </select>
             </div>
-            <div>
-                <label for="source">Type</label>
-                <select id="source" name="source" class="form-select">
-                    <option value="">All</option>
-                    <option value="@CashierSource.Sale" selected="@(Model.Source == CashierSource.Sale)">Product Sales</option>
-                    <option value="@CashierSource.ServiceInvoice" selected="@(Model.Source == CashierSource.ServiceInvoice)">Service Invoices</option>
-                </select>
-            </div>
+            @if (seesBothSources)
+            {
+                <div>
+                    <label for="source">Type</label>
+                    <select id="source" name="source" class="form-select">
+                        <option value="">All</option>
+                        <option value="@CashierSource.Sale" selected="@(Model.Source == CashierSource.Sale)">Product Sales</option>
+                        <option value="@CashierSource.ServiceInvoice" selected="@(Model.Source == CashierSource.ServiceInvoice)">Service Invoices</option>
+                    </select>
+                </div>
+            }
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-zx flex-grow-1">Apply</button>
                 <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>

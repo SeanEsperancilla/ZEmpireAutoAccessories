@@ -114,5 +114,12 @@ namespace ZEmpireAutoAccessories.Models
 
         public List<CashierPaymentModeTotal> ByPaymentMode { get; set; } = new();
         public List<CashierUserTotal> ByCashier { get; set; } = new();
+
+        // ----- what this user is allowed to see -----
+        // Cashiering has no module of its own; it is opened by holding Sales
+        // or Service Invoices, and shows only the half that is held. The view
+        // uses these to hide the tiles, filters and links for the other half.
+        public bool CanSeeSales { get; set; }
+        public bool CanSeeServiceInvoices { get; set; }
     }
 }

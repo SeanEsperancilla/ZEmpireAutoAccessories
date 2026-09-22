@@ -8,20 +8,26 @@ namespace ZEmpireAutoAccessories.Authorization
     /// module (from sec.RolePermission). Usage: [ModuleAuthorize("Sales")].
     /// Unauthenticated users are challenged (redirected to login); authenticated
     /// users without the module are forbidden (redirected to Access Denied).
+    ///
+    /// Several modules may be listed, in which case ANY one of them grants
+    /// access: [ModuleAuthorize("Sales", "Service Invoices")]. That is for
+    /// screens which only combine what other modules already own, so they
+    /// need no module row of their own in sec.Module - such a screen is
+    /// responsible for showing each user only the parts they hold.
     /// </summary>
     public sealed class ModuleAuthorizeAttribute : TypeFilterAttribute
     {
-        public ModuleAuthorizeAttribute(string module)
+        public ModuleAuthorizeAttribute(params string[] modules)
             : base(typeof(ModuleAuthorizeFilter))
         {
-            Arguments = new object[] { module };
+            Arguments = new object[] { modules };
         }
 
         private sealed class ModuleAuthorizeFilter : IAuthorizationFilter
         {
-            private readonly string _module;
+            private readonly string[] _modules;
 
-            public ModuleAuthorizeFilter(string module) => _module = module;
+            public ModuleAuthorizeFilter(string[] modules) => _modules = modules;
 
             public void OnAuthorization(AuthorizationFilterContext context)
             {
@@ -33,7 +39,7 @@ namespace ZEmpireAutoAccessories.Authorization
                     return;
                 }
 
-                if (!user.HasClaim(AppClaims.ModuleAccess, _module))
+                if (!_modules.Any(m => user.HasClaim(AppClaims.ModuleAccess, m)))
                     context.Result = new ForbidResult();
             }
         }
