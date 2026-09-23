@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using ZEmpireAutoAccessories.Data;
 using ZEmpireAutoAccessories.Models;
 using ZEmpireAutoAccessories.Services.Interfaces;
@@ -116,6 +116,12 @@ namespace ZEmpireAutoAccessories.Services
                 {
                     if (item.Quantity <= 0)
                         throw new ArgumentException("Sale quantity must be greater than zero.");
+
+                    // CK_SalesDetail_Price rejects a negative unit price, and
+                    // CK_Sales_Total rejects the negative total it would roll
+                    // up into. The form's min="0" is client-side only.
+                    if (item.UnitPrice < 0)
+                        throw new ArgumentException("Sale unit price can't be negative.");
 
                     var product = await _context.Products
                         .FirstOrDefaultAsync(p => p.ProductID == item.ProductID)
