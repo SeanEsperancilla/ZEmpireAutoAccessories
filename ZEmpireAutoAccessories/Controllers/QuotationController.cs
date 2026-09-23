@@ -456,6 +456,19 @@ namespace ZEmpireAutoAccessories.Controllers
             // Roll goods take cm/in/m on a line instead of a plain count.
             ViewData["RollProducts"] =
                 await _inventoryService.SoldByLength(lineProducts.Select(p => p.ProductID));
+
+            // Stock on hand, so a line can say what is available while it is
+            // being written. This is the friendly half - the binding check
+            // still happens when the document is completed. Same arithmetic
+            // as dbo.vw_StockOnHand.
+            ViewData["StockByProduct"] = await _context.InventoryTransactions
+                .GroupBy(t => t.ProductID)
+                .Select(g => new
+                {
+                    ProductID = g.Key,
+                    Stock = g.Sum(t => t.TransactionType == "IN" ? t.Quantity : -t.Quantity)
+                })
+                .ToDictionaryAsync(x => x.ProductID, x => x.Stock);
             ViewData["Services"] = await _context.Services.Where(s => s.IsActive).OrderBy(s => s.ServiceName).ToListAsync();
         }
     }

@@ -50,6 +50,57 @@
         }
     }
 
-    product.addEventListener('change', apply);
+    // ---- stock ---------------------------------------------------------
+    // What is on hand for the selected product, and whether the quantity
+    // being written exceeds it. A job order or quotation line is a plan, and
+    // stock only moves when the document is completed, so this warns rather
+    // than blocks - the binding check runs server-side at that point.
+    var note = document.getElementById('lineStockNote');
+
+    function onHand() {
+        var option = product.options[product.selectedIndex];
+        if (!option || !option.value) { return null; }
+        var stock = parseFloat(option.dataset.stock);
+        return isNaN(stock) ? null : stock;
+    }
+
+    function describe(quantity, roll) {
+        if (!roll) { return quantity.toLocaleString(undefined, { maximumFractionDigits: 2 }); }
+        return quantity >= 100
+            ? (quantity / 100).toFixed(2) + ' m'
+            : quantity.toFixed(1) + ' cm';
+    }
+
+    function showStock() {
+        if (!note) { return; }
+
+        var stock = onHand();
+        if (stock === null) { note.textContent = ''; note.className = 'form-text mt-1'; return; }
+
+        var roll = selectedIsRoll();
+
+        // Compare like with like: a line written in metres against stock held
+        // in centimetres. Same factors as UnitOfMeasure on the server.
+        var PER_BASE = { cm: 1, 'in': 2.54, m: 100 };
+        var typed = quantity ? parseFloat(quantity.value) || 0 : 0;
+        var wanted = roll ? typed * (PER_BASE[unit.value] || 1) : typed;
+
+        if (stock <= 0) {
+            note.textContent = 'Out of stock. This line can be written now, but the document cannot be completed until there is stock.';
+            note.className = 'form-text mt-1 text-danger';
+        } else if (wanted > stock) {
+            note.textContent = 'Only ' + describe(stock, roll) + ' on hand - this line asks for ' + describe(wanted, roll) + '.';
+            note.className = 'form-text mt-1 text-danger';
+        } else {
+            note.textContent = describe(stock, roll) + ' on hand.';
+            note.className = 'form-text mt-1 text-muted';
+        }
+    }
+
+    product.addEventListener('change', function () { apply(); showStock(); });
+    unit.addEventListener('change', showStock);
+    if (quantity) { quantity.addEventListener('input', showStock); }
+
     apply();
+    showStock();
 })();
