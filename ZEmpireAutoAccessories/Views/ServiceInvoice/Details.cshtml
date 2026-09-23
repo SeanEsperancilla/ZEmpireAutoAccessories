@@ -9,6 +9,8 @@
     var warrantyByLine = ViewData["WarrantyByLine"] as Dictionary<int, ZEmpireAutoAccessories.Models.Warranty>
                          ?? new Dictionary<int, ZEmpireAutoAccessories.Models.Warranty>();
     var canUseWarranty = User.HasClaim(AppClaims.ModuleAccess, "Warranty");
+
+    var rollProducts = ViewData["RollProducts"] as HashSet<int> ?? new HashSet<int>();
 }
 
 <style>
@@ -237,7 +239,7 @@
                 <option value="">-- None --</option>
                 @foreach (var p in (List<Product>)ViewData["Products"]!)
                 {
-                    <option value="@p.ProductID" data-price="@((p.DefaultPrice ?? 0).ToString(System.Globalization.CultureInfo.InvariantCulture))">@p.ProductName</option>
+                    <option value="@p.ProductID" data-price="@((p.DefaultPrice ?? 0).ToString(System.Globalization.CultureInfo.InvariantCulture))" data-roll="@(rollProducts.Contains(p.ProductID).ToString().ToLowerInvariant())">@p.ProductName</option>
                 }
             </select>
         </div>
@@ -274,7 +276,9 @@
         </div>
         <div class="col-md-2">
             <label class="form-label" title="Unit of measure shown on the printed document and invoice, e.g. pc, roll, set">Unit</label>
-            <input type="text" name="unit" class="form-control" value="Unit" />
+            <select name="unit" class="form-select" data-searchable="false">
+                <option value="Unit">Unit</option>
+            </select>
         </div>
         <div class="col-md-2">
             <label class="form-label">Price</label>
@@ -317,6 +321,7 @@
 </div>
 
 @section Scripts {
+    <script src="~/js/line-unit.js" asp-append-version="true"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             var modalEl = document.getElementById('removeLineModal');

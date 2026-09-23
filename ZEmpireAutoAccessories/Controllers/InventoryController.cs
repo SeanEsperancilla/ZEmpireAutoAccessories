@@ -51,6 +51,12 @@ namespace ZEmpireAutoAccessories.Controllers
 
             ViewData["Status"] = status;
             ViewData["Search"] = q;
+
+            // Which rows are roll goods, so the list can show "12.50 m"
+            // instead of "1250" and offer cm/in/m on the row's move form.
+            ViewData["SoldByLength"] =
+                await _inventoryService.SoldByLength(stockLevels.Select(s => s.ProductID));
+
             return View(stockLevels);
         }
 
@@ -66,6 +72,8 @@ namespace ZEmpireAutoAccessories.Controllers
 
             ViewData["StockOnHand"] = await _inventoryService.GetStockOnHand(id.Value);
             ViewData["Transactions"] = await _inventoryService.GetTransactions(id.Value);
+            ViewData["SoldByLength"] =
+                (await _inventoryService.SoldByLength(new[] { id.Value })).Count > 0;
 
             return View(product);
         }
@@ -73,12 +81,12 @@ namespace ZEmpireAutoAccessories.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> StockIn(
-            int productId, decimal quantity, string? returnTo, string? status, string? q)
+            int productId, decimal quantity, string? unit, string? returnTo, string? status, string? q)
         {
             try
             {
-                await _inventoryService.StockIn(productId, quantity, CurrentUserId);
-                TempData["Success"] = $"Stocked in {quantity:N0} of {await NameOf(productId)}.";
+                await _inventoryService.StockIn(productId, quantity, CurrentUserId, unit);
+                TempData["Success"] = $"Stocked in {quantity:N2} {unit ?? "pcs"} of {await NameOf(productId)}.";
             }
             catch (Exception ex)
             {
@@ -91,12 +99,12 @@ namespace ZEmpireAutoAccessories.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> StockOut(
-            int productId, decimal quantity, string? returnTo, string? status, string? q)
+            int productId, decimal quantity, string? unit, string? returnTo, string? status, string? q)
         {
             try
             {
-                await _inventoryService.StockOut(productId, quantity, CurrentUserId);
-                TempData["Success"] = $"Stocked out {quantity:N0} of {await NameOf(productId)}.";
+                await _inventoryService.StockOut(productId, quantity, CurrentUserId, unit);
+                TempData["Success"] = $"Stocked out {quantity:N2} {unit ?? "pcs"} of {await NameOf(productId)}.";
             }
             catch (Exception ex)
             {

@@ -597,10 +597,15 @@ namespace ZEmpireAutoAccessories.Controllers
         {
             var rows = await _context.ServiceInvoiceDetails
                 .Where(d => d.ServiceInvoiceID == serviceInvoiceId && d.ProductID != null)
-                .Select(d => new { ProductID = d.ProductID!.Value, d.Quantity })
+                .Select(d => new { ProductID = d.ProductID!.Value, d.Quantity, d.Unit })
                 .ToListAsync();
 
-            return rows.Select(r => new DocumentStockLine(r.ProductID, r.Quantity)).ToList();
+            // The line's Unit is what the quantity was written in - "m" or
+            // "in" for film, "Unit" for anything counted. The inventory
+            // service converts roll goods and passes the rest through.
+            return rows
+                .Select(r => new DocumentStockLine(r.ProductID, r.Quantity, r.Unit))
+                .ToList();
         }
 
         /// <summary>
@@ -677,7 +682,12 @@ namespace ZEmpireAutoAccessories.Controllers
         // attribute bag to hang that off of.
         private async Task LoadLineDropdowns()
         {
-            ViewData["Products"] = await _context.Products.Where(p => p.IsActive).OrderBy(p => p.ProductName).ToListAsync();
+            var lineProducts = await _context.Products.Where(p => p.IsActive).OrderBy(p => p.ProductName).ToListAsync();
+            ViewData["Products"] = lineProducts;
+
+            // Roll goods take cm/in/m on a line instead of a plain count.
+            ViewData["RollProducts"] =
+                await _inventoryService.SoldByLength(lineProducts.Select(p => p.ProductID));
             ViewData["Services"] = await _context.Services.Where(s => s.IsActive).OrderBy(s => s.ServiceName).ToListAsync();
         }
     }

@@ -13,6 +13,8 @@
 
     var success = TempData["Success"] as string;
     var inventoryError = TempData["InventoryError"] as string;
+
+    var byLength = ViewData["SoldByLength"] as HashSet<int> ?? new HashSet<int>();
 }
 
 <style>
@@ -138,6 +140,7 @@
     /* Move stock straight from the row rather than opening the product. */
     .move-form { display:flex; gap:6px; justify-content:flex-end; align-items:center; }
     .move-qty { width:86px; }
+    .move-unit { width:66px; }
     .move-form .btn { padding:4px 10px; font-weight:600; }
 
     /* On a phone the four columns plus a quantity box and two buttons are
@@ -155,7 +158,8 @@
            is low or out, so the badge column earns its space back for the
            In/Out buttons. */
         .status-col { display:none; }
-        .move-qty { width:48px; }
+        .move-qty { width:44px; }
+        .move-unit { width:52px; padding-left:4px; padding-right:16px; }
     }
 </style>
 
@@ -218,9 +222,10 @@
             @foreach (var item in Model)
             {
                 var stock = item.StockOnHand ?? 0;
+                var roll = byLength.Contains(item.ProductID);
                 <tr>
                     <td>@item.ProductName</td>
-                    <td>@stock.ToString("N0")</td>
+                    <td>@ZEmpireAutoAccessories.Models.UnitOfMeasure.Describe(stock, roll)</td>
                     <td class="status-col">
                         @if (stock <= 0)
                         {
@@ -246,6 +251,18 @@
                             <input type="hidden" name="q" value="@search" />
                             <input type="number" name="quantity" step="0.01" min="0.01"
                                    class="form-control form-control-sm move-qty" placeholder="Qty" />
+                            @if (roll)
+                            {
+                                @* Roll goods are worked in whatever unit suits
+                                   the job; the amount is converted on the way in. *@
+                                <select name="unit" class="form-select form-select-sm move-unit"
+                                        data-searchable="false" title="Unit">
+                                    @foreach (var u in ZEmpireAutoAccessories.Models.UnitOfMeasure.LengthUnits)
+                                    {
+                                        <option value="@u">@u</option>
+                                    }
+                                </select>
+                            }
                             <button type="submit" class="btn btn-sm btn-outline-success" title="Stock in">In</button>
                             @* Stocking out of an empty shelf can only be
                                refused, so don't offer the click. *@

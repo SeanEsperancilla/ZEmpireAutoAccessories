@@ -48,12 +48,13 @@ namespace ZEmpireAutoAccessories.Services
                 .ToListAsync();
         }
 
-        public async Task StockIn(int productId, decimal quantity, string userId)
+        public async Task StockIn(int productId, decimal quantity, string userId, string? unit = null)
         {
             if (quantity <= 0)
                 throw new ArgumentException("Stock-in quantity must be greater than zero.");
 
             await EnsureProductExists(productId);
+            quantity = await InBaseUnit(productId, quantity, unit);
 
             _context.InventoryTransactions.Add(new InventoryTransaction
             {
@@ -67,15 +68,22 @@ namespace ZEmpireAutoAccessories.Services
             await _context.SaveChangesAsync();
         }
 
-        public async Task StockOut(int productId, decimal quantity, string userId)
+        public async Task StockOut(int productId, decimal quantity, string userId, string? unit = null)
         {
             if (quantity <= 0)
                 throw new ArgumentException("Stock-out quantity must be greater than zero.");
 
             await EnsureProductExists(productId);
+            quantity = await InBaseUnit(productId, quantity, unit);
 
-            if (await GetStockOnHand(productId) < quantity)
-                throw new InvalidOperationException("Insufficient inventory.");
+            var onHand = await GetStockOnHand(productId);
+            if (onHand < quantity)
+            {
+                var byLength = (await SoldByLength(new[] { productId })).Count > 0;
+                throw new InvalidOperationException(
+                    $"Not enough stock - only {UnitOfMeasure.Describe(onHand, byLength)} on hand, " +
+                    $"{UnitOfMeasure.Describe(quantity, byLength)} requested.");
+            }
 
             _context.InventoryTransactions.Add(new InventoryTransaction
             {
@@ -96,8 +104,20 @@ namespace ZEmpireAutoAccessories.Services
             // the stock check has to see the total rather than each line on its
             // own - two lines of 3 against 5 in stock is short, even though
             // neither line is.
+            // Roll goods are entered in whatever unit suited the job, so bring
+            // every line to centimetres before anything is compared or summed.
+            // A line with no unit is already a base quantity.
+            var soldByLength = await SoldByLength(lines.Select(l => l.ProductID));
+
             var byProduct = lines
                 .Where(l => l.Quantity > 0)
+                .Select(l => new
+                {
+                    l.ProductID,
+                    Quantity = soldByLength.Contains(l.ProductID)
+                        ? UnitOfMeasure.ToBase(l.Quantity, l.Unit)
+                        : l.Quantity
+                })
                 .GroupBy(l => l.ProductID)
                 .Select(g => new { ProductID = g.Key, Quantity = g.Sum(l => l.Quantity) })
                 .ToList();
@@ -118,9 +138,13 @@ namespace ZEmpireAutoAccessories.Services
                     var name = (await GetProduct(line.ProductID))?.ProductName
                         ?? $"Product {line.ProductID}";
 
+                    var byLength = soldByLength.Contains(line.ProductID);
+
                     throw new InvalidOperationException(onHand <= 0
                         ? $"{name} is out of stock."
-                        : $"Not enough stock for {name} - only {onHand:N0} left, {line.Quantity:N0} needed.");
+                        : $"Not enough stock for {name} - only " +
+                          $"{UnitOfMeasure.Describe(onHand, byLength)} left, " +
+                          $"{UnitOfMeasure.Describe(line.Quantity, byLength)} needed.");
                 }
             }
 
@@ -152,6 +176,43 @@ namespace ZEmpireAutoAccessories.Services
                 .Where(t => t.ProductID == productId)
                 .OrderByDescending(t => t.TransactionDate)
                 .ToListAsync();
+        }
+
+        /// <summary>
+        /// A quantity typed against one product, converted to the unit stock
+        /// is held in. Only roll goods convert; everything else is already
+        /// counted in the unit it is stored in.
+        /// </summary>
+        private async Task<decimal> InBaseUnit(int productId, decimal quantity, string? unit)
+        {
+            if (unit == null)
+                return quantity;
+
+            var byLength = await SoldByLength(new[] { productId });
+            return byLength.Contains(productId)
+                ? UnitOfMeasure.ToBase(quantity, unit)
+                : quantity;
+        }
+
+        /// <summary>
+        /// Which of these products are roll goods, so their quantities need
+        /// converting to the base unit. One query rather than one per line.
+        /// </summary>
+        public async Task<HashSet<int>> SoldByLength(IEnumerable<int> productIds)
+        {
+            var ids = productIds.Distinct().ToList();
+            if (ids.Count == 0)
+                return new HashSet<int>();
+
+            var rows = await _context.Products
+                .Where(p => ids.Contains(p.ProductID))
+                .Select(p => new { p.ProductID, p.Category.CategoryName })
+                .ToListAsync();
+
+            return rows
+                .Where(r => UnitOfMeasure.IsSoldByLength(r.CategoryName))
+                .Select(r => r.ProductID)
+                .ToHashSet();
         }
 
         private async Task EnsureProductExists(int productId)

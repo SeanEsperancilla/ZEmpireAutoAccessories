@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -16,10 +16,16 @@ namespace ZEmpireAutoAccessories.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IQuotationService _quotationService;
 
-        public QuotationController(ApplicationDbContext context, IQuotationService quotationService)
+        private readonly IInventoryService _inventoryService;
+
+        public QuotationController(
+            ApplicationDbContext context,
+            IQuotationService quotationService,
+            IInventoryService inventoryService)
         {
             _context = context;
             _quotationService = quotationService;
+            _inventoryService = inventoryService;
         }
 
         // GET: Quotation?status=Draft&q=...
@@ -444,7 +450,12 @@ namespace ZEmpireAutoAccessories.Controllers
         // attribute bag to hang that off of.
         private async Task LoadLineDropdowns()
         {
-            ViewData["Products"] = await _context.Products.Where(p => p.IsActive).OrderBy(p => p.ProductName).ToListAsync();
+            var lineProducts = await _context.Products.Where(p => p.IsActive).OrderBy(p => p.ProductName).ToListAsync();
+            ViewData["Products"] = lineProducts;
+
+            // Roll goods take cm/in/m on a line instead of a plain count.
+            ViewData["RollProducts"] =
+                await _inventoryService.SoldByLength(lineProducts.Select(p => p.ProductID));
             ViewData["Services"] = await _context.Services.Where(s => s.IsActive).OrderBy(s => s.ServiceName).ToListAsync();
         }
     }

@@ -10,8 +10,12 @@
     var countError = TempData["CountError"] as string;
 
     var off = variances.Where(v => v.Variance != 0).ToList();
-    var over = off.Where(v => v.Variance > 0).Sum(v => v.Variance);
-    var short_ = off.Where(v => v.Variance < 0).Sum(v => -v.Variance);
+
+    // Roll goods are measured in centimetres and everything else is counted
+    // in pieces, so a total across products would add metres to bottles.
+    // Count the products instead and leave the amounts on their own rows.
+    var over = off.Count(v => v.Variance > 0);
+    var short_ = off.Count(v => v.Variance < 0);
 }
 
 <style>
@@ -73,11 +77,11 @@
                 <text>@off.Count product@(off.Count == 1 ? "" : "s")</text>
                 @if (over > 0)
                 {
-                    <text> · @over.ToString("N0") more on the shelf</text>
+                    <text> · @over with more on the shelf</text>
                 }
                 @if (short_ > 0)
                 {
-                    <text> · @short_.ToString("N0") missing</text>
+                    <text> · @short_ short</text>
                 }
             }
         </dd>
@@ -102,12 +106,12 @@
                 {
                     <tr>
                         <td>@v.ProductName</td>
-                        <td class="num">@v.PhysicalStock.ToString("N0")</td>
+                        <td class="num">@ZEmpireAutoAccessories.Models.UnitOfMeasure.Describe(v.PhysicalStock, v.SoldByLength)</td>
                         <td>@v.Unit</td>
                         <td>
                             <span class="badge badge-@v.StockLevel.ToLowerInvariant()">@v.StockLevel</span>
                         </td>
-                        <td class="num">@v.SystemStock.ToString("N0")</td>
+                        <td class="num">@ZEmpireAutoAccessories.Models.UnitOfMeasure.Describe(v.SystemStock, v.SoldByLength)</td>
                         <td>
                             @if (v.Variance == 0)
                             {
@@ -116,7 +120,7 @@
                             else
                             {
                                 <span class="variance @(v.Variance > 0 ? "over" : "short")">
-                                    @(v.Variance > 0 ? "+" : "")@v.Variance.ToString("N0")
+                                    @(v.Variance > 0 ? "+" : "")@ZEmpireAutoAccessories.Models.UnitOfMeasure.Describe(Math.Abs(v.Variance), v.SoldByLength)
                                 </span>
                             }
                         </td>

@@ -68,6 +68,7 @@ namespace ZEmpireAutoAccessories.Controllers
             List<string> unit)
         {
             var counted = new List<InventoryCheckDetail>();
+            var roll = await _inventoryService.SoldByLength(productId);
 
             for (var i = 0; i < productId.Count; i++)
             {
@@ -84,13 +85,24 @@ namespace ZEmpireAutoAccessories.Controllers
                     return View(await BuildCountSheet());
                 }
 
+                var typedUnit = i < unit.Count ? unit[i] : null;
+                var byLength = roll.Contains(productId[i]);
+
+                // Roll goods are counted in whatever unit the tape measure
+                // reads; store the count in the base unit so it can be
+                // compared with stock on hand.
+                var counting = byLength
+                    ? UnitOfMeasure.ToBase(physical.Value, typedUnit)
+                    : physical.Value;
+
                 counted.Add(new InventoryCheckDetail
                 {
                     ProductID = productId[i],
-                    PhysicalStock = physical.Value,
-                    // CK on inv.InventoryCheckDetail allows Piece or Roll only.
-                    Unit = i < unit.Count && unit[i] == "Roll" ? "Roll" : "Piece",
-                    StockLevel = LevelFor(physical.Value)
+                    PhysicalStock = counting,
+                    // CK on inv.InventoryCheckDetail allows Piece or Roll only,
+                    // so the measured unit lives in the figure, not the label.
+                    Unit = byLength || typedUnit == "Roll" ? "Roll" : "Piece",
+                    StockLevel = LevelFor(counting)
                 });
             }
 
@@ -210,7 +222,8 @@ namespace ZEmpireAutoAccessories.Controllers
                     ProductID = p.ProductID,
                     ProductName = p.ProductName,
                     CategoryName = p.Category.CategoryName,
-                    SystemStock = stock.TryGetValue(p.ProductID, out var s) ? s : 0
+                    SystemStock = stock.TryGetValue(p.ProductID, out var s) ? s : 0,
+                    SoldByLength = UnitOfMeasure.IsSoldByLength(p.Category.CategoryName)
                 })
                 .ToList();
         }
@@ -228,9 +241,12 @@ namespace ZEmpireAutoAccessories.Controllers
                 .Where(p => check.Details.Select(d => d.ProductID).Contains(p.ProductID))
                 .ToDictionaryAsync(p => p.ProductID, p => p.ProductName);
 
+            var roll = await _inventoryService.SoldByLength(check.Details.Select(d => d.ProductID));
+
             return check.Details
                 .Select(d => new StockVarianceRow
                 {
+                    SoldByLength = roll.Contains(d.ProductID),
                     ProductID = d.ProductID,
                     ProductName = names.TryGetValue(d.ProductID, out var n) ? n : $"Product {d.ProductID}",
                     PhysicalStock = d.PhysicalStock,
@@ -256,6 +272,8 @@ namespace ZEmpireAutoAccessories.Controllers
         }
 
         // CK on inv.InventoryCheckDetail allows Normal, Low or Critical only.
+        // The threshold is a piece count; for roll goods it reads as
+        // centimetres, so only the Critical (nothing left) case is meaningful.
         private static string LevelFor(decimal physical) =>
             physical <= 0 ? "Critical"
             : physical <= LowStockThreshold ? "Low"

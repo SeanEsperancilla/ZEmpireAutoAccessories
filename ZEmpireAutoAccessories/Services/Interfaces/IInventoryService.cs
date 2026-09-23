@@ -14,9 +14,9 @@ namespace ZEmpireAutoAccessories.Services.Interfaces
         /// <summary>Stock-on-hand for every product, from the dbo.vw_StockOnHand view.</summary>
         Task<List<VwStockOnHand>> GetStockLevels();
 
-        Task StockIn(int productId, decimal quantity, string userId);
+        Task StockIn(int productId, decimal quantity, string userId, string? unit = null);
 
-        Task StockOut(int productId, decimal quantity, string userId);
+        Task StockOut(int productId, decimal quantity, string userId, string? unit = null);
 
         Task<bool> HasSufficientStock(int productId, decimal quantity);
 
@@ -31,5 +31,11 @@ namespace ZEmpireAutoAccessories.Services.Interfaces
             IReadOnlyCollection<DocumentStockLine> lines, bool consume, string userId);
 
         Task<List<InventoryTransaction>> GetTransactions(int productId);
+
+        /// <summary>
+        /// Of the given products, the ones measured by length (Paint
+        /// Protection Film, Window Tint) rather than counted in pieces.
+        /// </summary>
+        Task<HashSet<int>> SoldByLength(IEnumerable<int> productIds);
     }
 }

@@ -31,6 +31,9 @@ namespace ZEmpireAutoAccessories.Models
         public string ProductName { get; set; } = string.Empty;
         public string CategoryName { get; set; } = string.Empty;
         public decimal SystemStock { get; set; }
+
+        /// <summary>Roll goods: counted in cm/in/m rather than pieces.</summary>
+        public bool SoldByLength { get; set; }
     }
 
     /// <summary>
@@ -45,6 +48,7 @@ namespace ZEmpireAutoAccessories.Models
         public decimal SystemStock { get; set; }
         public string Unit { get; set; } = "Piece";
         public string StockLevel { get; set; } = "Normal";
+        public bool SoldByLength { get; set; }
 
         public decimal Variance => PhysicalStock - SystemStock;
     }
@@ -54,7 +58,12 @@ namespace ZEmpireAutoAccessories.Models
     /// completion moves stock. Not a mapped entity - inv.InventoryTransaction
     /// records only the movement itself, with no link back to what caused it.
     /// </summary>
-    public record DocumentStockLine(int ProductID, decimal Quantity);
+    /// <param name="Unit">
+    /// The unit Quantity was entered in ("cm", "in", "m"). Null means the
+    /// quantity is already in the product's stock unit, which is how the
+    /// stock-count reconcile and every piece-goods caller pass it.
+    /// </param>
+    public record DocumentStockLine(int ProductID, decimal Quantity, string? Unit = null);
 
     [Table("InventoryCheck", Schema = "inv")]
     public class InventoryCheck
