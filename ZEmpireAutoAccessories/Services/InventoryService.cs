@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using ZEmpireAutoAccessories.Data;
 using ZEmpireAutoAccessories.Models;
 using ZEmpireAutoAccessories.Services.Interfaces;
@@ -85,6 +85,56 @@ namespace ZEmpireAutoAccessories.Services
                 Quantity = quantity,
                 TransactionDate = DateTime.Now
             });
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task PostDocumentStock(
+            IReadOnlyCollection<DocumentStockLine> lines, bool consume, string userId)
+        {
+            // A document can carry the same product on more than one line, and
+            // the stock check has to see the total rather than each line on its
+            // own - two lines of 3 against 5 in stock is short, even though
+            // neither line is.
+            var byProduct = lines
+                .Where(l => l.Quantity > 0)
+                .GroupBy(l => l.ProductID)
+                .Select(g => new { ProductID = g.Key, Quantity = g.Sum(l => l.Quantity) })
+                .ToList();
+
+            if (byProduct.Count == 0)
+                return;
+
+            if (consume)
+            {
+                // Check every line before writing any, so a document that is
+                // short on its last product doesn't half-post.
+                foreach (var line in byProduct)
+                {
+                    var onHand = await GetStockOnHand(line.ProductID);
+                    if (onHand >= line.Quantity)
+                        continue;
+
+                    var name = (await GetProduct(line.ProductID))?.ProductName
+                        ?? $"Product {line.ProductID}";
+
+                    throw new InvalidOperationException(onHand <= 0
+                        ? $"{name} is out of stock."
+                        : $"Not enough stock for {name} - only {onHand:N0} left, {line.Quantity:N0} needed.");
+                }
+            }
+
+            foreach (var line in byProduct)
+            {
+                _context.InventoryTransactions.Add(new InventoryTransaction
+                {
+                    ProductID = line.ProductID,
+                    UserId = userId,
+                    TransactionType = consume ? "OUT" : "IN",
+                    Quantity = line.Quantity,
+                    TransactionDate = DateTime.Now
+                });
+            }
 
             await _context.SaveChangesAsync();
         }

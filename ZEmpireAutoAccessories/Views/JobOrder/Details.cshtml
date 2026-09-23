@@ -1,10 +1,12 @@
-@model ZEmpireAutoAccessories.Models.JobOrder
+﻿@model ZEmpireAutoAccessories.Models.JobOrder
 
 @{
     ViewData["Title"] = "Job Order Details";
     var total = Model.Details.Sum(d => d.SubTotal);
     var successMessage = TempData["Success"] as string;
     var lockError = TempData["LockError"] as string;
+    var lineError = TempData["LineError"] as string;
+    var statusError = TempData["StatusError"] as string;
 }
 
 <style>
@@ -59,6 +61,14 @@
 @if (!string.IsNullOrEmpty(lockError))
 {
     <div class="alert alert-danger">@lockError</div>
+}
+@if (!string.IsNullOrEmpty(statusError))
+{
+    <div class="alert alert-danger">@statusError</div>
+}
+@if (!string.IsNullOrEmpty(lineError))
+{
+    <div class="alert alert-danger">@lineError</div>
 }
 
 <div class="zx-card">

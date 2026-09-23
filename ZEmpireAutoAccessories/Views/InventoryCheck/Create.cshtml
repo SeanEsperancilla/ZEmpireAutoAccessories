@@ -1,0 +1,138 @@
+@model List<ZEmpireAutoAccessories.Models.StockCountRow>
+
+@{
+    ViewData["Title"] = "New Stock Count";
+    var countError = ViewData["CountError"] as string;
+}
+
+<style>
+    .zx-page-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+    .zx-page-head h1 { font-family:'Oswald',system-ui,sans-serif; font-weight:700; font-size:22px; margin:0; color:#0b0b0c; }
+    .zx-page-sub { color:#7b8290; font-size:13.5px; margin:-10px 0 18px; }
+    .btn-zx { background:var(--zx-red); border-color:var(--zx-red); color:#fff; font-weight:600; }
+    .btn-zx:hover { background:var(--zx-red2); border-color:var(--zx-red2); color:#fff; }
+    .zx-card { background:#fff; border:1px solid #e8ebf0; border-radius:14px; padding:22px; }
+    .zx-table thead { background:#0b0b0c; color:#fff; }
+    .zx-table thead th { border-bottom:none; font-weight:600; font-size:13px; text-transform:uppercase; letter-spacing:.3px; }
+    .zx-table td, .zx-table th { vertical-align:middle; }
+    .cat-row td { background:#f7f8fa; font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:.4px; color:#7b8290; }
+    .count-input { max-width:140px; }
+    .unit-select { max-width:130px; }
+    .sys-stock { font-variant-numeric:tabular-nums; color:#4b5563; }
+    .variance { font-variant-numeric:tabular-nums; font-weight:600; }
+    .variance.over { color:#15803d; }
+    .variance.short { color:#b91c1c; }
+    .variance.match { color:#98a0ad; font-weight:500; }
+</style>
+
+<div class="zx-page-head">
+    <h1>New Stock Count</h1>
+    <a class="btn btn-outline-secondary" asp-action="Index">Cancel</a>
+</div>
+<p class="zx-page-sub">
+    Write in what is physically on the shelf. Leave a product blank if you did not count it —
+    only the rows you fill in are recorded.
+</p>
+
+@if (!string.IsNullOrEmpty(countError))
+{
+    <div class="alert alert-danger py-2 px-3">@countError</div>
+}
+
+<form asp-action="Create" method="post">
+    <div class="zx-card mb-3">
+        <div class="table-responsive">
+            <table class="table zx-table mb-0" id="countTable">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>System Stock</th>
+                        <th>Physical Count</th>
+                        <th>Unit</th>
+                        <th>Variance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @* Indexed names rather than repeated ones: a product left
+                       blank still posts its slot, so the three lists stay lined
+                       up with each other however many rows are skipped. *@
+                    @{ string? currentCategory = null; }
+                    @for (var i = 0; i < Model.Count; i++)
+                    {
+                        var row = Model[i];
+
+                        @if (row.CategoryName != currentCategory)
+                        {
+                            currentCategory = row.CategoryName;
+                            <tr class="cat-row"><td colspan="5">@currentCategory</td></tr>
+                        }
+                        <tr>
+                            <td>
+                                @row.ProductName
+                                <input type="hidden" name="productId[@i]" value="@row.ProductID" />
+                            </td>
+                            <td class="sys-stock" data-system="@row.SystemStock">@row.SystemStock.ToString("N0")</td>
+                            <td>
+                                <input type="number" step="0.01" min="0" name="physicalStock[@i]"
+                                       class="form-control count-input" placeholder="—" />
+                            </td>
+                            <td>
+                                <select name="unit[@i]" class="form-select unit-select" data-searchable="false">
+                                    <option value="Piece">Piece</option>
+                                    <option value="Roll">Roll</option>
+                                </select>
+                            </td>
+                            <td><span class="variance match">—</span></td>
+                        </tr>
+                    }
+                    @if (Model.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">
+                                No active products to count.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-zx">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" /><path d="M17 21v-8H7v8" /><path d="M7 3v5h8" /></svg>
+            Save Count
+        </button>
+        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        // Show the variance as each count is typed, so a miscount is obvious
+        // at the shelf rather than after saving. Display only - the figures
+        // that matter are recomputed server-side when the count is opened.
+        (function () {
+            var table = document.getElementById('countTable');
+            if (!table) { return; }
+
+            table.addEventListener('input', function (e) {
+                if (e.target.name.indexOf('physicalStock') !== 0) { return; }
+
+                var row = e.target.closest('tr');
+                var system = parseFloat(row.querySelector('[data-system]').dataset.system) || 0;
+                var cell = row.querySelector('.variance');
+
+                if (e.target.value === '') {
+                    cell.textContent = '—';
+                    cell.className = 'variance match';
+                    return;
+                }
+
+                var diff = (parseFloat(e.target.value) || 0) - system;
+                cell.textContent = diff === 0 ? 'Match' : (diff > 0 ? '+' : '') + diff.toLocaleString();
+                cell.className = 'variance ' + (diff === 0 ? 'match' : diff > 0 ? 'over' : 'short');
+            });
+        })();
+    </script>
+}

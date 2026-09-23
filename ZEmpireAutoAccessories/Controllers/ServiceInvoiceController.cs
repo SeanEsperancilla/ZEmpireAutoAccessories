@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -15,11 +15,16 @@ namespace ZEmpireAutoAccessories.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IQuotationService _quotationService; // GetNextInvoiceNumber lives here
+        private readonly IInventoryService _inventoryService;
 
-        public ServiceInvoiceController(ApplicationDbContext context, IQuotationService quotationService)
+        public ServiceInvoiceController(
+            ApplicationDbContext context,
+            IQuotationService quotationService,
+            IInventoryService inventoryService)
         {
             _context = context;
             _quotationService = quotationService;
+            _inventoryService = inventoryService;
         }
 
         // GET: ServiceInvoice?status=Paid
@@ -459,7 +464,11 @@ namespace ZEmpireAutoAccessories.Controllers
             // straight back to Details with no line added and nothing said,
             // which reads as the page simply refreshing. Say what was wrong.
             string? lineError = null;
-            if (string.IsNullOrWhiteSpace(description))
+            if (OwnsItsStock(invoice) && invoice.Status == "Paid")
+                lineError =
+                    "This invoice is paid and its products have already left stock. " +
+                    "Set it back to Pending to change its line items.";
+            else if (string.IsNullOrWhiteSpace(description))
                 lineError = "Description is required for a line item. Picking a product or service fills it in for you.";
             else if (quantity <= 0)
                 lineError = "Quantity must be more than zero.";
@@ -504,6 +513,16 @@ namespace ZEmpireAutoAccessories.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RemoveLine(int detailId, int serviceInvoiceId)
         {
+            // Same reason as AddLine: the stock is already out.
+            var owner = await _context.ServiceInvoices.FindAsync(serviceInvoiceId);
+            if (owner != null && OwnsItsStock(owner) && owner.Status == "Paid")
+            {
+                TempData["LineError"] =
+                    "This invoice is paid and its products have already left stock. " +
+                    "Set it back to Pending to change its line items.";
+                return RedirectToAction(nameof(Details), new { id = serviceInvoiceId });
+            }
+
             var detail = await _context.ServiceInvoiceDetails.FindAsync(detailId);
             if (detail != null)
             {
@@ -533,13 +552,55 @@ namespace ZEmpireAutoAccessories.Controllers
                 return BadRequest();
 
             var invoice = await _context.ServiceInvoices.FindAsync(id);
-            if (invoice != null)
+            if (invoice == null)
+                return RedirectToAction(nameof(Details), new { id });
+
+            var holdsStock = OwnsItsStock(invoice) && invoice.Status == "Paid";
+            var willHoldStock = OwnsItsStock(invoice) && status == "Paid";
+
+            await using var tx = await _context.Database.BeginTransactionAsync();
+            try
             {
+                if (holdsStock != willHoldStock)
+                    await _inventoryService.PostDocumentStock(
+                        await ProductLines(id), willHoldStock, CurrentUserId);
+
                 invoice.Status = status;
                 await _context.SaveChangesAsync();
+                await tx.CommitAsync();
+            }
+            catch (InvalidOperationException ex)
+            {
+                await tx.RollbackAsync();
+                TempData["StatusError"] = ex.Message;
             }
 
             return RedirectToAction(nameof(Details), new { id });
+        }
+
+        /// <summary>
+        /// Whether this invoice is the document that moves its own stock.
+        ///
+        /// An invoice raised against a job order bills for work the job order
+        /// already recorded, and that job order takes the products out of
+        /// stock when it is completed. Deducting here as well would count the
+        /// same film twice, so only a standalone invoice - one with no
+        /// JobOrderID - owns its stock.
+        /// </summary>
+        private static bool OwnsItsStock(ServiceInvoice invoice) => invoice.JobOrderID == null;
+
+        /// <summary>
+        /// The product lines of an invoice, as stock movements. Service-only
+        /// lines carry no ProductID and move no stock.
+        /// </summary>
+        private async Task<IReadOnlyCollection<DocumentStockLine>> ProductLines(int serviceInvoiceId)
+        {
+            var rows = await _context.ServiceInvoiceDetails
+                .Where(d => d.ServiceInvoiceID == serviceInvoiceId && d.ProductID != null)
+                .Select(d => new { ProductID = d.ProductID!.Value, d.Quantity })
+                .ToListAsync();
+
+            return rows.Select(r => new DocumentStockLine(r.ProductID, r.Quantity)).ToList();
         }
 
         /// <summary>

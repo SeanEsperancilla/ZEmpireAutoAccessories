@@ -1,4 +1,4 @@
-using ZEmpireAutoAccessories.Models;
+﻿using ZEmpireAutoAccessories.Models;
 
 namespace ZEmpireAutoAccessories.Services.Interfaces
 {
@@ -19,6 +19,16 @@ namespace ZEmpireAutoAccessories.Services.Interfaces
         Task StockOut(int productId, decimal quantity, string userId);
 
         Task<bool> HasSufficientStock(int productId, decimal quantity);
+
+        /// <summary>
+        /// Moves stock for every product line of a document being completed
+        /// (consume: true, writes OUT) or taken back out of its completed
+        /// state (consume: false, writes IN). Throws
+        /// InvalidOperationException naming the product if a consume would
+        /// take stock below zero.
+        /// </summary>
+        Task PostDocumentStock(
+            IReadOnlyCollection<DocumentStockLine> lines, bool consume, string userId);
 
         Task<List<InventoryTransaction>> GetTransactions(int productId);
     }

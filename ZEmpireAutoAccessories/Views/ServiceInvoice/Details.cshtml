@@ -1,4 +1,4 @@
-@model ZEmpireAutoAccessories.Models.ServiceInvoice
+﻿@model ZEmpireAutoAccessories.Models.ServiceInvoice
 
 @{
     ViewData["Title"] = "Service Invoice Details";
@@ -37,6 +37,11 @@
     #removeLineModal .modal-title { font-family:'Oswald',system-ui,sans-serif; font-weight:700; font-size:19px; }
 </style>
 
+
+@if (TempData["StatusError"] is string statusError)
+{
+    <div class="alert alert-danger">@statusError</div>
+}
 <div class="zx-page-head">
     <h1>Invoice @Model.InvoiceNumber</h1>
     <div>

@@ -1,4 +1,4 @@
-@model IEnumerable<ZEmpireAutoAccessories.Models.VwStockOnHand>
+﻿@model IEnumerable<ZEmpireAutoAccessories.Models.VwStockOnHand>
 
 @{
     ViewData["Title"] = "Inventory";
@@ -7,11 +7,18 @@
 }
 
 <style>
+    .zx-page-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+    }
+
     .zx-page-head h1 {
         font-family: 'Oswald',system-ui,sans-serif;
         font-weight: 700;
         font-size: 22px;
-        margin: 0 0 18px;
+        margin: 0;
         color: #0b0b0c;
     }
 
@@ -101,8 +108,17 @@
         }
 </style>
 
+<style>
+    .btn-zx { background:var(--zx-red); border-color:var(--zx-red); color:#fff; font-weight:600; }
+    .btn-zx:hover { background:var(--zx-red2); border-color:var(--zx-red2); color:#fff; }
+</style>
+
 <div class="zx-page-head">
     <h1>Inventory</h1>
+    <div>
+        <a class="btn btn-outline-secondary" asp-controller="InventoryCheck" asp-action="Index">Stock counts</a>
+        <a class="btn btn-zx" asp-controller="InventoryCheck" asp-action="Create">+ New stock count</a>
+    </div>
 </div>
 
 <div class="status-filters">
