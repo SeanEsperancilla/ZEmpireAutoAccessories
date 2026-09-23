@@ -25,6 +25,14 @@ namespace ZEmpireAutoAccessories.Controllers
                 .OrderBy(p => p.ProductName)
                 .ToListAsync();
 
+            // How many prices each product has, so the list can flag the ones
+            // that still need one - a product with no cat.Pricing row cannot
+            // be put on a quotation or job order.
+            ViewData["PriceCountByProduct"] = await _context.Pricings
+                .GroupBy(p => p.ProductID)
+                .Select(g => new { ProductID = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.ProductID, x => x.Count);
+
             return View(products);
         }
 
@@ -70,6 +78,20 @@ namespace ZEmpireAutoAccessories.Controllers
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
 
+            // A product with no price cannot be sold or quoted, so go straight
+            // on to setting one instead of leaving that to be remembered later.
+            // Someone without the Pricing module can't be sent there, so they
+            // land back on the list as before.
+            if (User.HasClaim(AppClaims.ModuleAccess, "Pricing"))
+            {
+                TempData["Success"] =
+                    $"\"{product.ProductName}\" saved. Now set its price.";
+
+                return RedirectToAction(
+                    "Create", "Pricing", new { productId = product.ProductID });
+            }
+
+            TempData["Success"] = $"\"{product.ProductName}\" saved.";
             return RedirectToAction(nameof(Index));
         }
 

@@ -49,10 +49,55 @@ namespace ZEmpireAutoAccessories.Controllers
             return View(pricing);
         }
 
-        public async Task<IActionResult> Create()
+        // GET: Pricing/Create?productId=5
+        //
+        // There is no "New Pricing" button any more - a price is always set
+        // for a product you navigated to, either straight after creating it
+        // or from the Products list. productId pre-selects and locks that
+        // product so the form is only asking for the parts still unknown.
+        public async Task<IActionResult> Create(int? productId)
         {
-            await LoadDropdowns();
-            return View();
+            var pricing = new Pricing { ProductID = productId ?? 0 };
+
+            if (productId != null)
+            {
+                var product = await _context.Products
+                    .Include(p => p.Category)
+                    .FirstOrDefaultAsync(p => p.ProductID == productId);
+
+                if (product == null)
+                    return NotFound();
+
+                ViewData["LockedProductName"] = product.ProductName;
+                ViewData["LockedProductCategory"] = product.Category.CategoryName;
+                ViewData["ExistingPriceCount"] =
+                    await _context.Pricings.CountAsync(p => p.ProductID == productId);
+            }
+
+            await LoadDropdowns(pricing);
+            return View(pricing);
+        }
+
+        /// <summary>
+        /// Names the product the form is locked to, so the banner survives a
+        /// failed save instead of dropping back to a bare form.
+        /// </summary>
+        private async Task DescribeLockedProduct(int productId)
+        {
+            if (productId <= 0)
+                return;
+
+            var product = await _context.Products
+                .Include(p => p.Category)
+                .FirstOrDefaultAsync(p => p.ProductID == productId);
+
+            if (product == null)
+                return;
+
+            ViewData["LockedProductName"] = product.ProductName;
+            ViewData["LockedProductCategory"] = product.Category.CategoryName;
+            ViewData["ExistingPriceCount"] =
+                await _context.Pricings.CountAsync(p => p.ProductID == productId);
         }
 
         [HttpPost]
@@ -66,6 +111,7 @@ namespace ZEmpireAutoAccessories.Controllers
 
             if (!ModelState.IsValid)
             {
+                await DescribeLockedProduct(pricing.ProductID);
                 await LoadDropdowns(pricing);
                 return View(pricing);
             }
@@ -79,11 +125,16 @@ namespace ZEmpireAutoAccessories.Controllers
             catch (Exception ex)
             {
                 ModelState.AddModelError(string.Empty, ex.Message);
+                await DescribeLockedProduct(pricing.ProductID);
                 await LoadDropdowns(pricing);
                 return View(pricing);
             }
 
-            return RedirectToAction(nameof(Index));
+            // A product usually needs a price per classification and panel, so
+            // stay on the form for the same product rather than bouncing to
+            // the list after each one.
+            TempData["Success"] = "Price saved.";
+            return RedirectToAction(nameof(Create), new { productId = pricing.ProductID });
         }
 
         public async Task<IActionResult> Edit(int? id)

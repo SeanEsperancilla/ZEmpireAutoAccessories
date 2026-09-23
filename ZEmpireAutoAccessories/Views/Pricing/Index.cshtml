@@ -24,9 +24,12 @@
     .search-actions { display:flex; gap:8px; margin-top:8px; margin-bottom:18px; }
 </style>
 
+@* A price always belongs to a product, so it is set from the Products
+   module (straight after creating one, or via "Set price" on the list).
+   This screen is for changing a price that already exists. *@
 <div class="zx-page-head">
     <h1>Pricing</h1>
-    <a class="btn btn-zx" asp-action="Create">+ New Pricing</a>
+    <a class="btn btn-outline-secondary" asp-controller="Product" asp-action="Index">Go to Products to set a price</a>
 </div>
 
 <form asp-action="Index" method="get">

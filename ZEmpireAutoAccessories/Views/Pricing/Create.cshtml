@@ -1,7 +1,16 @@
 ﻿@model ZEmpireAutoAccessories.Models.Pricing
 
 @{
-    ViewData["Title"] = "New Pricing";
+    ViewData["Title"] = "Set Product Price";
+
+    // Set when the form was opened for a specific product - from the Products
+    // list or straight after creating one. There is no longer a way in that
+    // does not name a product, so this is the normal case.
+    var lockedProduct = ViewData["LockedProductName"] as string;
+    var lockedCategory = ViewData["LockedProductCategory"] as string;
+    var existingPrices = ViewData["ExistingPriceCount"] as int? ?? 0;
+    var locked = !string.IsNullOrEmpty(lockedProduct);
+    var saved = TempData["Success"] as string;
 }
 
 <style>
@@ -45,21 +54,44 @@
 </style>
 
 <div class="zx-page-head">
-    <h1>New Pricing</h1>
+    <h1>Set Product Price</h1>
 </div>
-<p class="zx-page-sub">Set the price for a product/classification/panel combination.</p>
+<p class="zx-page-sub">A price covers one classification and panel, so a product usually needs several.</p>
+
+@if (!string.IsNullOrEmpty(saved))
+{
+    <div class="alert alert-success py-2 px-3" style="max-width:640px;">@saved</div>
+}
 
 <div class="zx-card">
     <form asp-action="Create" method="post">
         <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
-        <div class="mb-3">
-            <label asp-for="ProductID" class="form-label"></label>
-            <select asp-for="ProductID" class="form-select" asp-items="ViewBag.ProductID">
-                <option value="">-- Select Product --</option>
-            </select>
-            <span asp-validation-for="ProductID" class="text-danger"></span>
-        </div>
+        @if (locked)
+        {
+            <input type="hidden" asp-for="ProductID" />
+            <div class="link-context mb-3">
+                <div class="link-kind">Pricing</div>
+                <div class="link-ref">@lockedProduct</div>
+                <div class="link-item">@lockedCategory</div>
+                <div class="link-customer">
+                    @(existingPrices == 0
+                        ? "No prices set for this product yet."
+                        : $"{existingPrices} price{(existingPrices == 1 ? "" : "s")} already set.")
+                </div>
+                <a class="link-back" asp-controller="Product" asp-action="Index">Pick a different product</a>
+            </div>
+        }
+        else
+        {
+            <div class="mb-3">
+                <label asp-for="ProductID" class="form-label"></label>
+                <select asp-for="ProductID" class="form-select" asp-items="ViewBag.ProductID">
+                    <option value="">-- Select Product --</option>
+                </select>
+                <span asp-validation-for="ProductID" class="text-danger"></span>
+            </div>
+        }
 
         <div class="mb-3">
             <label asp-for="TintVariantID" class="form-label">Tint Variant <span class="text-muted fw-normal">(optional, for non-tint products leave blank)</span></label>
@@ -99,7 +131,14 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" /><path d="M17 21v-8H7v8" /><path d="M7 3v5h8" /></svg>
             Save
         </button>
-        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+        @if (locked)
+        {
+            <a asp-controller="Product" asp-action="Index" class="btn btn-outline-secondary">Done</a>
+        }
+        else
+        {
+            <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+        }
     </form>
 </div>
 
