@@ -19,7 +19,7 @@
 <p class="zx-page-sub">Update @Model.FirstName @Model.LastName's details.</p>
 
 <div class="zx-card">
-    <form asp-action="Edit" method="post">
+    <form asp-action="Edit" method="post" class="zx-form">
         <input type="hidden" asp-for="EmployeeID" />
         <input type="hidden" asp-for="UserId" />
         <input type="hidden" asp-for="CreatedAt" />
@@ -85,11 +85,13 @@
             <label asp-for="IsActive" class="form-check-label"></label>
         </div>
 
-        <button type="submit" class="btn btn-zx">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
-            Save Changes
-        </button>
-        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-zx">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
+                Save Changes
+            </button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+        </div>
     </form>
 </div>
 

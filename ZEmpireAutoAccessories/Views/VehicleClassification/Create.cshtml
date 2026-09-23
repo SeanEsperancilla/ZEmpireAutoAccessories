@@ -19,7 +19,7 @@
 <p class="zx-page-sub">Add a classification vehicles and pricing can be grouped under.</p>
 
 <div class="zx-card">
-    <form asp-action="Create" method="post">
+    <form asp-action="Create" method="post" class="zx-form">
         <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
         <div class="mb-3">
@@ -28,11 +28,13 @@
             <span asp-validation-for="ClassificationName" class="text-danger"></span>
         </div>
 
-        <button type="submit" class="btn btn-zx">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
-            Save
-        </button>
-        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-zx">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
+                Save
+            </button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+        </div>
     </form>
 </div>
 

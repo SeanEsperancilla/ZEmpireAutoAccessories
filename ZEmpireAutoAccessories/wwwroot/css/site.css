@@ -177,13 +177,23 @@ body {
 }
 
 /* ---- page width ----------------------------------------------------
-   Bootstrap's .container tops out at 1320px, so on a wide monitor the
-   line-item tables sit in the middle with a lot of dead screen either
-   side. Use the full width past that point, keeping a 1in gutter left
-   and right so nothing runs into the edge. */
-@media (min-width: 1400px) {
+   Bootstrap's .container tops out at 1320px, so on a wide monitor every
+   screen sits in the middle with a lot of dead screen either side. Take
+   the full width from the desktop breakpoint up, with a gutter that
+   grows with the viewport and stops at 1in so nothing runs into the
+   edge on a big monitor. */
+@media (min-width: 1200px) {
   .container {
     max-width: none;
+    padding-left: 44px;
+    padding-right: 44px;
+  }
+}
+
+/* A full inch either side once there is room for it, which is the gutter
+   the screens were designed around. */
+@media (min-width: 1500px) {
+  .container {
     padding-left: 1in;
     padding-right: 1in;
   }
@@ -192,11 +202,146 @@ body {
 /* Each page sets its own .zx-card max-width in an inline <style> that
    loads after this file, so a plain .zx-card rule here would lose on
    source order. `body .zx-card` outranks it on specificity instead, and
-   lets the wide transaction cards use the space the container just
-   gained rather than stopping short of it. */
-@media (min-width: 1400px) {
+   lets the list, detail and line-item cards use the space the container
+   just gained rather than stopping short of it. */
+@media (min-width: 992px) {
   body .zx-card {
     max-width: none;
+  }
+}
+
+/* ---- data-entry forms ----------------------------------------------
+   The Create/Edit cards were a single 480-720px column, which left most
+   of a desktop screen empty and made every form twice as tall as it
+   needed to be. Forms marked .zx-form lay their fields out two to a row
+   from the desktop breakpoint up; below it they fall back to normal
+   block flow, so the phone layout is unchanged.
+
+   The card itself is capped rather than run out to the full container -
+   a text input the width of a 27" monitor is harder to use, not easier -
+   except where the form carries its own line-item table, which is the
+   one thing that really does want every pixel. */
+@media (min-width: 992px) {
+  body .zx-card:has(> .zx-form) {
+    max-width: 1180px;
+  }
+
+  body .zx-card:has(> .zx-form table) {
+    max-width: none;
+  }
+
+  .zx-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 26px;
+    align-items: start;
+  }
+
+  /* Anything that isn't a single field runs the full width: validation
+     summaries, Bootstrap .row groups (which carry their own columns and
+     already line up with the two tracks), headings, line-item tables and
+     the action bar. */
+  .zx-form > .alert,
+  .zx-form > .row,
+  .zx-form > .form-actions,
+  .zx-form > .link-context,
+  .zx-form > .table-responsive,
+  .zx-form > table,
+  .zx-form > template,
+  .zx-form > hr,
+  .zx-form > dl,
+  .zx-form > p,
+  .zx-form > h1, .zx-form > h2, .zx-form > h3,
+  .zx-form > h4, .zx-form > h5, .zx-form > h6,
+  .zx-form > .text-end,
+  .zx-form > button {
+    grid-column: 1 / -1;
+  }
+
+  /* A grid item fills its track by default, which would stretch a loose
+     button ("+ Add Item") across the whole card. */
+  .zx-form > button {
+    justify-self: start;
+  }
+
+  /* A few fields carry a Bootstrap column class (.mb-3.col-md-4) from
+     when they were laid out by hand. As a grid item that width would be
+     a third of an already-halved track, so drop it and let the track
+     decide. */
+  .zx-form > [class*="col-"] {
+    width: auto;
+    max-width: none;
+    flex: none;
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
+/* Save/Cancel sit together on one line under the fields, separated from
+   them by a rule, instead of being placed into grid cells half a card
+   apart. Declared outside the media query so the spacing is the same on
+   a phone. */
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: 6px;
+  padding-top: 18px;
+  border-top: 1px solid #eef1f5;
+}
+
+/* ---- detail screens ------------------------------------------------
+   The Details and Delete screens list their fields as a Bootstrap
+   dl.row: a label at col-sm-3/4 and the value taking the rest of the
+   line. On a wide card that leaves a long empty strip to the right of
+   every value, so pack two label/value pairs onto each row instead.
+   Every dl.row in the app is a direct child of a .zx-card and has
+   matching dt/dd counts, so the four tracks always line up. */
+@media (min-width: 1200px) {
+  .zx-card > dl.row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(110px, max-content) minmax(180px, 1fr));
+    column-gap: 26px;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .zx-card > dl.row > dt,
+  .zx-card > dl.row > dd {
+    width: auto;
+    max-width: none;
+    flex: none;
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
+/* Three pairs fit on a full-HD monitor, which turns a 13-field invoice
+   from a 13-row list into a 5-row block. */
+@media (min-width: 1600px) {
+  .zx-card > dl.row {
+    grid-template-columns: repeat(3, minmax(110px, max-content) minmax(180px, 1fr));
+  }
+}
+
+/* Lists gain the most room from the wider container, so let the rows
+   breathe rather than keeping them at the density they needed when the
+   table was squeezed into 1320px. */
+@media (min-width: 1200px) {
+  .zx-table > :not(caption) > * > * {
+    padding-top: .72rem;
+    padding-bottom: .72rem;
+  }
+
+  .zx-table th:first-child,
+  .zx-table td:first-child {
+    padding-left: 1.1rem;
+  }
+
+  /* The search box above a list was sized for a narrow page. */
+  .search-wrap {
+    max-width: 520px;
   }
 }
 
