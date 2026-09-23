@@ -23,6 +23,13 @@
     .variance.over { color:#15803d; }
     .variance.short { color:#b91c1c; }
     .variance.match { color:#98a0ad; font-weight:500; }
+
+    .sheet-tools { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:14px; }
+    .sheet-filter { position:relative; flex:1 1 320px; max-width:420px; }
+    .sheet-filter svg { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:#98a0ad; }
+    .sheet-filter input { padding-left:38px; border-radius:10px; }
+    .counted-tally { font-size:13.5px; font-weight:600; color:#4b5563; white-space:nowrap; }
+    .counted-tally b { color:#0b0b0c; }
 </style>
 
 <div class="zx-page-head">
@@ -38,6 +45,19 @@
 {
     <div class="alert alert-danger py-2 px-3">@countError</div>
 }
+
+<div class="sheet-tools">
+    <div class="sheet-filter">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+        <input type="text" id="sheetFilter" class="form-control" autocomplete="off"
+               placeholder="Filter to a product or category, e.g. tint" />
+    </div>
+    <label class="form-check-label d-flex align-items-center gap-2" style="font-size:13.5px;">
+        <input type="checkbox" id="onlyCounted" class="form-check-input mt-0" />
+        Show only what I have counted
+    </label>
+    <span class="counted-tally"><b id="countedCount">0</b> counted</span>
+</div>
 
 <form asp-action="Create" method="post">
     <div class="zx-card mb-3">
@@ -64,9 +84,9 @@
                         @if (row.CategoryName != currentCategory)
                         {
                             currentCategory = row.CategoryName;
-                            <tr class="cat-row"><td colspan="5">@currentCategory</td></tr>
+                            <tr class="cat-row" data-category="@currentCategory"><td colspan="5">@currentCategory</td></tr>
                         }
-                        <tr>
+                        <tr data-name="@row.ProductName.ToLowerInvariant()" data-category="@row.CategoryName">
                             <td>
                                 @row.ProductName
                                 <input type="hidden" name="productId[@i]" value="@row.ProductID" />
@@ -133,6 +153,54 @@
                 cell.textContent = diff === 0 ? 'Match' : (diff > 0 ? '+' : '') + diff.toLocaleString();
                 cell.className = 'variance ' + (diff === 0 ? 'match' : diff > 0 ? 'over' : 'short');
             });
+
+            // Narrowing the sheet to the shelf being counted, and a running
+            // tally so it is obvious how much has been filled in. Filtering
+            // only hides rows - every row still posts, so a hidden product is
+            // simply an uncounted one, exactly as if it were left blank.
+            var filterBox = document.getElementById('sheetFilter');
+            var onlyCounted = document.getElementById('onlyCounted');
+            var tally = document.getElementById('countedCount');
+            var rows = Array.prototype.slice.call(table.querySelectorAll('tbody tr[data-name]'));
+            var catRows = Array.prototype.slice.call(table.querySelectorAll('tbody tr.cat-row'));
+
+            function apply() {
+                var term = (filterBox.value || '').trim().toLowerCase();
+                var countedOnly = onlyCounted.checked;
+                var counted = 0;
+                var visibleByCategory = {};
+
+                rows.forEach(function (row) {
+                    var input = row.querySelector('input[name^="physicalStock"]');
+                    var hasCount = input && input.value !== '';
+                    if (hasCount) { counted++; }
+
+                    var category = row.dataset.category;
+                    var matches =
+                        (term === '' ||
+                         row.dataset.name.indexOf(term) !== -1 ||
+                         category.toLowerCase().indexOf(term) !== -1) &&
+                        (!countedOnly || hasCount);
+
+                    row.style.display = matches ? '' : 'none';
+                    if (matches) { visibleByCategory[category] = true; }
+                });
+
+                // A category heading with nothing under it is just noise.
+                catRows.forEach(function (row) {
+                    row.style.display = visibleByCategory[row.dataset.category] ? '' : 'none';
+                });
+
+                tally.textContent = counted;
+            }
+
+            filterBox.addEventListener('input', apply);
+            onlyCounted.addEventListener('change', apply);
+            table.addEventListener('input', function (e) {
+                if (e.target.name.indexOf('physicalStock') === 0) { apply(); }
+            });
+
+            apply();
         })();
     </script>
 }
