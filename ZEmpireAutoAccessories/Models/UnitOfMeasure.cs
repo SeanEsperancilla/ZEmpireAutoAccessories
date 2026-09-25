@@ -53,14 +53,6 @@
         public static bool IsSoldByLength(string? categoryName) =>
             categoryName != null && LengthCategories.Contains(categoryName.Trim());
 
-        /// <summary>
-        /// How one product is measured: its own setting when it has one,
-        /// otherwise its category's. This is the resolution every screen and
-        /// service should use - the category is only the default.
-        /// </summary>
-        public static bool IsSoldByLength(bool? productOverride, string? categoryName) =>
-            productOverride ?? IsSoldByLength(categoryName);
-
         public static bool IsLengthUnit(string? unit) =>
             unit != null && Centimeters.ContainsKey(unit);
 
