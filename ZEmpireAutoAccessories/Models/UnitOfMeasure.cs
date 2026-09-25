@@ -33,7 +33,9 @@
             new(StringComparer.OrdinalIgnoreCase)
             {
                 "Paint Protection Film",
-                "Window Tint"
+                "Paint Protection",
+                "Window Tint",
+                "Tint"
             };
 
         /// <summary>How many centimetres one of each unit is. Exact in decimal.</summary>
@@ -49,7 +51,7 @@
         public static readonly string[] LengthUnits = { Centimeter, Inch, Meter };
 
         public static bool IsSoldByLength(string? categoryName) =>
-            categoryName != null && LengthCategories.Contains(categoryName);
+            categoryName != null && LengthCategories.Contains(categoryName.Trim());
 
         public static bool IsLengthUnit(string? unit) =>
             unit != null && Centimeters.ContainsKey(unit);
