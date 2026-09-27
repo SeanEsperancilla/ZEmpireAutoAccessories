@@ -26,12 +26,12 @@ namespace ZEmpireAutoAccessories.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly ICashieringService _cashieringService;
-        private readonly IPaymentProofStore _proofs;
+        private readonly IProofStore _proofs;
 
         public CashieringController(
             ApplicationDbContext context,
             ICashieringService cashieringService,
-            IPaymentProofStore proofs)
+            IProofStore proofs)
         {
             _context = context;
             _cashieringService = cashieringService;
@@ -93,10 +93,11 @@ namespace ZEmpireAutoAccessories.Controllers
             // Which rows already have a receipt attached. One folder listing
             // for the whole page - see PaymentProofStore.
             var attached = _proofs.ExistingFor(
-                model.Transactions.Select(t => (t.Source, t.SourceId)));
+                model.Transactions.Select(t => (ProofKinds.For(t.Source), t.SourceId)));
 
             foreach (var transaction in model.Transactions)
-                transaction.HasProof = attached.Contains((transaction.Source, transaction.SourceId));
+                transaction.HasProof =
+                    attached.Contains((ProofKinds.For(transaction.Source), transaction.SourceId));
 
             await LoadFilterDropdowns(model);
 
@@ -123,7 +124,7 @@ namespace ZEmpireAutoAccessories.Controllers
             if (proof == null)
                 TempData["ProofError"] = "Choose a file to attach.";
             else
-                TempData["ProofError"] = await _proofs.Save(source, sourceId, proof);
+                TempData["ProofError"] = await _proofs.Save(ProofKinds.For(source), sourceId, proof);
 
             if (TempData["ProofError"] == null)
                 TempData["Success"] = "Proof of payment attached.";
@@ -141,7 +142,7 @@ namespace ZEmpireAutoAccessories.Controllers
             if (!MaySee(source))
                 return Forbid();
 
-            var stored = _proofs.Open(source, sourceId);
+            var stored = _proofs.Open(ProofKinds.For(source), sourceId);
             if (stored == null)
                 return NotFound();
 
@@ -151,6 +152,26 @@ namespace ZEmpireAutoAccessories.Controllers
             // checking a screenshot, not collecting files. The content type
             // comes from the store's own allow-list, never from the upload.
             return File(content, contentType, fileName, enableRangeProcessing: false);
+        }
+
+        // POST: Cashiering/RemoveProof
+        //
+        // For the wrong file - the customer's other receipt, the screenshot
+        // before it finished sending. The row goes back to asking for one, so
+        // a removal cannot quietly leave a payment looking settled.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult RemoveProof(CashierSource source, int sourceId, string? returnUrl)
+        {
+            if (!MaySee(source))
+                return Forbid();
+
+            if (_proofs.Delete(ProofKinds.For(source), sourceId))
+                TempData["Success"] = "Proof of payment removed. Attach the right file in its place.";
+            else
+                TempData["ProofError"] = "There was nothing attached to remove.";
+
+            return RedirectBack(returnUrl);
         }
 
         /// <summary>

@@ -76,8 +76,9 @@ builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IQuotationService, QuotationService>();
 builder.Services.AddScoped<ICashieringService, CashieringService>();
 
-// Where proof of an online payment is kept, and which modes need one.
-builder.Services.AddScoped<IPaymentProofStore, PaymentProofStore>();
+// Where files kept as evidence live - proof an online payment arrived, proof
+// a warranty was claimed - and which payment modes need one.
+builder.Services.AddScoped<IProofStore, ProofStore>();
 ZEmpireAutoAccessories.Models.PaymentModes.Configure(
     builder.Configuration.GetSection("Payments:Modes").Get<string[]>(),
     builder.Configuration.GetSection("Payments:ModesNeedingProof").Get<string[]>());

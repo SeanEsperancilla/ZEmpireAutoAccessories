@@ -4,23 +4,25 @@ using ZEmpireAutoAccessories.Services.Interfaces;
 namespace ZEmpireAutoAccessories.Services
 {
     /// <summary>
-    /// Proof of payment for a bank transfer or a QRPH payment: the screenshot
-    /// or receipt the customer sends, kept against the transaction it paid.
+    /// Files kept as evidence: the screenshot or receipt showing an online
+    /// payment arrived, and the slip or photo showing a warranty was claimed.
+    /// Each one is filed against the record it belongs to.
     ///
     /// The files live in a folder, not in the database. There is nowhere in
     /// the schema to put them - sales.Sales holds a total and nothing else,
-    /// and there is no attachment table - and adding one is off the table. A
-    /// folder needs no migration, and the link is the file's name: the
-    /// transaction it belongs to and nothing else, so nothing the customer or
-    /// the cashier types can steer where it is written.
+    /// sales.Warranty has no attachment column, and there is no attachment
+    /// table - and adding one is off the table. A folder needs no migration,
+    /// and the link is the file's name: what kind of record it belongs to and
+    /// that record's id, and nothing else, so nothing the customer or the
+    /// staff types can steer where it is written.
     ///
-    /// The folder sits outside wwwroot deliberately. These are bank receipts
-    /// with names, reference numbers and account details on them; served as
-    /// static files they would be readable by anyone who guessed the URL.
-    /// Cashiering streams them back through an action instead, behind the
-    /// same permission as the rest of the screen.
+    /// The folder sits outside wwwroot deliberately. These carry customers'
+    /// names, bank reference numbers and account details; served as static
+    /// files they would be readable by anyone who guessed the URL. The
+    /// screens stream them back through an action instead, each behind the
+    /// permission that screen already requires.
     /// </summary>
-    public class PaymentProofStore : IPaymentProofStore
+    public class ProofStore : IProofStore
     {
         // What a phone screenshot or a downloaded receipt actually is. Anything
         // else is refused rather than stored and worried about later.
@@ -37,7 +39,7 @@ namespace ZEmpireAutoAccessories.Services
         private readonly string _folder;
         private readonly long _maxBytes;
 
-        public PaymentProofStore(IConfiguration config, IWebHostEnvironment environment)
+        public ProofStore(IConfiguration config, IWebHostEnvironment environment)
         {
             var configured = config["Payments:ProofFolder"];
 
@@ -50,13 +52,13 @@ namespace ZEmpireAutoAccessories.Services
             _maxBytes = config.GetValue<long?>("Payments:MaxProofBytes") ?? 5 * 1024 * 1024;
         }
 
-        public bool Exists(CashierSource source, int sourceId) =>
-            FindExisting(source, sourceId) != null;
+        public bool Exists(ProofKind kind, int recordId) =>
+            FindExisting(kind, recordId) != null;
 
-        public HashSet<(CashierSource Source, int SourceId)> ExistingFor(
-            IEnumerable<(CashierSource Source, int SourceId)> transactions)
+        public HashSet<(ProofKind Kind, int RecordId)> ExistingFor(
+            IEnumerable<(ProofKind Kind, int RecordId)> records)
         {
-            var found = new HashSet<(CashierSource, int)>();
+            var found = new HashSet<(ProofKind, int)>();
 
             if (!Directory.Exists(_folder))
                 return found;
@@ -67,17 +69,17 @@ namespace ZEmpireAutoAccessories.Services
                 Directory.EnumerateFiles(_folder).Select(Path.GetFileName)!,
                 StringComparer.OrdinalIgnoreCase);
 
-            foreach (var (source, sourceId) in transactions)
+            foreach (var (kind, recordId) in records)
             {
-                var stem = StemFor(source, sourceId);
+                var stem = StemFor(kind, recordId);
                 if (AllowedTypes.Keys.Any(ext => names.Contains(stem + ext)))
-                    found.Add((source, sourceId));
+                    found.Add((kind, recordId));
             }
 
             return found;
         }
 
-        public async Task<string?> Save(CashierSource source, int sourceId, IFormFile file)
+        public async Task<string?> Save(ProofKind kind, int recordId, IFormFile file)
         {
             if (file == null || file.Length == 0)
                 return "Choose a file to attach.";
@@ -107,10 +109,10 @@ namespace ZEmpireAutoAccessories.Services
             // Replacing a proof means the old one goes: the other extensions
             // for this transaction are cleared first, so a PNG replacing a JPG
             // cannot leave two proofs behind with only one of them visible.
-            foreach (var stale in ExistingPaths(source, sourceId))
+            foreach (var stale in ExistingPaths(kind, recordId))
                 File.Delete(stale);
 
-            var path = Path.Combine(_folder, StemFor(source, sourceId) + extension.ToLowerInvariant());
+            var path = Path.Combine(_folder, StemFor(kind, recordId) + extension.ToLowerInvariant());
 
             await using var destination = File.Create(path);
             await using var upload = file.OpenReadStream();
@@ -120,9 +122,9 @@ namespace ZEmpireAutoAccessories.Services
         }
 
         public (Stream Content, string ContentType, string FileName)? Open(
-            CashierSource source, int sourceId)
+            ProofKind kind, int recordId)
         {
-            var path = FindExisting(source, sourceId);
+            var path = FindExisting(kind, recordId);
             if (path == null)
                 return null;
 
@@ -136,20 +138,42 @@ namespace ZEmpireAutoAccessories.Services
             return (File.OpenRead(path), contentType, Path.GetFileName(path));
         }
 
-        /// <summary>
-        /// The file name for a transaction, built only from what kind of
-        /// document it is and its id - never from anything typed or uploaded,
-        /// so there is nothing in it to escape the folder with.
-        /// </summary>
-        private static string StemFor(CashierSource source, int sourceId) =>
-            (source == CashierSource.Sale ? "sale-" : "invoice-") + sourceId.ToString();
+        public bool Delete(ProofKind kind, int recordId)
+        {
+            var removed = false;
 
-        private IEnumerable<string> ExistingPaths(CashierSource source, int sourceId)
+            // Every extension for this record, not just the first: a replace
+            // that half-failed could have left two behind, and "delete" has
+            // to mean the record is left with nothing attached.
+            foreach (var path in ExistingPaths(kind, recordId).ToList())
+            {
+                File.Delete(path);
+                removed = true;
+            }
+
+            return removed;
+        }
+
+        /// <summary>
+        /// The file name for a record, built only from what kind of thing it
+        /// is evidence of and that record's id - never from anything typed or
+        /// uploaded, so there is nothing in it to escape the folder with.
+        /// </summary>
+        private static string StemFor(ProofKind kind, int recordId) =>
+            kind switch
+            {
+                ProofKind.Sale => "sale-",
+                ProofKind.ServiceInvoice => "invoice-",
+                ProofKind.WarrantyClaim => "warranty-",
+                _ => throw new ArgumentOutOfRangeException(nameof(kind))
+            } + recordId.ToString();
+
+        private IEnumerable<string> ExistingPaths(ProofKind kind, int recordId)
         {
             if (!Directory.Exists(_folder))
                 yield break;
 
-            var stem = StemFor(source, sourceId);
+            var stem = StemFor(kind, recordId);
 
             foreach (var extension in AllowedTypes.Keys)
             {
@@ -159,8 +183,8 @@ namespace ZEmpireAutoAccessories.Services
             }
         }
 
-        private string? FindExisting(CashierSource source, int sourceId) =>
-            ExistingPaths(source, sourceId).FirstOrDefault();
+        private string? FindExisting(ProofKind kind, int recordId) =>
+            ExistingPaths(kind, recordId).FirstOrDefault();
 
         /// <summary>
         /// Whether the opening bytes match the format the extension promised.

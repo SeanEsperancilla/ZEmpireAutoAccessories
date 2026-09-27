@@ -259,6 +259,18 @@
     .proof-missing { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
     .proof-missing:hover { background: #fde2e2; color: #7f1d1d; }
     .proof-none { color: #c4c9d2; font-size: 12px; }
+    .proof-pair { display: inline-flex; align-items: center; gap: 4px; }
+
+    .proof-remove {
+        border: none;
+        background: none;
+        padding: 2px 3px;
+        line-height: 0;
+        color: #c4c9d2;
+        border-radius: 5px;
+    }
+
+    .proof-remove:hover { color: #b91c1c; background: #fef2f2; }
 
     .icon-btn {
         width: 32px;
@@ -566,15 +578,33 @@
                         <td>
                             @if (txn.HasProof)
                             {
-                                <a class="proof-chip proof-attached"
-                                   asp-action="Proof"
-                                   asp-route-source="@txn.Source"
-                                   asp-route-sourceId="@txn.SourceId"
-                                   target="_blank"
-                                   title="View the attached receipt">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.234 20.252 21 12.3"/><path d="m16 6-8.414 8.586a2 2 0 0 0 0 2.828 2 2 0 0 0 2.828 0l8.414-8.586a4 4 0 0 0 0-5.656 4 4 0 0 0-5.656 0l-8.415 8.585a6 6 0 1 0 8.486 8.486"/></svg>
-                                    Attached
-                                </a>
+                                <span class="proof-pair">
+                                    <a class="proof-chip proof-attached"
+                                       asp-action="Proof"
+                                       asp-route-source="@txn.Source"
+                                       asp-route-sourceId="@txn.SourceId"
+                                       target="_blank"
+                                       title="View the attached receipt">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.234 20.252 21 12.3"/><path d="m16 6-8.414 8.586a2 2 0 0 0 0 2.828 2 2 0 0 0 2.828 0l8.414-8.586a4 4 0 0 0 0-5.656 4 4 0 0 0-5.656 0l-8.415 8.585a6 6 0 1 0 8.486 8.486"/></svg>
+                                        Attached
+                                    </a>
+                                    @if (canOpen)
+                                    {
+                                        @* The wrong file happens - the other
+                                           receipt, the screenshot taken before
+                                           it finished sending. Removing puts
+                                           the row back to asking for one. *@
+                                        <form asp-action="RemoveProof" method="post" class="d-inline"
+                                              onsubmit="return confirm('Remove the file attached to @txn.InvoiceNumber? This payment will show as missing its proof again.');">
+                                            <input type="hidden" name="source" value="@txn.Source" />
+                                            <input type="hidden" name="sourceId" value="@txn.SourceId" />
+                                            <input type="hidden" name="returnUrl" value="@($"{Context.Request.Path}{Context.Request.QueryString}")" />
+                                            <button type="submit" class="proof-remove" title="Remove this file">
+                                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                                            </button>
+                                        </form>
+                                    }
+                                </span>
                             }
                             else if (txn.NeedsProof && canOpen)
                             {
