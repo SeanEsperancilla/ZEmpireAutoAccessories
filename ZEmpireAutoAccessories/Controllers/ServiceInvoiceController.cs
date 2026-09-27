@@ -742,8 +742,12 @@ namespace ZEmpireAutoAccessories.Controllers
                 .ToListAsync();
             ViewData["JobOrderID"] = new SelectList(jobOrders, "JobOrderID", "Display", invoice?.JobOrderID);
 
+            // Only the modes the shop offers, in the order it offers them,
+            // plus whatever this invoice is already on - see
+            // Models/PaymentModes.cs.
             ViewData["PaymentModeID"] = new SelectList(
-                await _context.PaymentModes.OrderBy(p => p.PaymentModeName).ToListAsync(),
+                PaymentModes.ForSelection(
+                    await _context.PaymentModes.ToListAsync(), invoice?.PaymentModeID),
                 "PaymentModeID", "PaymentModeName", invoice?.PaymentModeID);
         }
 

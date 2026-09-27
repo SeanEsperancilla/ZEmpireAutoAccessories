@@ -76,6 +76,12 @@ builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IQuotationService, QuotationService>();
 builder.Services.AddScoped<ICashieringService, CashieringService>();
 
+// Where proof of an online payment is kept, and which modes need one.
+builder.Services.AddScoped<IPaymentProofStore, PaymentProofStore>();
+ZEmpireAutoAccessories.Models.PaymentModes.Configure(
+    builder.Configuration.GetSection("Payments:Modes").Get<string[]>(),
+    builder.Configuration.GetSection("Payments:ModesNeedingProof").Get<string[]>());
+
 var app = builder.Build();
 
 // Configure HTTP request pipeline
@@ -105,6 +111,12 @@ try
     await IdentitySeeder.SeedAsync(
         app.Services,
         app.Configuration,
+        app.Services.GetRequiredService<ILogger<Program>>());
+
+    // The payment modes the shop offers, inserted if the table does not
+    // already carry them. Insert-only - see PaymentModeSeeder.
+    await PaymentModeSeeder.SeedAsync(
+        app.Services,
         app.Services.GetRequiredService<ILogger<Program>>());
 }
 catch (Exception ex)
