@@ -292,8 +292,24 @@
         }
 
     .breakdown-table td, .breakdown-table th {
-        padding: .5rem .75rem;
+        padding: .6rem .75rem;
         font-size: 13.5px;
+    }
+
+    /* Counts and pesos line up digit under digit, so two rows can be compared
+       at a glance instead of read. */
+    .breakdown-table .num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .breakdown-table .amount { font-weight: 600; color: #0b0b0c; }
+
+    .breakdown-table tfoot td {
+        border-top: 2px solid #e8ebf0;
+        font-weight: 700;
+        color: #0b0b0c;
     }
 
     .breakdown-head {
@@ -303,6 +319,13 @@
         padding: 14px 18px 0;
         margin: 0;
         color: #0b0b0c;
+    }
+
+    .breakdown-sub {
+        padding: 2px 18px 0;
+        margin: 0;
+        color: #7b8290;
+        font-size: 12.5px;
     }
 </style>
 
@@ -466,18 +489,29 @@
    back to the Total Collected above. *@
 @if (Model.CanSeeTotals && (Model.ByPaymentMode.Count > 0 || Model.ByCashier.Count > 0))
 {
+    // Summed from the rows on show rather than read off the tiles above, so a
+    // footer can never disagree with the lines it sits under.
+    var modeTransactions = Model.ByPaymentMode.Sum(m => m.TransactionCount);
+    var modeTotal = Model.ByPaymentMode.Sum(m => m.Total);
+    var cashierTransactions = Model.ByCashier.Sum(c => c.TransactionCount);
+    var cashierTotal = Model.ByCashier.Sum(c => c.Total);
+
     <div class="row g-3 mb-3">
         @if (Model.ByPaymentMode.Count > 0)
         {
             <div class="col-md-6">
                 <div class="zx-card h-100">
                     <h2 class="breakdown-head">Collected by Payment Mode</h2>
+                    <p class="breakdown-sub">How the money came in. Collected transactions only.</p>
                     <table class="table breakdown-table mb-0">
                         <thead>
                             <tr>
                                 <th>Mode</th>
-                                <th class="text-center">Txns</th>
-                                <th class="text-end pe-3">Amount</th>
+                                @* "Txns" saved five characters in a column
+                                   with room to spare, at the cost of anyone
+                                   knowing what it counted. *@
+                                <th class="num">Transactions</th>
+                                <th class="num pe-3">Amount</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -485,11 +519,25 @@
                             {
                                 <tr>
                                     <td>@mode.PaymentModeName</td>
-                                    <td class="text-center">@mode.TransactionCount</td>
-                                    <td class="text-end pe-3">@("₱" + mode.Total.ToString("N2"))</td>
+                                    <td class="num">@mode.TransactionCount.ToString("N0")</td>
+                                    <td class="num amount pe-3">@("₱" + mode.Total.ToString("N2"))</td>
                                 </tr>
                             }
                         </tbody>
+                        @* The rows add up to the Total Collected tile above.
+                           Footed here so that can be seen rather than taken on
+                           trust. *@
+                        @* A total under a single line only repeats it. *@
+                        @if (Model.ByPaymentMode.Count > 1)
+                        {
+                        <tfoot>
+                            <tr>
+                                <td>All modes</td>
+                                <td class="num">@modeTransactions.ToString("N0")</td>
+                                <td class="num pe-3">@("₱" + modeTotal.ToString("N2"))</td>
+                            </tr>
+                        </tfoot>
+                        }
                     </table>
                 </div>
             </div>
@@ -499,12 +547,13 @@
             <div class="col-md-6">
                 <div class="zx-card h-100">
                     <h2 class="breakdown-head">Collected by Cashier</h2>
+                    <p class="breakdown-sub">Who took it. The same transactions, counted another way.</p>
                     <table class="table breakdown-table mb-0">
                         <thead>
                             <tr>
                                 <th>Cashier</th>
-                                <th class="text-center">Txns</th>
-                                <th class="text-end pe-3">Amount</th>
+                                <th class="num">Transactions</th>
+                                <th class="num pe-3">Amount</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -512,11 +561,21 @@
                             {
                                 <tr>
                                     <td>@(cashier.CashierName ?? "—")</td>
-                                    <td class="text-center">@cashier.TransactionCount</td>
-                                    <td class="text-end pe-3">@("₱" + cashier.Total.ToString("N2"))</td>
+                                    <td class="num">@cashier.TransactionCount.ToString("N0")</td>
+                                    <td class="num amount pe-3">@("₱" + cashier.Total.ToString("N2"))</td>
                                 </tr>
                             }
                         </tbody>
+                        @if (Model.ByCashier.Count > 1)
+                        {
+                        <tfoot>
+                            <tr>
+                                <td>Everyone</td>
+                                <td class="num">@cashierTransactions.ToString("N0")</td>
+                                <td class="num pe-3">@("₱" + cashierTotal.ToString("N2"))</td>
+                            </tr>
+                        </tfoot>
+                        }
                     </table>
                 </div>
             </div>
