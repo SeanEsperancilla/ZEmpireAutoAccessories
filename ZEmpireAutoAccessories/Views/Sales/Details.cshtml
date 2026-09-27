@@ -13,6 +13,11 @@
     var warrantyByLine = ViewData["WarrantyByLine"] as Dictionary<int, ZEmpireAutoAccessories.Models.Warranty>
                          ?? new Dictionary<int, ZEmpireAutoAccessories.Models.Warranty>();
     var canUseWarranty = User.HasClaim(AppClaims.ModuleAccess, "Warranty");
+
+    // sales.Sales has no tax column, and dbo.vw_SalesSummary reconciles
+    // TotalAmount against the sum of its lines, so the 12% is shown rather
+    // than stored - it is inside the price either way. See Models/Vat.cs.
+    var vat = Vat.Breakdown(Model.TotalAmount);
 }
 
 <style>
@@ -114,7 +119,23 @@
             }
             <tr class="totals-row">
                 <td colspan="3" class="text-end">Total</td>
-                <td>@("₱" + Model.TotalAmount.ToString("N2"))</td>
+                <td><strong>@("₱" + Model.TotalAmount.ToString("N2"))</strong></td>
+                @if (canUseWarranty)
+                {
+                    <td></td>
+                }
+            </tr>
+            <tr class="totals-row">
+                <td colspan="3" class="text-end text-muted">VATable Sales</td>
+                <td class="text-muted">@("₱" + vat.VatableSales.ToString("N2"))</td>
+                @if (canUseWarranty)
+                {
+                    <td></td>
+                }
+            </tr>
+            <tr class="totals-row">
+                <td colspan="3" class="text-end text-muted">VAT (@Vat.RateLabel), included</td>
+                <td class="text-muted">@("₱" + vat.Amount.ToString("N2"))</td>
                 @if (canUseWarranty)
                 {
                     <td></td>

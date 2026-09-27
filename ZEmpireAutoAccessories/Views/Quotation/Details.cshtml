@@ -8,6 +8,9 @@
 
     var rollProducts = ViewData["RollProducts"] as HashSet<int> ?? new HashSet<int>();
     var stockByProduct = ViewData["StockByProduct"] as Dictionary<int, decimal> ?? new Dictionary<int, decimal>();
+
+    // The 12% inside the total, worked out once for the whole page.
+    var vat = Vat.Breakdown(Model.TotalAmount);
 }
 
 <style>
@@ -191,13 +194,28 @@
                 <td colspan="4" class="text-end">Discount</td>
                 <td colspan="2">@("₱" + Model.DiscountAmount.ToString("N2"))</td>
             </tr>
-            <tr class="totals-row">
-                <td colspan="4" class="text-end">Tax</td>
-                <td colspan="2">@("₱" + Model.TaxAmount.ToString("N2"))</td>
-            </tr>
+            @if (Model.TaxAmount > 0)
+            {
+                @* Only on older quotations, where a figure was typed into Tax
+                   and CK_Quotation_Math added it to the total. *@
+                <tr class="totals-row">
+                    <td colspan="4" class="text-end">Tax entered separately</td>
+                    <td colspan="2">@("₱" + Model.TaxAmount.ToString("N2"))</td>
+                </tr>
+            }
             <tr class="totals-row">
                 <td colspan="4" class="text-end">Total</td>
-                <td colspan="2">@("₱" + Model.TotalAmount.ToString("N2"))</td>
+                <td colspan="2"><strong>@("₱" + Model.TotalAmount.ToString("N2"))</strong></td>
+            </tr>
+            @* The 12% is inside that total, not on top of it - prices are
+               quoted VAT-inclusive. See Models/Vat.cs. *@
+            <tr class="totals-row">
+                <td colspan="4" class="text-end text-muted">VATable Sales</td>
+                <td colspan="2" class="text-muted">@("₱" + vat.VatableSales.ToString("N2"))</td>
+            </tr>
+            <tr class="totals-row">
+                <td colspan="4" class="text-end text-muted">VAT (@Vat.RateLabel), included</td>
+                <td colspan="2" class="text-muted">@("₱" + vat.Amount.ToString("N2"))</td>
             </tr>
         </tbody>
     </table>

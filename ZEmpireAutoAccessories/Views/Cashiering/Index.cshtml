@@ -312,6 +312,14 @@
             <div class="value">@("₱" + Model.GrandTotal.ToString("N2"))</div>
             <div class="sub">@Model.CollectedCount transaction@(Model.CollectedCount == 1 ? "" : "s")</div>
         </div>
+        @* Output VAT for the period. Prices are quoted VAT-inclusive, so this
+           is the 12% already inside what was collected, not an extra charge -
+           see Models/Vat.cs. *@
+        <div class="tile">
+            <div class="label">VAT (@Vat.RateLabel)</div>
+            <div class="value">@("₱" + Vat.Amount(Model.GrandTotal).ToString("N2"))</div>
+            <div class="sub">included in the collected total</div>
+        </div>
         @if (canOpenSales)
         {
             <div class="tile">

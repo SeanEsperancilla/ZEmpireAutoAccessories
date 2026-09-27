@@ -250,7 +250,10 @@ namespace ZEmpireAutoAccessories.Controllers
             invoice.UserId = CurrentUserId;
             invoice.InvoiceDate = DateTime.Now;
             invoice.CreatedAt = DateTime.Now;
-            invoice.Status = "Paid";
+            // The work is not finished and nothing has been handed over yet,
+            // so a new invoice starts Pending. It becomes Paid when the
+            // payment is recorded.
+            invoice.Status = "Pending";
 
             _context.ServiceInvoices.Add(invoice);
             await _context.SaveChangesAsync();
@@ -555,6 +558,64 @@ namespace ZEmpireAutoAccessories.Controllers
             if (invoice == null)
                 return RedirectToAction(nameof(Details), new { id });
 
+            await MoveToStatus(invoice, status);
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        // POST: ServiceInvoice/RecordPayment
+        //
+        // Takes what the customer handed over, works out the change and
+        // settles the invoice. This is the only way an invoice becomes Paid
+        // through the counter, so the tendered amount is always recorded
+        // rather than being assumed equal to the total.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RecordPayment(int id, decimal amountTendered)
+        {
+            var invoice = await _context.ServiceInvoices
+                .Include(i => i.Details)
+                .FirstOrDefaultAsync(i => i.ServiceInvoiceID == id);
+
+            if (invoice == null)
+                return RedirectToAction(nameof(Details), new { id });
+
+            if (invoice.TotalAmount <= 0)
+            {
+                TempData["StatusError"] = "Add at least one line item before taking payment.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            if (amountTendered < invoice.TotalAmount)
+            {
+                // CK_ServiceInvoice_Math ties ChangeAmount to
+                // AmountPaid - TotalAmount and CK_ServiceInvoice_Change keeps
+                // it at or above zero, so short payment cannot be stored at
+                // all. Say so rather than letting the database refuse it.
+                TempData["StatusError"] =
+                    $"That is short of the total. ₱{invoice.TotalAmount:N2} is due, " +
+                    $"₱{amountTendered:N2} was tendered.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            invoice.AmountPaid = amountTendered;
+            invoice.ChangeAmount = amountTendered - invoice.TotalAmount;
+
+            await MoveToStatus(invoice, "Paid");
+
+            if (TempData["StatusError"] == null)
+                TempData["Success"] =
+                    $"Payment recorded. Change ₱{invoice.ChangeAmount:N2}.";
+
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        /// <summary>
+        /// Moves an invoice to a status, posting or releasing its stock when
+        /// that crosses the Paid boundary, and saving both together so a
+        /// refused stock movement leaves the status where it was.
+        /// </summary>
+        private async Task MoveToStatus(ServiceInvoice invoice, string status)
+        {
             var holdsStock = OwnsItsStock(invoice) && invoice.Status == "Paid";
             var willHoldStock = OwnsItsStock(invoice) && status == "Paid";
 
@@ -563,7 +624,18 @@ namespace ZEmpireAutoAccessories.Controllers
             {
                 if (holdsStock != willHoldStock)
                     await _inventoryService.PostDocumentStock(
-                        await ProductLines(id), willHoldStock, CurrentUserId);
+                        await ProductLines(invoice.ServiceInvoiceID), willHoldStock, CurrentUserId);
+
+                // Sent back to be worked on or written off: the tender that
+                // was recorded no longer stands. Cleared to the total, which
+                // is the only figure CK_ServiceInvoice_Math and
+                // CK_ServiceInvoice_Change allow while nothing has been paid,
+                // so the next payment starts from a clean slate.
+                if (invoice.Status == "Paid" && (status == "Pending" || status == "Cancelled"))
+                {
+                    invoice.AmountPaid = invoice.TotalAmount;
+                    invoice.ChangeAmount = 0m;
+                }
 
                 invoice.Status = status;
                 await _context.SaveChangesAsync();
@@ -574,8 +646,6 @@ namespace ZEmpireAutoAccessories.Controllers
                 await tx.RollbackAsync();
                 TempData["StatusError"] = ex.Message;
             }
-
-            return RedirectToAction(nameof(Details), new { id });
         }
 
         /// <summary>

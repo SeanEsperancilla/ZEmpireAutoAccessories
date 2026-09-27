@@ -54,8 +54,11 @@ namespace ZEmpireAutoAccessories.Services
                             SubTotal: d.SubTotal
                         )), includeDiscountColumn: false);
 
-                        ComposeTotals(column, ("Sub Total", quotation.SubTotal), ("Discount", -quotation.DiscountAmount),
-                            ("Tax", quotation.TaxAmount), ("Total", quotation.TotalAmount));
+                        ComposeTotals(column, WithVat(
+                            ("Sub Total", quotation.SubTotal),
+                            ("Discount", -quotation.DiscountAmount),
+                            ("Tax entered separately", quotation.TaxAmount),
+                            ("Total", quotation.TotalAmount)));
 
                         if (!string.IsNullOrWhiteSpace(quotation.Remarks))
                             ComposeRemarks(column, quotation.Remarks);
@@ -102,7 +105,7 @@ namespace ZEmpireAutoAccessories.Services
                             SubTotal: d.SubTotal
                         )), includeDiscountColumn: false, includeUnitColumn: false);
 
-                        ComposeTotals(column, ("Total", sale.TotalAmount));
+                        ComposeTotals(column, WithVat(("Total", sale.TotalAmount)));
                     });
 
                     page.Footer().Element(c => ComposeFooter(c, "Thank you for your business!"));
@@ -148,13 +151,13 @@ namespace ZEmpireAutoAccessories.Services
                             SubTotal: d.SubTotal
                         )), includeDiscountColumn: true);
 
-                        ComposeTotals(column,
+                        ComposeTotals(column, WithVat(
                             ("Sub Total", invoice.SubTotal),
                             ("Discount", -invoice.DiscountAmount),
-                            ("Tax", invoice.TaxAmount),
+                            ("Tax entered separately", invoice.TaxAmount),
                             ("Total", invoice.TotalAmount),
                             ("Amount Paid", invoice.AmountPaid),
-                            ("Change", invoice.ChangeAmount));
+                            ("Change", invoice.ChangeAmount)));
 
                         if (!string.IsNullOrWhiteSpace(invoice.Remarks))
                             ComposeRemarks(column, invoice.Remarks);
@@ -369,6 +372,33 @@ namespace ZEmpireAutoAccessories.Services
             });
         }
 
+        /// <summary>
+        /// The VAT split, added under the Total row, and any zero "Tax entered
+        /// separately" line dropped on the way through.
+        ///
+        /// Prices are quoted VAT-inclusive, so the 12% is worked out of the
+        /// total rather than charged on top - see Models/Vat.cs. A document
+        /// with no Total row (nothing to divide) comes back untouched.
+        /// </summary>
+        private static (string Label, decimal Value)[] WithVat(params (string Label, decimal Value)[] rows)
+        {
+            var kept = rows.Where(r => r.Label != "Tax entered separately" || r.Value > 0).ToList();
+
+            var totalAt = kept.FindIndex(r => r.Label == "Total");
+            if (totalAt < 0)
+                return kept.ToArray();
+
+            var (vatable, vat) = Vat.Breakdown(kept[totalAt].Value);
+
+            kept.InsertRange(totalAt + 1, new[]
+            {
+                ("VATable Sales", vatable),
+                ($"VAT ({Vat.RateLabel}), included", vat)
+            });
+
+            return kept.ToArray();
+        }
+
         private static void ComposeTotals(ColumnDescriptor column, params (string Label, decimal Value)[] rows)
         {
             column.Item().AlignRight().Width(220).Column(col =>
@@ -376,7 +406,7 @@ namespace ZEmpireAutoAccessories.Services
                 for (var i = 0; i < rows.Length; i++)
                 {
                     var (label, value) = rows[i];
-                    var isTotal = i == rows.Length - 1 && rows.Length > 1 && label == "Total";
+                    var isTotal = rows.Length > 1 && label == "Total";
                     var isLast = i == rows.Length - 1;
 
                     col.Item().Row(row =>
