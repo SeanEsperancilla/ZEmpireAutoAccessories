@@ -79,6 +79,12 @@ builder.Services.AddScoped<ICashieringService, CashieringService>();
 // Where files kept as evidence live - proof an online payment arrived, proof
 // a warranty was claimed - and which payment modes need one.
 builder.Services.AddScoped<IProofStore, ProofStore>();
+
+// How much film each panel takes on each class of vehicle, and what that
+// makes a document's completion deduct. The cut sizes are a singleton
+// because the point of them is the cache; see CutSizeStore.
+builder.Services.AddSingleton<ICutSizeStore, CutSizeStore>();
+builder.Services.AddScoped<IDocumentStockService, DocumentStockService>();
 ZEmpireAutoAccessories.Models.PaymentModes.Configure(
     builder.Configuration.GetSection("Payments:Modes").Get<string[]>(),
     builder.Configuration.GetSection("Payments:ModesNeedingProof").Get<string[]>());

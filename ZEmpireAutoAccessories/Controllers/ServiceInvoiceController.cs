@@ -16,15 +16,18 @@ namespace ZEmpireAutoAccessories.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IQuotationService _quotationService; // GetNextInvoiceNumber lives here
         private readonly IInventoryService _inventoryService;
+        private readonly IDocumentStockService _documentStock;
 
         public ServiceInvoiceController(
             ApplicationDbContext context,
             IQuotationService quotationService,
-            IInventoryService inventoryService)
+            IInventoryService inventoryService,
+            IDocumentStockService documentStock)
         {
             _context = context;
             _quotationService = quotationService;
             _inventoryService = inventoryService;
+            _documentStock = documentStock;
         }
 
         // GET: ServiceInvoice?status=Paid
@@ -634,7 +637,7 @@ namespace ZEmpireAutoAccessories.Controllers
             {
                 if (holdsStock != willHoldStock)
                     await _inventoryService.PostDocumentStock(
-                        await ProductLines(invoice.ServiceInvoiceID), willHoldStock, CurrentUserId);
+                        await _documentStock.ForServiceInvoice(invoice.ServiceInvoiceID), willHoldStock, CurrentUserId);
 
                 // Sent back to be worked on or written off: the tender that
                 // was recorded no longer stands. Cleared to the total, which
@@ -668,25 +671,6 @@ namespace ZEmpireAutoAccessories.Controllers
         /// JobOrderID - owns its stock.
         /// </summary>
         private static bool OwnsItsStock(ServiceInvoice invoice) => invoice.JobOrderID == null;
-
-        /// <summary>
-        /// The product lines of an invoice, as stock movements. Service-only
-        /// lines carry no ProductID and move no stock.
-        /// </summary>
-        private async Task<IReadOnlyCollection<DocumentStockLine>> ProductLines(int serviceInvoiceId)
-        {
-            var rows = await _context.ServiceInvoiceDetails
-                .Where(d => d.ServiceInvoiceID == serviceInvoiceId && d.ProductID != null)
-                .Select(d => new { ProductID = d.ProductID!.Value, d.Quantity, d.Unit })
-                .ToListAsync();
-
-            // The line's Unit is what the quantity was written in - "m" or
-            // "in" for film, "Unit" for anything counted. The inventory
-            // service converts roll goods and passes the rest through.
-            return rows
-                .Select(r => new DocumentStockLine(r.ProductID, r.Quantity, r.Unit))
-                .ToList();
-        }
 
         /// <summary>
         /// Recomputes SubTotal, TotalAmount and ChangeAmount from the lines.
