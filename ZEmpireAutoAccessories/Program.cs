@@ -66,6 +66,11 @@ builder.Services.AddScoped<IInventoryService, InventoryService>();
 // or a schema change; an absent section keeps the built-in list.
 ZEmpireAutoAccessories.Models.UnitOfMeasure.ConfigureLengthCategories(
     builder.Configuration.GetSection("Inventory:LengthCategories").Get<string[]>());
+
+// Categories that are two names for the same shelf. The screens group and
+// label by the canonical name so one shelf shows as one heading.
+ZEmpireAutoAccessories.Models.ProductCategories.ConfigureAliases(
+    builder.Configuration.GetSection("Catalog:EquivalentCategories").Get<Dictionary<string, string>>());
 builder.Services.AddScoped<ISalesService, SalesService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IQuotationService, QuotationService>();

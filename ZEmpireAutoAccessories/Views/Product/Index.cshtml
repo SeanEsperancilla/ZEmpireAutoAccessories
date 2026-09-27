@@ -10,6 +10,7 @@
     // actually holds it.
     var canPrice = User.HasClaim(AppClaims.ModuleAccess, "Pricing");
     var lengthProducts = ViewData["LengthProducts"] as HashSet<int> ?? new HashSet<int>();
+    var categoryDisplay = ViewData["CategoryDisplay"] as Dictionary<int, string> ?? new Dictionary<int, string>();
     var saved = TempData["Success"] as string;
 }
 
@@ -139,7 +140,7 @@
             {
                 <tr>
                     <td>@Html.DisplayFor(modelItem => item.ProductName)</td>
-                    <td>@item.Category.CategoryName</td>
+                    <td>@(categoryDisplay.TryGetValue(item.ProductID, out var cat) ? cat : item.Category.CategoryName)</td>
                     <td>
                         @if (lengthProducts.Contains(item.ProductID))
                         {

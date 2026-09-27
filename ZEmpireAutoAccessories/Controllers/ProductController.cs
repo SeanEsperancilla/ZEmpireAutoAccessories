@@ -33,6 +33,11 @@ namespace ZEmpireAutoAccessories.Controllers
                 .Select(g => new { ProductID = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.ProductID, x => x.Count);
 
+            // One heading per shelf: a product filed under a duplicate category
+            // name is listed under the canonical one.
+            ViewData["CategoryDisplay"] = products.ToDictionary(
+                p => p.ProductID, p => ProductCategories.Canonical(p.Category.CategoryName));
+
             // Which products are measured off a roll rather than counted, so
             // the list says so rather than leaving it implied by the category.
             ViewData["LengthProducts"] = products
@@ -59,6 +64,7 @@ namespace ZEmpireAutoAccessories.Controllers
                 return NotFound();
 
             ViewData["SoldByLength"] = UnitOfMeasure.IsSoldByLength(product.Category.CategoryName);
+            ViewData["CategoryDisplay"] = ProductCategories.Canonical(product.Category.CategoryName);
 
             return View(product);
         }
@@ -247,14 +253,22 @@ namespace ZEmpireAutoAccessories.Controllers
                 .OrderBy(c => c.CategoryName)
                 .ToListAsync();
 
+            // Duplicate category names are kept off the form so nothing new is
+            // filed under one - but a product already sitting in one keeps it
+            // on the list, or editing that product would silently move it.
+            var offered = categories
+                .Where(c => !ProductCategories.IsDuplicate(c.CategoryName)
+                         || c.CategoryID == product?.CategoryID)
+                .ToList();
+
             ViewData["CategoryID"] = new SelectList(
-                categories, "CategoryID", "CategoryName", product?.CategoryID);
+                offered, "CategoryID", "CategoryName", product?.CategoryID);
 
             // How a product is measured follows its category - there is no
             // column on cat.Product to say otherwise - so the form can show
             // the consequence as soon as a category is picked instead of
             // leaving it to be discovered at the stock screen.
-            ViewData["LengthCategories"] = categories
+            ViewData["LengthCategories"] = offered
                 .Where(c => UnitOfMeasure.IsSoldByLength(c.CategoryName))
                 .Select(c => c.CategoryID)
                 .ToHashSet();
