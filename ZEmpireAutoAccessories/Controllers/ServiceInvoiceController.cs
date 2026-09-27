@@ -162,9 +162,19 @@ namespace ZEmpireAutoAccessories.Controllers
                 .Include(i => i.PaymentMode)
                 .Include(i => i.User)
                 .Include(i => i.Details)
-                    .ThenInclude(d => d.Product)
+                    // The category tells the receipt whether the product is
+                    // fitted off a roll, and the variant, shade and panel say
+                    // exactly what went on the car.
+                    .ThenInclude(d => d.Product!)
+                        .ThenInclude(p => p.Category)
                 .Include(i => i.Details)
                     .ThenInclude(d => d.Service)
+                .Include(i => i.Details)
+                    .ThenInclude(d => d.TintVariant)
+                .Include(i => i.Details)
+                    .ThenInclude(d => d.Shade)
+                .Include(i => i.Details)
+                    .ThenInclude(d => d.Panel)
                 .FirstOrDefaultAsync(i => i.ServiceInvoiceID == id);
 
             if (invoice == null)
