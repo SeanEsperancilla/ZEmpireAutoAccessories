@@ -489,7 +489,7 @@
                     <th class="text-end">Tendered</th>
                     <th class="text-end">Change</th>
                     <th>Status</th>
-                    <th class="text-end pe-3">Open</th>
+                    <th class="text-end pe-3">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -498,6 +498,7 @@
                     var isSale = txn.Source == CashierSource.Sale;
                     var openController = isSale ? "Sales" : "ServiceInvoice";
                     var openTitle = isSale ? "Open sale" : "Open service invoice";
+                    var printTitle = isSale ? "Reprint sales receipt" : "Reprint service invoice";
                     var canOpen = isSale ? canOpenSales : canOpenInvoices;
                     <tr class="@(txn.IsCollected ? "" : "row-uncollected")">
                         <td>
@@ -522,6 +523,17 @@
                         <td class="text-end pe-3">
                             @if (canOpen)
                             {
+                                @* Regenerates the PDF from the document as it
+                                   stands now, so a reprint shows any later
+                                   correction rather than a stored copy. *@
+                                <a class="icon-btn"
+                                   asp-controller="@openController"
+                                   asp-action="Pdf"
+                                   asp-route-id="@txn.SourceId"
+                                   title="@printTitle"
+                                   target="_blank">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v5"/><rect width="12" height="8" x="6" y="14" rx="1"/></svg>
+                                </a>
                                 <a class="icon-btn"
                                    asp-controller="@openController"
                                    asp-action="Details"
