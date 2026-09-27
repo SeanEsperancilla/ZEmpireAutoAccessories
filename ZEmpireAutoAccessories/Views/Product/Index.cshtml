@@ -230,7 +230,9 @@
                         {
                             <a asp-controller="Pricing" asp-action="Create" asp-route-productId="@item.ProductID"
                                class="icon-btn" title="Set price">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+                                @* Peso, not dollar - the shop prices in PHP. Stem and bowl of a P with
+                                   the two bars through it. *@
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4v16" /><path d="M8 4h5.5a4 4 0 0 1 0 8H8" /><path d="M4.5 8h13" /><path d="M4.5 12h13" /></svg>
                             </a>
                         }
                         <a asp-action="Details" asp-route-id="@item.ProductID" class="icon-btn" title="View details">
