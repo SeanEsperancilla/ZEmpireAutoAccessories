@@ -110,7 +110,11 @@ namespace ZEmpireAutoAccessories.Services
                                 table.Cell().Element(BodyCell).Text(item.QuotationNumber);
                                 table.Cell().Element(BodyCell).Text(item.QuotationDate.ToString("MMM d, yyyy"));
                                 table.Cell().Element(BodyCell).Text(item.CustomerName ?? "—");
-                                table.Cell().Element(BodyCell).Text(item.Status);
+                                // The same two states the screens show, from
+                                // the job order rather than the stored word -
+                                // see Models/QuotationStatuses.cs.
+                                table.Cell().Element(BodyCell).Text(
+                                    QuotationStatuses.Display(item.Status, item.ConvertedJobOrderID != null));
                                 table.Cell().Element(BodyCell).Text(item.ConvertedJobOrderNumber ?? "—");
                                 table.Cell().Element(BodyCell).Text(item.PreparedBy ?? "—");
                                 table.Cell().Element(BodyCell).AlignRight().Text("₱" + item.TotalAmount.ToString("N2"));

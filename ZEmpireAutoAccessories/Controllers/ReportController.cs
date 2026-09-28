@@ -155,16 +155,18 @@ namespace ZEmpireAutoAccessories.Controllers
                 query = query.Where(q => q.QuotationDate >= from.Value.ToDateTime(TimeOnly.MinValue));
             if (to.HasValue)
                 query = query.Where(q => q.QuotationDate < to.Value.AddDays(1).ToDateTime(TimeOnly.MinValue));
-            if (!string.IsNullOrEmpty(status))
-            {
-                // Draft covers the statuses the quotation screens retired, so
-                // this report shows the same set they do - see
-                // Models/QuotationStatuses.cs.
-                var stored = QuotationStatuses.StoredValuesFor(status);
-                query = query.Where(q => stored.Contains(q.Status));
-            }
-
             var results = await query.OrderByDescending(q => q.QuotationDate).ToListAsync();
+
+            // Filtered after the query rather than in it: a quotation reads as
+            // Converted because a job order exists, not because of the word
+            // stored on it, and the two disagree on everything converted
+            // before that word was being written. Deciding it here is the only
+            // way the filter and the label can agree - see
+            // Models/QuotationStatuses.cs.
+            if (!string.IsNullOrEmpty(status))
+                results = results
+                    .Where(q => QuotationStatuses.Matches(status, q.Status, q.ConvertedJobOrderID != null))
+                    .ToList();
             return (results, results.Sum(q => q.TotalAmount));
         }
     }
