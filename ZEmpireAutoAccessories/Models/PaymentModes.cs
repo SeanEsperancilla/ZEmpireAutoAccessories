@@ -42,7 +42,22 @@ namespace ZEmpireAutoAccessories.Models
             "GCash"
         };
 
+        /// <summary>
+        /// Old name -> the name it should read as now. Applied to the row
+        /// itself at startup, so the mode keeps its id and every transaction
+        /// on it keeps pointing at it.
+        /// </summary>
+        private static readonly Dictionary<string, string> DefaultRenames =
+            new(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Bank Transfer"] = "Bank Transfers",
+                ["Card"] = "Credit Cards"
+            };
+
         private static string[] Offered = DefaultOffered;
+
+        private static Dictionary<string, string> Renames =
+            new(DefaultRenames, StringComparer.OrdinalIgnoreCase);
 
         private static HashSet<string> RequiringProof =
             new(DefaultRequiringProof, StringComparer.OrdinalIgnoreCase);
@@ -52,7 +67,10 @@ namespace ZEmpireAutoAccessories.Models
         /// keeps the built-in list, so a missing section can never leave the
         /// shop with no way to take money.
         /// </summary>
-        public static void Configure(IEnumerable<string>? offered, IEnumerable<string>? requiringProof)
+        public static void Configure(
+            IEnumerable<string>? offered,
+            IEnumerable<string>? requiringProof,
+            IDictionary<string, string>? renamed = null)
         {
             var cleanOffered = Clean(offered);
             if (cleanOffered.Count > 0)
@@ -61,7 +79,23 @@ namespace ZEmpireAutoAccessories.Models
             var cleanProof = Clean(requiringProof);
             if (cleanProof.Count > 0)
                 RequiringProof = new HashSet<string>(cleanProof, StringComparer.OrdinalIgnoreCase);
+
+            var cleanRenames = renamed?
+                .Where(kv => !string.IsNullOrWhiteSpace(kv.Key) && !string.IsNullOrWhiteSpace(kv.Value))
+                .ToDictionary(kv => kv.Key.Trim(), kv => kv.Value.Trim(), StringComparer.OrdinalIgnoreCase);
+
+            if (cleanRenames is { Count: > 0 })
+                Renames = cleanRenames;
         }
+
+        /// <summary>
+        /// What this mode should be called now, or null if it keeps its name.
+        /// </summary>
+        public static string? RenamedTo(string? paymentModeName) =>
+            paymentModeName != null && Renames.TryGetValue(paymentModeName.Trim(), out var renamed)
+            && !string.Equals(renamed, paymentModeName.Trim(), StringComparison.OrdinalIgnoreCase)
+                ? renamed
+                : null;
 
         private static List<string> Clean(IEnumerable<string>? names) =>
             names?.Where(n => !string.IsNullOrWhiteSpace(n))

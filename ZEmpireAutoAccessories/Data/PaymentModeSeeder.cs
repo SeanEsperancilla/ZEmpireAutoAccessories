@@ -23,11 +23,41 @@ namespace ZEmpireAutoAccessories.Data
             using var scope = services.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-            var existing = await context.PaymentModes
-                .Select(p => p.PaymentModeName)
-                .ToListAsync();
+            var rows = await context.PaymentModes.ToListAsync();
 
-            var known = new HashSet<string>(existing, StringComparer.OrdinalIgnoreCase);
+            // Renames first. "Card" becoming "Credit Cards" is the same mode
+            // under a better name, so the row is renamed and keeps its id -
+            // every sale and invoice already on it follows automatically.
+            // Inserting the new name instead would leave two rows meaning one
+            // thing, and the old one could not be deleted because those
+            // transactions point at it.
+            var renamed = new List<string>();
+
+            foreach (var row in rows)
+            {
+                var to = PaymentModes.RenamedTo(row.PaymentModeName);
+                if (to == null)
+                    continue;
+
+                // Unless something already carries the new name, in which case
+                // renaming would make the pair this is trying to avoid. Leave
+                // it; the old name simply stops being offered.
+                if (rows.Any(other => other != row &&
+                        string.Equals(other.PaymentModeName, to, StringComparison.OrdinalIgnoreCase)))
+                    continue;
+
+                renamed.Add($"{row.PaymentModeName} -> {to}");
+                row.PaymentModeName = to;
+            }
+
+            if (renamed.Count > 0)
+            {
+                await context.SaveChangesAsync();
+                logger.LogInformation("Renamed payment mode(s): {Renamed}.", string.Join(", ", renamed));
+            }
+
+            var known = new HashSet<string>(
+                rows.Select(r => r.PaymentModeName), StringComparer.OrdinalIgnoreCase);
 
             var missing = PaymentModes.OfferedNames
                 .Where(name => !known.Contains(name))

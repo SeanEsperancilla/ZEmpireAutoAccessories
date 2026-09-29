@@ -92,7 +92,8 @@ builder.Services.AddScoped<IDocumentStockService, DocumentStockService>();
 builder.Services.AddSingleton<IStockPostingLog, StockPostingLog>();
 ZEmpireAutoAccessories.Models.PaymentModes.Configure(
     builder.Configuration.GetSection("Payments:Modes").Get<string[]>(),
-    builder.Configuration.GetSection("Payments:ModesNeedingProof").Get<string[]>());
+    builder.Configuration.GetSection("Payments:ModesNeedingProof").Get<string[]>(),
+    builder.Configuration.GetSection("Payments:RenamedModes").Get<Dictionary<string, string>>());
 
 var app = builder.Build();
 
