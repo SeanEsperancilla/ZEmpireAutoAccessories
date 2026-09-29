@@ -19,8 +19,8 @@
     // The 12% inside the total, worked out once for the whole page.
     var vat = Vat.Breakdown(Model.TotalAmount);
 
-    // A transfer or a wallet sends exactly what was asked for, so there is
-    // nothing to type and no change to work out.
+    // Everything except cash is charged the exact total, so there is nothing
+    // to type and no change to work out.
     var settlesExactly = PaymentModes.SettlesExactly(Model.PaymentMode?.PaymentModeName);
 }
 
@@ -230,7 +230,7 @@
                        tabindex="@(settlesExactly ? "-1" : null)" required />
                 @if (settlesExactly)
                 {
-                    <div class="form-text">@Model.PaymentMode!.PaymentModeName sends the exact amount.</div>
+                    <div class="form-text">@Model.PaymentMode!.PaymentModeName settles at the exact amount.</div>
                 }
             </div>
             <div class="pay-field">

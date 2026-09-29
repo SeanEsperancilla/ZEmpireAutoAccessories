@@ -43,6 +43,20 @@ namespace ZEmpireAutoAccessories.Models
         };
 
         /// <summary>
+        /// The modes where a customer can hand over more than the price, so
+        /// there is a tendered amount to type and change to give back.
+        ///
+        /// Cash is the only one. A transfer or a wallet sends the figure it
+        /// was asked for, and a card terminal is charged the total - none of
+        /// them has a bigger note. Held as the exception rather than the rule
+        /// because the rule is nearly everything: a mode nobody has listed
+        /// here settles exactly, which is the safer way round. Locking a
+        /// tender that should have been typed is an annoyance; recording
+        /// change that was never given is a wrong figure in the drawer.
+        /// </summary>
+        private static readonly string[] DefaultGivingChange = { "Cash" };
+
+        /// <summary>
         /// Old name -> the name it should read as now. Applied to the row
         /// itself at startup, so the mode keeps its id and every transaction
         /// on it keeps pointing at it.
@@ -62,6 +76,9 @@ namespace ZEmpireAutoAccessories.Models
         private static HashSet<string> RequiringProof =
             new(DefaultRequiringProof, StringComparer.OrdinalIgnoreCase);
 
+        private static HashSet<string> GivingChange =
+            new(DefaultGivingChange, StringComparer.OrdinalIgnoreCase);
+
         /// <summary>
         /// Points both lists at configuration. An absent or empty setting
         /// keeps the built-in list, so a missing section can never leave the
@@ -70,8 +87,13 @@ namespace ZEmpireAutoAccessories.Models
         public static void Configure(
             IEnumerable<string>? offered,
             IEnumerable<string>? requiringProof,
-            IDictionary<string, string>? renamed = null)
+            IDictionary<string, string>? renamed = null,
+            IEnumerable<string>? givingChange = null)
         {
+            var cleanChange = Clean(givingChange);
+            if (cleanChange.Count > 0)
+                GivingChange = new HashSet<string>(cleanChange, StringComparer.OrdinalIgnoreCase);
+
             var cleanOffered = Clean(offered);
             if (cleanOffered.Count > 0)
                 Offered = cleanOffered.ToArray();
@@ -127,8 +149,14 @@ namespace ZEmpireAutoAccessories.Models
         /// <summary>
         /// Whether the tendered amount is the total and nothing else, so there
         /// is no change and nothing to type.
+        ///
+        /// Not the same question as whether a receipt is needed, though it was
+        /// written that way to begin with. A card terminal is charged the
+        /// exact total - no change - but it is settled in front of you and
+        /// prints its own slip, so there is nothing to chase.
         /// </summary>
-        public static bool SettlesExactly(string? paymentModeName) => IsOnline(paymentModeName);
+        public static bool SettlesExactly(string? paymentModeName) =>
+            !(paymentModeName != null && GivingChange.Contains(paymentModeName.Trim()));
 
         /// <summary>
         /// What a form should offer, from the rows the table actually holds:

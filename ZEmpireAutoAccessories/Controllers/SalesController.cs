@@ -323,10 +323,10 @@ namespace ZEmpireAutoAccessories.Controllers
             ViewData["PaymentModeID"] = new SelectList(
                 paymentModes, "PaymentModeID", "PaymentModeName");
 
-            // Which of them arrive from somewhere other than the counter. The
-            // form locks the tendered amount to the total for those - there is
-            // no bigger note to hand over and no change to give back.
-            ViewData["OnlinePaymentModeIds"] = paymentModes
+            // Which of them are charged the exact total - everything except
+            // cash. The form fills the tendered amount in and locks it for
+            // those; there is no bigger note and no change to give back.
+            ViewData["ExactPaymentModeIds"] = paymentModes
                 .Where(m => PaymentModes.SettlesExactly(m.PaymentModeName))
                 .Select(m => m.PaymentModeID)
                 .ToList();
