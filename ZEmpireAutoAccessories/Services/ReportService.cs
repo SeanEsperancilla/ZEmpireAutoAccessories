@@ -40,6 +40,14 @@ namespace ZEmpireAutoAccessories.Services
         ///
         /// A service invoice counts only once it is Paid, which is the rule
         /// Cashiering and the Collections report use, so the three agree.
+        ///
+        /// It is dated by InvoiceDate, not by when the money came in, because
+        /// there is nowhere to record the latter - sales.ServiceInvoice has no
+        /// paid-at column and adding one is off the table. So an invoice
+        /// raised yesterday and paid today lands on yesterday, and yesterday's
+        /// figure moves when it is paid. Cashiering ranges the same way, which
+        /// is what keeps the two agreeing; the alternative would be a headline
+        /// figure that disagrees with the screen it links to.
         /// </summary>
         private async Task<CollectedTotal> Collected(DateTime from, DateTime toExclusive)
         {

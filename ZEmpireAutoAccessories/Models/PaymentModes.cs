@@ -23,10 +23,10 @@ namespace ZEmpireAutoAccessories.Models
         /// </summary>
         private static readonly string[] DefaultOffered =
         {
-            "Cash",
-            "Card",
-            "Bank Transfer",
-            "QRPH"
+            "Bank Transfers",
+            "Credit Cards",
+            "GCash",
+            "Cash"
         };
 
         /// <summary>

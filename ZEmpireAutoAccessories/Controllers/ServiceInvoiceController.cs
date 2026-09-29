@@ -602,11 +602,17 @@ namespace ZEmpireAutoAccessories.Controllers
                 return RedirectToAction(nameof(Details), new { id });
             }
 
-            // A transfer or a wallet sends the amount it was asked for. There
-            // is no bigger note and no change, so the figure is the total and
-            // the form does not offer to type one - this is what makes that
-            // true rather than merely displayed.
-            if (PaymentModes.SettlesExactly(invoice.PaymentMode?.PaymentModeName))
+            // A transfer, a wallet or a card is charged the total. The form
+            // fills that in and locks it, and this is what makes it true
+            // rather than merely displayed.
+            //
+            // Only upwards, though. Forcing a short figure up to the total
+            // would take the one guard below out of play for every mode but
+            // cash, and quietly record a part payment as settled in full -
+            // which is the opposite of what an exact-amount mode means. A
+            // figure below the total still falls through and is refused.
+            if (amountTendered >= invoice.TotalAmount
+                && PaymentModes.SettlesExactly(invoice.PaymentMode?.PaymentModeName))
                 amountTendered = invoice.TotalAmount;
 
             if (amountTendered < invoice.TotalAmount)

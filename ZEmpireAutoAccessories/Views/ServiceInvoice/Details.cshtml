@@ -101,7 +101,7 @@
         <dd class="col-sm-9">@(Model.JobOrder?.JobOrderNumber ?? "—")</dd>
 
         <dt class="col-sm-3">Payment Mode</dt>
-        <dd class="col-sm-9">@Model.PaymentMode.PaymentModeName</dd>
+        <dd class="col-sm-9">@(Model.PaymentMode?.PaymentModeName ?? "—")</dd>
 
         <dt class="col-sm-3">Invoice Date</dt>
         <dd class="col-sm-9">@Model.InvoiceDate.ToString("MMM d, yyyy")</dd>
@@ -230,7 +230,7 @@
                        tabindex="@(settlesExactly ? "-1" : null)" required />
                 @if (settlesExactly)
                 {
-                    <div class="form-text">@Model.PaymentMode!.PaymentModeName settles at the exact amount.</div>
+                    <div class="form-text">@(Model.PaymentMode?.PaymentModeName) settles at the exact amount.</div>
                 }
             </div>
             <div class="pay-field">
