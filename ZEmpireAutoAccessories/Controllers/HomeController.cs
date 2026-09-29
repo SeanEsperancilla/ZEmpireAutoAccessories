@@ -37,8 +37,11 @@ namespace ZEmpireAutoAccessories.Controllers
             // counts below (job orders, stock, warranties), just not revenue.
             if (modules.Contains("Sales") && User.IsInRole("Admin"))
             {
-                var todaySales = await _reportService.GetDailySales();
-                stats.Add(new DashboardStat("Today's Sales", "₱" + todaySales.ToString("N2"), Url.Action("Index", "Sales")!, "sales"));
+                // Everything taken today, not product sales alone - most of
+                // this shop's money comes in on service invoices, which this
+                // figure used to leave out entirely.
+                var today = await _reportService.GetDailySales();
+                stats.Add(new DashboardStat("Collected Today", "₱" + today.Total.ToString("N2"), Url.Action("Index", "Cashiering")!, "sales"));
             }
 
             if (modules.Contains("Job Orders"))
