@@ -30,16 +30,24 @@ namespace ZEmpireAutoAccessories.Models
         };
 
         /// <summary>
-        /// Modes where the money moves before anyone at the shop sees it, so a
-        /// receipt or screenshot is what proves it arrived. GCash is here
-        /// because the existing data uses it; QRPH is the rail that replaced
-        /// it for most counters.
+        /// Modes that leave a record somewhere other than this system, which
+        /// is worth keeping against the transaction: the transfer screenshot,
+        /// the wallet receipt, the terminal slip a card prints.
+        ///
+        /// Cash is the only mode with nothing to attach - the money is in the
+        /// drawer and the drawer is the record. Everything else has a piece of
+        /// paper or a screen behind it, and a payment with none of that is a
+        /// payment nobody can check afterwards.
+        ///
+        /// The older names are kept alongside the current ones so a database
+        /// that has not been through the rename yet still asks for proof.
         /// </summary>
         private static readonly string[] DefaultRequiringProof =
         {
-            "Bank Transfer",
-            "QRPH",
-            "GCash"
+            "Bank Transfers", "Bank Transfer",
+            "Credit Cards", "Card",
+            "GCash",
+            "QRPH"
         };
 
         /// <summary>
@@ -129,22 +137,11 @@ namespace ZEmpireAutoAccessories.Models
         public static IReadOnlyList<string> OfferedNames => Offered;
 
         /// <summary>
-        /// Whether the money moved before anyone at the shop saw it - a
-        /// transfer or a wallet rather than cash or a terminal.
-        ///
-        /// Two things follow from it, for the same reason. A receipt is what
-        /// shows the money arrived, because nobody watched it arrive. And the
-        /// amount is exactly the total, because there is no handing over of a
-        /// bigger note: the customer sends what they were asked for, and there
-        /// is no change to give back.
+        /// Whether a payment on this mode leaves a record worth attaching to
+        /// the transaction - a screenshot, a receipt, a terminal slip.
         /// </summary>
-        public static bool IsOnline(string? paymentModeName) =>
+        public static bool NeedsProof(string? paymentModeName) =>
             paymentModeName != null && RequiringProof.Contains(paymentModeName.Trim());
-
-        /// <summary>
-        /// Whether a payment on this mode needs a receipt attached to it.
-        /// </summary>
-        public static bool NeedsProof(string? paymentModeName) => IsOnline(paymentModeName);
 
         /// <summary>
         /// Whether the tendered amount is the total and nothing else, so there
