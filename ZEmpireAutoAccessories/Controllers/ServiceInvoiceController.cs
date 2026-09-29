@@ -590,6 +590,7 @@ namespace ZEmpireAutoAccessories.Controllers
         {
             var invoice = await _context.ServiceInvoices
                 .Include(i => i.Details)
+                .Include(i => i.PaymentMode)
                 .FirstOrDefaultAsync(i => i.ServiceInvoiceID == id);
 
             if (invoice == null)
@@ -600,6 +601,13 @@ namespace ZEmpireAutoAccessories.Controllers
                 TempData["StatusError"] = "Add at least one line item before taking payment.";
                 return RedirectToAction(nameof(Details), new { id });
             }
+
+            // A transfer or a wallet sends the amount it was asked for. There
+            // is no bigger note and no change, so the figure is the total and
+            // the form does not offer to type one - this is what makes that
+            // true rather than merely displayed.
+            if (PaymentModes.SettlesExactly(invoice.PaymentMode?.PaymentModeName))
+                amountTendered = invoice.TotalAmount;
 
             if (amountTendered < invoice.TotalAmount)
             {
@@ -619,8 +627,9 @@ namespace ZEmpireAutoAccessories.Controllers
             await MoveToStatus(invoice, "Paid");
 
             if (TempData["StatusError"] == null)
-                TempData["Success"] =
-                    $"Payment recorded. Change ₱{invoice.ChangeAmount:N2}.";
+                TempData["Success"] = invoice.ChangeAmount > 0m
+                    ? $"Payment recorded. Change ₱{invoice.ChangeAmount:N2}."
+                    : "Payment recorded.";
 
             return RedirectToAction(nameof(Details), new { id });
         }

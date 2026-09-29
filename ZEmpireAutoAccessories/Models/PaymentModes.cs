@@ -107,10 +107,28 @@ namespace ZEmpireAutoAccessories.Models
         public static IReadOnlyList<string> OfferedNames => Offered;
 
         /// <summary>
+        /// Whether the money moved before anyone at the shop saw it - a
+        /// transfer or a wallet rather than cash or a terminal.
+        ///
+        /// Two things follow from it, for the same reason. A receipt is what
+        /// shows the money arrived, because nobody watched it arrive. And the
+        /// amount is exactly the total, because there is no handing over of a
+        /// bigger note: the customer sends what they were asked for, and there
+        /// is no change to give back.
+        /// </summary>
+        public static bool IsOnline(string? paymentModeName) =>
+            paymentModeName != null && RequiringProof.Contains(paymentModeName.Trim());
+
+        /// <summary>
         /// Whether a payment on this mode needs a receipt attached to it.
         /// </summary>
-        public static bool NeedsProof(string? paymentModeName) =>
-            paymentModeName != null && RequiringProof.Contains(paymentModeName.Trim());
+        public static bool NeedsProof(string? paymentModeName) => IsOnline(paymentModeName);
+
+        /// <summary>
+        /// Whether the tendered amount is the total and nothing else, so there
+        /// is no change and nothing to type.
+        /// </summary>
+        public static bool SettlesExactly(string? paymentModeName) => IsOnline(paymentModeName);
 
         /// <summary>
         /// What a form should offer, from the rows the table actually holds:

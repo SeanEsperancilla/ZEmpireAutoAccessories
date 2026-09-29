@@ -202,6 +202,16 @@ namespace ZEmpireAutoAccessories.Controllers
                 // will not submit one, so it can only be a stale or tampered
                 // post, and a wrong change figure is worse than none.
                 //
+                // An online mode sends exactly what it was asked for, so the
+                // figure is the total whatever arrived on the form.
+                var paymentMode = await _context.PaymentModes
+                    .Where(p => p.PaymentModeID == paymentModeId)
+                    .Select(p => p.PaymentModeName)
+                    .FirstOrDefaultAsync();
+
+                if (PaymentModes.SettlesExactly(paymentMode))
+                    amountTendered = sale.TotalAmount;
+
                 // Written as text because TempData's serializer refuses a
                 // decimal outright - it would throw at the end of this request
                 // and take the whole sale down with it.
@@ -308,9 +318,18 @@ namespace ZEmpireAutoAccessories.Controllers
 
             // Only the modes the shop offers, in the order it offers them -
             // see Models/PaymentModes.cs.
+            var paymentModes = PaymentModes.ForSelection(await _context.PaymentModes.ToListAsync());
+
             ViewData["PaymentModeID"] = new SelectList(
-                PaymentModes.ForSelection(await _context.PaymentModes.ToListAsync()),
-                "PaymentModeID", "PaymentModeName");
+                paymentModes, "PaymentModeID", "PaymentModeName");
+
+            // Which of them arrive from somewhere other than the counter. The
+            // form locks the tendered amount to the total for those - there is
+            // no bigger note to hand over and no change to give back.
+            ViewData["OnlinePaymentModeIds"] = paymentModes
+                .Where(m => PaymentModes.SettlesExactly(m.PaymentModeName))
+                .Select(m => m.PaymentModeID)
+                .ToList();
 
             var saleProducts = await _context.Products
                 .Where(p => p.IsActive)
