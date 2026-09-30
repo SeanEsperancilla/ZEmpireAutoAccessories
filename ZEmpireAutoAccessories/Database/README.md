@@ -22,7 +22,26 @@ cut-size file from one database points at the wrong panels in another.
 
 **1. Back up the database over the committed file.**
 
-In SSMS, against your `ZEmpire` database:
+*In SSMS, by hand:*
+
+1. Open SSMS and connect to the server that holds `ZEmpire`.
+2. In Object Explorer expand **Databases**, right-click **ZEmpire**, then
+   **Tasks -> Back Up...**.
+3. **Backup type:** `Full`. **Backup to:** `Disk`.
+4. Under **Destination**, select the default path that is already listed and
+   click **Remove**, then click **Add...** and type the full path, filename
+   included:
+   `C:\path\to\ZEmpireAutoAccessories\ZEmpireAutoAccessories\Database\ZEmpireUpdated.bak`
+   Keep the `.bak` on the end - the Add dialog will otherwise offer you a
+   folder and write a file with no extension.
+5. Go to the **Media Options** page on the left and tick **Overwrite all
+   existing backup sets**. This is the step people miss: without it SSMS
+   *appends*, so the committed file grows by another ~16 MB every time you
+   share, and git keeps all of it forever.
+6. **OK**. "The backup of database 'ZEmpire' completed successfully" means the
+   file is written.
+
+*Or, the same thing as a query* - open a New Query window and run:
 
 ```sql
 BACKUP DATABASE ZEmpire
@@ -30,8 +49,39 @@ TO DISK = N'C:\path\to\ZEmpireAutoAccessories\ZEmpireAutoAccessories\Database\ZE
 WITH FORMAT, INIT, COMPRESSION, NAME = N'ZEmpire full backup';
 ```
 
-`FORMAT, INIT` overwrite the file rather than appending, so it stays one
-backup and does not grow with every share.
+`FORMAT, INIT` are the query equivalent of that Media Options checkbox.
+
+`C:\path\to\...` above is a **placeholder** - replace it with your own clone's
+path before running anything. To find it: in File Explorer open your
+`ZEmpireAutoAccessories` repo, go to the inner `ZEmpireAutoAccessories` folder,
+then `Database`, click the address bar and copy it. The path is also read on
+the machine SQL Server runs on, not the machine SSMS runs on - the same thing
+only when the server is your own PC.
+
+Two errors come up, and they mean different things:
+
+> **`Cannot open backup device ... Operating system error 3 (The system cannot
+> find the path specified.)`** - the folder in your path does not exist. Nearly
+> always the placeholder was left in. SQL Server creates the `.bak` file but
+> never creates folders, so every folder in the path has to be there already.
+
+> **`... Operating system error 5 (Access is denied.)`** - the file is written
+> by the **SQL Server service account**, not by you, and that account usually
+> cannot reach a folder under your user profile (`Documents`, `Desktop`,
+> `OneDrive`). Don't fight the permissions. Back up to SQL Server's own backup
+> folder, which the service account can always write, and copy the file into
+> `Database\` with File Explorer afterwards:
+>
+> ```sql
+> SELECT SERVERPROPERTY('InstanceDefaultBackupPath');
+>
+> BACKUP DATABASE ZEmpire
+> TO DISK = N'ZEmpireUpdated.bak'
+> WITH FORMAT, INIT, COMPRESSION, NAME = N'ZEmpire full backup';
+> ```
+>
+> A bare filename with no folder lands in exactly that folder. The committed
+> file is the same either way.
 
 **2. Commit the backup and the cut sizes.**
 
