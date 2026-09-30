@@ -132,6 +132,11 @@ try
     await PaymentModeSeeder.SeedAsync(
         app.Services,
         app.Services.GetRequiredService<ILogger<Program>>());
+
+    // The shades each tint variant comes in. Also insert-only.
+    await ShadeSeeder.SeedAsync(
+        app.Services,
+        app.Services.GetRequiredService<ILogger<Program>>());
 }
 catch (Exception ex)
 {
